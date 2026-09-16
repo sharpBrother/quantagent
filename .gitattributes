@@ -1,0 +1,11 @@
+# 冻结输入制品的 digest 按统一 LF 计算，避免 Windows checkout 的 CRLF 造成校验失败。
+# 这条规则继承自旧仓 bond_timing 冻结 bundle 的裁定，见 docs/adr/。
+frozen/** text eol=lf
+publish/** text eol=lf
+*.csv text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.sql text eol=lf

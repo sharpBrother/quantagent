@@ -1,0 +1,48 @@
+# 旧仓没有任何 pre-commit 门禁，问题全靠事后发现。
+# 这里只放快速检查；重的类型检查与契约测试留给 CI。
+default_language_version:
+  python: python3.12
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict        # 旧仓 legacy/ 有 2 个文件残留冲突标记
+      - id: check-added-large-files     # 旧仓有 115 个 >1MB 文件入库
+        args: ["--maxkb=512"]
+        exclude: ^frozen/           # 冻结制品不可重算，上限由 CI 单独放宽到 4MB
+      - id: detect-private-key
+      - id: forbid-submodules
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.7.4
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/mwouts/jupytext
+    rev: v1.16.4
+    hooks:
+      - id: jupytext
+        args: ["--sync"]
+        files: ^notebooks/
+
+  - repo: local
+    hooks:
+      - id: no-scripts-dir
+        name: 禁止新建 scripts/ 目录（入口只能是 CLI 子命令或 Dagster asset）
+        entry: bash -c 'test ! -d scripts || { echo "本仓库不设 scripts/，见 docs/architecture/cli-and-orchestration.md"; exit 1; }'
+        language: system
+        pass_filenames: false
+
+      - id: no-config-ini
+        name: 禁止提交 config.ini 或任何 .env
+        entry: bash -c 'git diff --cached --name-only | grep -E "(^|/)(config\.ini|\.env)$" && { echo "凭据文件不得入库"; exit 1; } || exit 0'
+        language: system
+        pass_filenames: false
