@@ -67,7 +67,9 @@ applies_to:
 ### 研究数据面 `src_*`
 
 schema 按源划分：`src_wind`、`src_tushare`、`src_jydb`、`src_suntime`、
-`src_macro`。
+`src_macro`。第一批 59 张源镜像的清单见
+[`../contracts/src-plane.md`](../contracts/src-plane.md) 与
+`db/src_tables.yaml`。
 
 - **只有 `quantagent.ingest` 可以写。** 其他任何层对它只读。
 - **只存源原生结构。** 字段名、类型、语义与源端严格一致，不改含义，不加

@@ -33,4 +33,18 @@ PostgreSQL 上有两个互不混用的逻辑面，因此迁移也分开演进：
 5. **不在迁移里写数据**。`seeds/` 只放静态参照数据（交易所日历种子、行业
    分类码表这类），且必须可重复执行。
 
+第一批源镜像清单见 [`src_tables.yaml`](src_tables.yaml)，口径说明见
+[`../docs/contracts/src-plane.md`](../docs/contracts/src-plane.md)。
+
+## 命令
+
+```
+quantagent db status
+quantagent db migrate --plane all          # 干跑，打印 pending
+quantagent db migrate --write-db           # 真正执行；还需 QUANTAGENT_ALLOW_DB_WRITE=true
+```
+
+两条序列独立。登记表 `qa_migrate.applied` 由运行器创建，不进编号 SQL。
+未同时打开写闸时 `migrate` 拒绝执行。
+
 `ddl/` 存放供人阅读的当前结构快照，由迁移生成，不手工维护。
