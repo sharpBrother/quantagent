@@ -41,6 +41,7 @@ applies_to:
 | [domain/temporal-semantics.md](domain/temporal-semantics.md) | 三条时间轴、四种时间形态 |
 | [domain/pit-rules.md](domain/pit-rules.md) | 可见性规则、PIT 等级、因子字段强制要求 |
 | [contracts/README.md](contracts/README.md) | 可执行契约与文档的双向绑定、契约变更流程 |
+| [contracts/trade-calendar.md](contracts/trade-calendar.md) | 第一个数据集契约：交易日历 |
 
 ## 决策记录
 

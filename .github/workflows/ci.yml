@@ -48,6 +48,10 @@ jobs:
       - name: 测试
         run: uv run pytest -m "not integration and not slow" --cov
 
+      # 与 pytest 契约测试同源，但走正式 CLI 入口，防止入口注册漂移。
+      - name: 契约完整性
+        run: uv run quantagent check contracts
+
   guardrails:
     name: 仓库约束
     runs-on: ubuntu-latest

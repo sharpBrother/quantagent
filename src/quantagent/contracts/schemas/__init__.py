@@ -1,4 +1,4 @@
 """quantagent/contracts/schemas
 
-骨架占位。职责定义见 docs/architecture/layers/。
+DataFrame / JSON 契约按层分目录：pg、ops、lake、publish。
 """

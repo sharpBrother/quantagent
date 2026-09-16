@@ -1,4 +1,6 @@
-"""quantagent/platform/identity
+"""内容哈希与运行身份。"""
 
-骨架占位。职责定义见 docs/architecture/layers/。
-"""
+from quantagent.platform.identity.digest import digest_bytes, digest_file, digest_json, digest_text
+from quantagent.platform.identity.run_id import new_run_id
+
+__all__ = ["digest_bytes", "digest_file", "digest_json", "digest_text", "new_run_id"]

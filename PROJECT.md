@@ -259,7 +259,9 @@ Alpha 因子库、IC、RankIC、ICIR、Turnover、Decay。因子长表是唯一�
 
 # 当前阶段
 
-**P0：骨架已就位，尚无业务实现。**
+**P1 第一刀：platform（配置 / 路径 / digest / run log / 写闸）、契约加载
+与 fail-closed 检查、交易日历契约、`quantagent check contracts` /
+`quantagent db status`。尚未建 PG schema、尚未接采集。**
 
 阶段划分、每阶段验收标准与回滚点见
 [`docs/migration/roadmap.md`](docs/migration/roadmap.md)。

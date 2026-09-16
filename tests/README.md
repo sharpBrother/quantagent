@@ -34,5 +34,7 @@ applies_to:
 ## 文档与契约的校验也是测试
 
 `contracts/test_docs_frontmatter.py` 校验 `docs/` 下所有文档的 frontmatter
-完整性，`contracts/test_frozen_bundles.py` 校验 `frozen/` 下每个 bundle 的
-digest 与行列合同。这两项在 CI 中与代码测试同等对待。
+完整性，`contracts/test_docs_contract_binding.py` 校验契约 `doc_ref` 能解析，
+`contracts/test_frozen_bundles.py` 校验 `frozen/` 下每个 bundle 的 digest 与
+行列合同。`quantagent check contracts` 与这些测试同源，缺可见性规则即失败。
+这几项在 CI 中与代码测试同等对待。

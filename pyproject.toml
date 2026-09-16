@@ -78,6 +78,12 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/quantagent"]
 
+# hatchling 默认只打包 .py。契约 YAML 必须进 wheel，否则安装后 check contracts 会空跑。
+[tool.hatch.build.targets.wheel.force-include]
+"src/quantagent/py.typed" = "quantagent/py.typed"
+"src/quantagent/contracts/schemas" = "quantagent/contracts/schemas"
+"src/quantagent/contracts/visibility" = "quantagent/contracts/visibility"
+
 
 # ---------------------------------------------------------------------------
 # ruff：lint + format 单一工具，取代旧仓缺失的 black/isort/flake8 组合

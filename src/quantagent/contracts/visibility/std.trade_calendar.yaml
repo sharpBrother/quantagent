@@ -1,0 +1,14 @@
+dataset: std.trade_calendar
+doc_ref: docs/contracts/trade-calendar.md
+temporal_kind: point_event
+event_field: cal_dt
+visibility:
+  rule: same_day_close
+  grade: A
+  rationale: >
+    交易所官方交易日历。源端（Tushare trade_cal 等）不提供年度休市安排的
+    公告日，本表不设 published_at，也不允许把采集时间或推测公告日写进任何
+    日期列。same_day_close 是不引入未来信息的下界：该日收盘后，「这一天
+    是否开市」对市场已是公开事实。实际日历在年度安排公布后即确定，比当日
+    收盘更早；把可见日提前必须以源端原生公告日为前提，没有则保持这条下界。
+pit_recoverable: true

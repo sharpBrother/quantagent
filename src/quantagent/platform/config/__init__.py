@@ -1,4 +1,11 @@
-"""quantagent/platform/config
+"""配置解析与写库总闸。"""
 
-骨架占位。职责定义见 docs/architecture/layers/。
-"""
+from quantagent.platform.config.settings import Settings, cache_clear, get_settings
+from quantagent.platform.config.write_gate import assert_db_write_allowed
+
+__all__ = [
+    "Settings",
+    "assert_db_write_allowed",
+    "cache_clear",
+    "get_settings",
+]

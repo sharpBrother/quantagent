@@ -1,4 +1,4 @@
 """quantagent/contracts/schemas/publish
 
-骨架占位。职责定义见 docs/architecture/layers/。
+发布产物 JSON 契约。P5 之前可为空。
 """

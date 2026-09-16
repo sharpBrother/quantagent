@@ -4,8 +4,8 @@
 Parquet Lakehouse 完成标准化、口径对齐、因子计算、建模、信号与组合，最终
 装配为发布产物供展示层消费。DuckDB 作查询引擎，Dagster 作资产化编排。
 
-重构自 `pycharm_workspace`。**当前处于 P0 阶段：目录骨架、工程基建与设计
-文档已就位，尚无业务实现。**
+重构自 `pycharm_workspace`。**当前处于 P1 第一刀：platform 底座、契约加载
+与交易日历契约已落地；尚未接 PostgreSQL，也尚未采集数据。**
 
 ## 先读这三份
 
@@ -30,6 +30,8 @@ uv run ruff check .
 uv run mypy
 uv run lint-imports              # 依赖方向契约
 uv run pytest -m "unit or contracts"
+uv run quantagent check contracts
+uv run quantagent db status      # 第一刀不连库；未配置会打印「未配置」
 
 # 提交钩子
 uv run pre-commit install

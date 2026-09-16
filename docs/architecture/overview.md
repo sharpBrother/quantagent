@@ -165,5 +165,7 @@ Python 3.12，`uv` 管理依赖与虚拟环境，依赖锁在 `uv.lock`。两套
 
 ## 当前状态
 
-P0 阶段：目录骨架、工程基建、设计文档已就位，尚无业务实现。后续阶段与验收
-标准见 [../migration/roadmap.md](../migration/roadmap.md)。
+P1 第一刀：`platform` 配置/路径/digest/run log/写闸、契约 YAML 加载、缺
+visibility 时 CI fail-closed、第一个数据集 `std.trade_calendar`。尚未建 PG
+schema，尚未采集。后续阶段与验收标准见
+[../migration/roadmap.md](../migration/roadmap.md)。

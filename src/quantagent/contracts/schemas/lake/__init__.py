@@ -1,4 +1,4 @@
 """quantagent/contracts/schemas/lake
 
-骨架占位。职责定义见 docs/architecture/layers/。
+lake 层 DataFrame 契约（YAML）。每个数据集一份，文件名等于 dataset。
 """

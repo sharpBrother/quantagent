@@ -1,4 +1,6 @@
-"""quantagent/platform/runlog
+"""运行记录。"""
 
-骨架占位。职责定义见 docs/architecture/layers/。
-"""
+from quantagent.platform.runlog.record import RunLog
+from quantagent.platform.runlog.writer import persist_run_log
+
+__all__ = ["RunLog", "persist_run_log"]
