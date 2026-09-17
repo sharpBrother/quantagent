@@ -23,6 +23,7 @@ def _isolated_settings(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None,
     settings = Settings(_env_file=None)
     monkeypatch.setattr("quantagent.cli.db.get_settings", lambda: settings)
     monkeypatch.setattr("quantagent.cli.lake.get_settings", lambda: settings)
+    monkeypatch.setattr("quantagent.cli.ingest.get_settings", lambda: settings)
     yield
     cache_clear()
 
@@ -63,12 +64,30 @@ def test_db_migrate_help_lists_write_db() -> None:
 
 
 @pytest.mark.unit
-def test_root_help_lists_check_db_and_lake() -> None:
+def test_root_help_lists_check_db_ingest_and_lake() -> None:
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
     assert "check" in result.stdout
     assert "db" in result.stdout
+    assert "ingest" in result.stdout
     assert "lake" in result.stdout
+
+
+@pytest.mark.unit
+def test_ingest_trade_cal_help_lists_write_db() -> None:
+    result = runner.invoke(app, ["ingest", "tushare", "trade-cal", "--help"])
+    assert result.exit_code == 0
+    assert "--write-db" in result.stdout
+    assert "--start" in result.stdout
+    assert "--exchange" in result.stdout
+
+
+@pytest.mark.unit
+def test_lake_materialize_trade_calendar_help() -> None:
+    result = runner.invoke(app, ["lake", "materialize", "trade-calendar", "--help"])
+    assert result.exit_code == 0
+    assert "--as-of" in result.stdout
+    assert "--rebuild" in result.stdout
 
 
 @pytest.mark.unit

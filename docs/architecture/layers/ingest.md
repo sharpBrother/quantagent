@@ -56,6 +56,10 @@ applies_to:
 
 这些是写入函数的内建行为，不依赖任何授权流程或身份校验。
 
+当前唯一允许写入的源表是 `src.tushare.trade_cal`。`src_*._batch` 与其余
+源表显式禁写。批次行与数据行在同一事务里一次 INSERT 完成（含
+`finished_at`），禁止事后 UPDATE 批次状态。
+
 ### 采集时间不是 PIT
 
 `_ingested_at` 只记录本系统何时取得数据。它**不是**来源发布时间，也不是

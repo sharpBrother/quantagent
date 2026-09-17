@@ -1,0 +1,12 @@
+dataset: src.tushare.trade_cal
+doc_ref: docs/contracts/trade-calendar.md
+temporal_kind: point_event
+event_field: cal_date
+visibility:
+  rule: same_day_close
+  grade: A
+  rationale: >
+    交易所官方交易日历的源镜像。Tushare trade_cal 不提供年度休市安排的公告日，
+    表内也没有 published_at。same_day_close 是不引入未来信息的下界，与
+    std.trade_calendar 同一条规则；不得用 _ingested_at 提前可见日。
+pit_recoverable: true

@@ -58,3 +58,9 @@ def test_get_settings_reads_profile_from_env(monkeypatch: pytest.MonkeyPatch) ->
 @pytest.mark.unit
 def test_allow_db_write_defaults_false() -> None:
     assert Settings(_env_file=None).allow_db_write is False
+
+
+@pytest.mark.unit
+def test_tushare_token_defaults_empty() -> None:
+    settings = Settings(_env_file=None)
+    assert settings.tushare_token.get_secret_value() == ""

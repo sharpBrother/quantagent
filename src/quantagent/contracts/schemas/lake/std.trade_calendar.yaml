@@ -6,7 +6,8 @@ event_field: cal_dt
 keys:
   - cal_dt
   - exchange
-reads: []
+reads:
+  - src.tushare.trade_cal
 columns:
   cal_dt:
     dtype: date

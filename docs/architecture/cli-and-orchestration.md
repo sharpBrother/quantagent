@@ -43,9 +43,9 @@ Scheduler 的远端配置，实际触发链条跨了两处。
 分组按动作对象划分：
 
 ```
-quantagent ingest <source> [--start --end --write-db]
+quantagent ingest tushare trade-cal [--start --end --exchange --write-db]
 quantagent lake benchmark-layout [--scale tiny|paper --rebuild]
-quantagent lake <dataset> [--partition --rebuild]
+quantagent lake materialize trade-calendar [--as-of --rebuild]
 quantagent feature <action>       compute / register / list / inspect
 quantagent model <action>         train / predict / evaluate
 quantagent backtest <action>      run / compare / report

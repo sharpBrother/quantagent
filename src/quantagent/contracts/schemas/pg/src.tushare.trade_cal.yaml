@@ -1,0 +1,38 @@
+dataset: src.tushare.trade_cal
+layer: pg
+doc_ref: docs/contracts/trade-calendar.md
+temporal_kind: point_event
+event_field: cal_date
+keys:
+  - exchange
+  - cal_date
+reads: []
+columns:
+  exchange:
+    dtype: string
+    nullable: false
+    description: 交易所代码，源端原样（SSE/SZSE 等）
+  cal_date:
+    dtype: string
+    nullable: false
+    description: 日历日 YYYYMMDD，源端字符串，标准化层再转 date
+  is_open:
+    dtype: int64
+    nullable: true
+    description: 是否开市，源端 0/1；缺失保持 NULL，不补
+  pretrade_date:
+    dtype: string
+    nullable: true
+    description: 上一交易日 YYYYMMDD；空就是空
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次，指向 src_tushare._batch
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间，不是 PIT 依据
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 源端业务列的内容指纹

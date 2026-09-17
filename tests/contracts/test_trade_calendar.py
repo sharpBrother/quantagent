@@ -17,8 +17,23 @@ def test_trade_calendar_bundle_is_complete() -> None:
     bundle = load_bundle()
     assert "std.trade_calendar" in bundle.schemas
     assert "std.trade_calendar" in bundle.visibilities
+    assert "src.tushare.trade_cal" in bundle.schemas
+    assert "src.tushare.trade_cal" in bundle.visibilities
+    assert bundle.schemas["std.trade_calendar"].reads == ["src.tushare.trade_cal"]
     report = run_check(bundle=bundle, repo_root=detect_repo_root())
     assert report.ok, [issue.render() for issue in report.issues]
+
+
+@pytest.mark.contracts
+def test_src_trade_cal_keeps_native_string_dates() -> None:
+    schema = load_bundle().schemas["src.tushare.trade_cal"]
+    assert schema.layer == "pg"
+    assert schema.keys == ["exchange", "cal_date"]
+    assert schema.columns["cal_date"].dtype == "string"
+    assert schema.columns["is_open"].nullable is True
+    vis = load_bundle().visibilities["src.tushare.trade_cal"]
+    assert vis.visibility.rule == "same_day_close"
+    assert vis.visibility.grade == "A"
 
 
 @pytest.mark.contracts

@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     pg_ops_user: str = ""
     pg_ops_password: SecretStr = SecretStr("")
 
+    tushare_token: SecretStr = SecretStr("")
+
     @model_validator(mode="after")
     def _relative_var_root_only_when_intended(self) -> Self:
         # 绝对路径允许（office 档位可能挂到共享盘）；相对路径必须相对仓库根

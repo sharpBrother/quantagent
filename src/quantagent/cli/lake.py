@@ -1,4 +1,4 @@
-"""``quantagent lake`` 分组。物化子命令后续切片补；本刀先提供布局 benchmark。"""
+"""``quantagent lake`` 分组：物化与布局 benchmark。"""
 
 from __future__ import annotations
 
@@ -10,9 +10,10 @@ from typing import TYPE_CHECKING, Annotated
 import typer
 
 from quantagent.lake.layout_bench import SCALES, run_layout_benchmark
+from quantagent.lake.materialize.trade_calendar import materialize_trade_calendar
 from quantagent.lake.partitions import LakeLayoutError
 from quantagent.platform.config import get_settings
-from quantagent.platform.errors import DuckSessionError, RunLogError
+from quantagent.platform.errors import ConfigError, DuckSessionError, RunLogError
 from quantagent.platform.identity import digest_json
 from quantagent.platform.runlog import RunLog, persist_run_log
 from quantagent.platform.storage import detect_repo_root, resolve_var_paths
@@ -21,6 +22,8 @@ if TYPE_CHECKING:
     from quantagent.platform.storage.paths import VarPaths
 
 lake_app = typer.Typer(help="Parquet 湖：物化与布局 benchmark。", no_args_is_help=True)
+materialize_app = typer.Typer(help="标准化 / 口径表物化。", no_args_is_help=True)
+lake_app.add_typer(materialize_app, name="materialize")
 
 
 @lake_app.command("benchmark-layout")
@@ -79,6 +82,31 @@ def lake_benchmark_layout(
         raise typer.Exit(code=1) from exc
     typer.echo(json.dumps(report, indent=2, ensure_ascii=False))
     typer.echo(f"report {report_path}")
+
+
+@materialize_app.command("trade-calendar")
+def lake_materialize_trade_calendar(
+    as_of: Annotated[str, typer.Option("--as-of", help="物化运行日 YYYY-MM-DD，只写入 run log")],
+    rebuild: Annotated[bool, typer.Option("--rebuild", help="允许覆盖已有 parquet")] = False,
+) -> None:
+    """把 src_tushare.trade_cal 改名/转类型写入 std.trade_calendar。不按 cal_dt 截断。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    try:
+        as_of_date = datetime.strptime(as_of.strip(), "%Y-%m-%d").date()
+        result = materialize_trade_calendar(
+            settings=settings,
+            paths=paths,
+            as_of=as_of_date,
+            rebuild=rebuild,
+        )
+    except (LakeLayoutError, ConfigError, RunLogError, ValueError) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(
+        f"wrote dataset={result.dataset} rows={result.row_count} "
+        f"digest={result.output_digest} path={result.path}"
+    )
 
 
 def _persist_failure(

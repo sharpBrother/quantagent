@@ -1,4 +1,13 @@
-"""quantagent/lake/materialize
+"""quantagent/lake/materialize"""
 
-骨架占位。职责定义见 docs/architecture/layers/。
-"""
+from quantagent.lake.materialize.trade_calendar import (
+    TradeCalendarMaterializeResult,
+    materialize_trade_calendar,
+    src_rows_to_std,
+)
+
+__all__ = [
+    "TradeCalendarMaterializeResult",
+    "materialize_trade_calendar",
+    "src_rows_to_std",
+]
