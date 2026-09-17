@@ -36,7 +36,7 @@ applies_to:
 |---|---|
 | 2026-09-16 | [存储选型：PostgreSQL + Parquet + DuckDB](2026-09-16-storage-selection.md) |
 | 2026-09-16 | [PostgreSQL 分为研究数据面与控制状态面](2026-09-16-pg-two-planes.md) |
-| 2026-09-16 | [源镜像层不做版本留存](2026-09-16-no-source-vintage-in-pg.md) |
+| 2026-09-16 | [源镜像层不做版本留存](2026-09-16-no-source-vintage-in-pg.md)（已被取代） |
 | 2026-09-16 | [PIT 由声明式规则定义，不由字段约定](2026-09-16-rule-based-pit.md) |
 | 2026-09-16 | [因子统一为长表存储](2026-09-16-feature-long-table.md) |
 | 2026-09-16 | [因子身份拆分为三段](2026-09-16-feature-identity-triplet.md) |
@@ -47,3 +47,4 @@ applies_to:
 | 2026-09-16 | [文档体系去编号化](2026-09-16-docs-without-numbering.md) |
 | 2026-09-17 | [因子配套派生数据集的层归属](2026-09-17-derived-dataset-boundaries.md) |
 | 2026-09-17 | [因子长表 Parquet 物理布局](2026-09-17-feature-value-parquet-layout.md) |
+| 2026-09-17 | [源数据不做批次 vintage 归档](2026-09-17-no-source-vintage-archive.md) |

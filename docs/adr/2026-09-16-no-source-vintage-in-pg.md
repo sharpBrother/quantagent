@@ -1,14 +1,14 @@
 ---
 title: 源镜像层不做版本留存
-status: active
+status: superseded
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 applies_to:
   - src/quantagent/ingest/
   - db/migrations/src/
   - src/quantagent/contracts/visibility/
 supersedes: null
-superseded_by: null
+superseded_by: adr/2026-09-17-no-source-vintage-archive.md
 ---
 
 # 源镜像层不做版本留存

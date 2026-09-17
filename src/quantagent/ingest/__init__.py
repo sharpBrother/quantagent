@@ -1,8 +1,8 @@
 """ingest：外部源到 PG 研究数据面的采集。
 
 负责：从 Wind、Tushare、聚源 JYDB、朝阳永续、宏观数据源拉取数据，写入
-PG ``src_*`` schema 的源原生表；批次登记写入 ``src_<source>._batch``；
-原始拉取结果 append-only 归档到 ``var/lake/_vintage/``。
+PG ``src_*`` schema 的源原生表；批次登记写入 ``src_<source>._batch``。
+原始拉取不另存第二份源镜像。
 
 **这是全仓库唯一允许写 PG 研究数据面的层。**
 

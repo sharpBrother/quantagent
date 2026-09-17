@@ -165,7 +165,6 @@ Python 3.12，`uv` 管理依赖与虚拟环境，依赖锁在 `uv.lock`。两套
 
 ## 当前状态
 
-P1 进行中：`platform`（含 DuckDB 内存会话）、契约 YAML、PG 双面 DDL、
-`feature.value` 物理布局已冻结。尚未采集，`_vintage/` 尚未落第一批快照。
-后续阶段与验收标准见
+P1 存储底座已完成：DuckDB 会话、契约、PG 双面 DDL、因子长表布局已冻结；
+源拉取不做 `_vintage/` 归档。尚未采集。后续阶段见
 [../migration/roadmap.md](../migration/roadmap.md)。

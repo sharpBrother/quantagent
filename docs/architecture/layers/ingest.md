@@ -2,7 +2,7 @@
 title: ingest 层职责
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 applies_to:
   - src/quantagent/ingest/
   - db/migrations/src/
@@ -18,8 +18,8 @@ applies_to:
   的层。**
 - **批次登记**：写 `src_<source>._batch`（拉取窗口、源端游标位点、行数、
   digest、成功或失败原因）。
-- **版本快照归档**：原始拉取结果 append-only 落
-  `var/lake/_vintage/<source>/<dataset>/batch_dt=.../`。
+- **不归档原始拉取**：源端静默修订不可回溯，见
+  [../../adr/2026-09-17-no-source-vintage-archive.md](../../adr/2026-09-17-no-source-vintage-archive.md)。
 
 ## 不负责
 

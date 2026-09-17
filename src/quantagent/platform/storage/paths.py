@@ -28,7 +28,6 @@ class VarPaths:
     logs: Path
     runs: Path
     cache: Path
-    vintage: Path
 
 
 def detect_repo_root(start: Path | None = None) -> Path:
@@ -61,7 +60,6 @@ def resolve_var_paths(settings: Settings, *, repo_root: Path) -> VarPaths:
         logs=root / "logs",
         runs=root / "logs" / "runs",
         cache=root / "cache",
-        vintage=lake / "_vintage",
     )
 
 

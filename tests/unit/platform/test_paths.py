@@ -38,7 +38,6 @@ def test_relative_var_root_resolves_against_repo(tmp_path: Path) -> None:
     settings = Settings(_env_file=None, var_root=Path("var"))
     paths = resolve_var_paths(settings, repo_root=tmp_path)
     assert paths.root == (tmp_path / "var").resolve()
-    assert paths.vintage == (tmp_path / "var" / "lake" / "_vintage").resolve()
     assert paths.runs == (tmp_path / "var" / "logs" / "runs").resolve()
 
 

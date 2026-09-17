@@ -2,7 +2,7 @@
 title: 迁移路线 P0–P6
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 applies_to:
   - src/quantagent/
   - orchestration/
@@ -26,7 +26,7 @@ applies_to:
 | 阶段 | 内容 | 关键产出 |
 |---|---|---|
 | P0 | 骨架 | 目录结构、工程基建、设计文档 |
-| P1 | 存储底座与时间语义 | PG 双面 schema、DuckDB 会话层、契约校验、因子布局 benchmark、`_vintage/` 归档启动 |
+| P1 | 存储底座与时间语义 | PG 双面 schema、DuckDB 会话层、契约校验、因子布局 benchmark |
 | P2 | 处置清单与数据入湖 | wx2 逐表清单、ETL 重写为 asset、发布时间可得性盘点 |
 | P3 | 口径与因子 | domain 纯规则层、ports/adapters、golden test、因子长表 |
 | P4 | 建模与策略 | Dataset/Estimator 抽象、回测语义合同、内核对照 |
@@ -64,18 +64,14 @@ applies_to:
 3. `contracts/` 的 schema 与 visibility 规则加载与校验
 4. **因子长表物理布局 benchmark**：分区键、目标文件大小、排序键、压缩，
    出 ADR 后才固化 Parquet 约定
-5. **批次快照归档启动**（`var/lake/_vintage/`）
+
+源拉取的批次原样归档（`_vintage/`）已取消，见
+[../adr/2026-09-17-no-source-vintage-archive.md](../adr/2026-09-17-no-source-vintage-archive.md)。
 
 ### 为什么 benchmark 在这里
 
 物理布局一旦固化，改起来要重写全部历史数据。在写入任何真实因子之前完成
 benchmark，代价最低。
-
-### 为什么 `_vintage/` 归档在 P1 而不是 P2
-
-越早开始积累，收益越大——每晚一天就永久少一天的版本序列。它不依赖数据
-入湖完成，只依赖采集能跑，因此与存储底座一起启动。见
-[../adr/2026-09-16-no-source-vintage-in-pg.md](../adr/2026-09-16-no-source-vintage-in-pg.md)。
 
 ### 验收标准
 
@@ -84,7 +80,6 @@ benchmark，代价最低。
 - 至少一个数据集有完整契约（schema + visibility + `reads`），且缺规则时
   CI 确实失败
 - benchmark 结论 ADR 已定版，脚本保留在仓库
-- `_vintage/` 有第一个批次快照落盘，格式符合契约
 
 ### 回滚点
 

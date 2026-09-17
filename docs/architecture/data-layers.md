@@ -96,11 +96,12 @@ PG 只反映源端当前状态，不做 CDC、不保留历史版本。
 `_ingested_at`：一次性迁入的存量数据，其 `_ingested_at` 全部等于迁移日，
 用它做 PIT 等于伪造历史。
 
-取舍记录见 [../adr/2026-09-16-no-source-vintage-in-pg.md](../adr/2026-09-16-no-source-vintage-in-pg.md)。
+取舍记录见
+[../adr/2026-09-17-no-source-vintage-archive.md](../adr/2026-09-17-no-source-vintage-archive.md)。
 
-补偿手段是**从现在开始积累**：每个采集批次的原始拉取结果 append-only 归档
-到 `var/lake/_vintage/<source>/<dataset>/batch_dt=.../`，即使源端不提供发布
-时间，也能逐步积累系统时间轴上的版本序列。这件事越早开始收益越大。
+**不做批次原样归档。** 源表体量大，静默修订视为可接受误差；原始拉取写入
+PG 后丢弃。补偿只剩契约上的诚实标记：`pit_recoverable: false` 与
+`pit_from`。不得用 `_ingested_at` 或采集批次号伪造版本序列。
 
 ### 原生结构与技术元数据如何兼容
 
@@ -137,7 +138,6 @@ var/lake/
 │   └── group_nav/   因子分组净值
 ├── portfolio/   组合、风险、归因
 ├── _matrix/     训练宽矩阵缓存（纯派生，可整体删除重建）
-├── _vintage/    批次原始快照归档（append-only）
 └── legacy/      从 wx2 冻结迁入的不可重算历史制品（只读）
 ```
 
