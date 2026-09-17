@@ -1,4 +1,4 @@
-"""feature.value 三类查询：强制 as_of，knowledge_dt 过滤，空域 fail-closed。"""
+"""feature.value 三类查询：强制 PIT 截止列，空域 fail-closed。"""
 
 from __future__ import annotations
 
@@ -62,7 +62,8 @@ def test_window_drops_rows_not_yet_visible(feature_dir: Path) -> None:
         register_parquet(conn, FEATURE_VALUE_VIEW, feature_dir)
         table = scan_feature_window(
             conn,
-            as_of=date(2024, 1, 10),
+            visibility_column="knowledge_dt",
+            visible_on_or_before=date(2024, 1, 10),
             feature_id="mom_20d",
             definition_version="v1",
             param_hash="p0",
@@ -83,7 +84,8 @@ def test_cross_section_is_one_day_and_pit(feature_dir: Path) -> None:
         register_parquet(conn, FEATURE_VALUE_VIEW, feature_dir)
         table = scan_feature_cross_section(
             conn,
-            as_of=date(2024, 1, 10),
+            visibility_column="knowledge_dt",
+            visible_on_or_before=date(2024, 1, 10),
             event_dt=date(2024, 1, 3),
         )
     keys = list(
@@ -100,12 +102,31 @@ def test_cross_section_is_one_day_and_pit(feature_dir: Path) -> None:
 
 
 @pytest.mark.unit
+def test_window_cutoff_column_is_honored(feature_dir: Path) -> None:
+    """WHERE 必须用传入的截止列。若 SQL 仍写死 knowledge_dt，改用 event_dt 也滤不进 A0001。"""
+    with duck_session() as conn:
+        register_parquet(conn, FEATURE_VALUE_VIEW, feature_dir)
+        table = scan_feature_window(
+            conn,
+            visibility_column="event_dt",
+            visible_on_or_before=date(2024, 1, 10),
+            feature_id="mom_20d",
+            definition_version="v1",
+            param_hash="p0",
+            start=date(2024, 1, 1),
+            end=date(2024, 1, 31),
+        )
+    assert "A0001" in table.column("asset_id").to_pylist()
+
+
+@pytest.mark.unit
 def test_training_matrix_pivots_visible_values(feature_dir: Path) -> None:
     with duck_session() as conn:
         register_parquet(conn, FEATURE_VALUE_VIEW, feature_dir)
         table = build_training_matrix(
             conn,
-            as_of=date(2024, 1, 10),
+            visibility_column="knowledge_dt",
+            visible_on_or_before=date(2024, 1, 10),
             start=date(2024, 1, 3),
             end=date(2024, 1, 3),
             feature_ids=["mom_20d", "turn_20d"],
@@ -130,7 +151,8 @@ def test_training_matrix_empty_universe_fails_closed(feature_dir: Path) -> None:
         register_parquet(conn, FEATURE_VALUE_VIEW, feature_dir)
         build_training_matrix(
             conn,
-            as_of=date(2024, 1, 10),
+            visibility_column="knowledge_dt",
+            visible_on_or_before=date(2024, 1, 10),
             start=date(2024, 1, 1),
             end=date(2024, 1, 31),
             feature_ids=["mom_20d"],

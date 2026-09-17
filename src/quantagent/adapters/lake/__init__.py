@@ -7,6 +7,7 @@ Parquet + DuckDB 读取适配。会话由 ``platform.duck`` 创建，本层只�
 from quantagent.adapters.lake.errors import EmptyDomainError, LakeAdapterError
 from quantagent.adapters.lake.feature_value import (
     FEATURE_VALUE_VIEW,
+    LakeFeatureRepository,
     build_training_matrix,
     scan_feature_cross_section,
     scan_feature_window,
@@ -18,6 +19,7 @@ __all__ = [
     "EmptyDomainError",
     "LakeAdapterError",
     "LakeCalendarRepository",
+    "LakeFeatureRepository",
     "build_training_matrix",
     "scan_feature_cross_section",
     "scan_feature_window",

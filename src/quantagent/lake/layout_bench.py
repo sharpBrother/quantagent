@@ -22,6 +22,8 @@ from quantagent.adapters.lake import (
     scan_feature_cross_section,
     scan_feature_window,
 )
+from quantagent.adapters.lake.feature_value import load_feature_value_visibility
+from quantagent.domain.pit import pit_cutoff
 from quantagent.lake.partitions.layout import FeatureValueLayout
 from quantagent.lake.partitions.write import write_feature_value_parquet
 from quantagent.platform.duck import duck_session, register_parquet
@@ -251,6 +253,7 @@ def _time_queries(
 ) -> list[QueryStat]:
     last_event = spec.start + timedelta(days=spec.n_dates - 1)
     as_of = last_event + timedelta(days=30)
+    cutoff = pit_cutoff(load_feature_value_visibility(), as_of=as_of)
     feature_id = "f000"
     cross_dt = spec.start + timedelta(days=spec.n_dates // 2)
     matrix_start = last_event - timedelta(days=spec.n_matrix_dates - 1)
@@ -262,7 +265,8 @@ def _time_queries(
         def _window() -> pa.Table:
             return scan_feature_window(
                 conn,
-                as_of=as_of,
+                visibility_column=cutoff.column,
+                visible_on_or_before=cutoff.on_or_before,
                 feature_id=feature_id,
                 definition_version="v1",
                 param_hash="p0",
@@ -271,12 +275,18 @@ def _time_queries(
             )
 
         def _cross() -> pa.Table:
-            return scan_feature_cross_section(conn, as_of=as_of, event_dt=cross_dt)
+            return scan_feature_cross_section(
+                conn,
+                visibility_column=cutoff.column,
+                visible_on_or_before=cutoff.on_or_before,
+                event_dt=cross_dt,
+            )
 
         def _matrix() -> pa.Table:
             return build_training_matrix(
                 conn,
-                as_of=as_of,
+                visibility_column=cutoff.column,
+                visible_on_or_before=cutoff.on_or_before,
                 start=matrix_start,
                 end=last_event,
                 feature_ids=feature_ids,

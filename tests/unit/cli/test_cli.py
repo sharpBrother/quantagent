@@ -25,6 +25,7 @@ def _isolated_settings(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None,
     monkeypatch.setattr("quantagent.cli.lake.get_settings", lambda: settings)
     monkeypatch.setattr("quantagent.cli.ingest.get_settings", lambda: settings)
     monkeypatch.setattr("quantagent.cli.calendar.get_settings", lambda: settings)
+    monkeypatch.setattr("quantagent.cli.feature.get_settings", lambda: settings)
     yield
     cache_clear()
 
@@ -71,6 +72,7 @@ def test_root_help_lists_check_db_ingest_and_lake() -> None:
     assert "check" in result.stdout
     assert "db" in result.stdout
     assert "calendar" in result.stdout
+    assert "feature" in result.stdout
     assert "ingest" in result.stdout
     assert "lake" in result.stdout
 
@@ -82,6 +84,42 @@ def test_calendar_is_open_help_requires_as_of() -> None:
     assert "--as-of" in result.stdout
     assert "--cal-dt" in result.stdout
     assert "--exchange" in result.stdout
+
+
+@pytest.mark.unit
+def test_feature_window_help_requires_as_of() -> None:
+    result = runner.invoke(app, ["feature", "window", "--help"])
+    assert result.exit_code == 0
+    assert "--as-of" in result.stdout
+    assert "--feature-id" in result.stdout
+    assert "--start" in result.stdout
+    assert "--end" in result.stdout
+
+
+@pytest.mark.unit
+def test_feature_window_missing_lake_fails_closed() -> None:
+    result = runner.invoke(
+        app,
+        [
+            "feature",
+            "window",
+            "--feature-id",
+            "mom_20d",
+            "--definition-version",
+            "v1",
+            "--param-hash",
+            "p0",
+            "--start",
+            "2024-01-01",
+            "--end",
+            "2024-01-31",
+            "--as-of",
+            "2024-01-10",
+        ],
+    )
+    assert result.exit_code == 1
+    assert "Traceback" not in result.output
+    assert "parquet 源不存在" in result.output or "因子窗口为空" in result.output
 
 
 @pytest.mark.unit

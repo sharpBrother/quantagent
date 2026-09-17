@@ -38,8 +38,7 @@ applies_to:
 ### same_day_close
 
 点事件在业务日收盘后可见。求解为 ``event_field`` 的日期 ``<= as_of``：
-``as_of`` 当天可见，更晚的业务日不可见。本切片只实现这一条；查询路径上
-遇到未实现的规则名必须 fail-closed。
+``as_of`` 当天可见，更晚的业务日不可见。已实现。
 
 ```yaml
 # equity_eod.yaml
@@ -53,6 +52,11 @@ visibility:
 ```
 
 ### source_field 加 fallback
+
+截止列是 ``visibility.field``（不是 ``event_field``），该列日期 ``<= as_of``。
+``as_of`` 当天可见，更晚不可见。主规则已实现；``fallback`` 尚未实现，查询
+路径遇到必须 fail-closed。``feature.value`` 的 field 是 ``knowledge_dt``：
+因子截面日可以早于可见日，把 ``event_dt`` 当可见日会引入前视。
 
 ```yaml
 # fin_statement.yaml
@@ -95,6 +99,10 @@ visibility:
 | `statutory_deadline` | 按法定最迟披露日推断 | B |
 | `fixed_lag` | 业务日 + N 个交易日或自然日 | B / C |
 | `ingest_time` | 以系统采集时间为准（兜底） | C / D |
+
+本切片已实现 `same_day_close` 与 `source_field`。其余规则
+（`release_calendar` / `statutory_deadline` / `fixed_lag` / `ingest_time`）
+在查询路径上遇到必须 fail-closed，避免半套求解被当成已支持。
 
 `ingest_time` **仅对系统上线后采集的数据有效**。对一次性迁入的存量数据，
 它的 `_ingested_at` 全部等于迁移日，此时必须配合 `pit_recoverable: false`

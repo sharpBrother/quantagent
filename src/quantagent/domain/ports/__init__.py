@@ -7,5 +7,6 @@
 """
 
 from quantagent.domain.ports.calendar import CalendarRepository
+from quantagent.domain.ports.feature import FeatureRepository
 
-__all__ = ["CalendarRepository"]
+__all__ = ["CalendarRepository", "FeatureRepository"]

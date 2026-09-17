@@ -48,7 +48,9 @@ quantagent lake benchmark-layout [--scale tiny|paper --rebuild]
 quantagent lake materialize trade-calendar [--as-of --rebuild]
 quantagent calendar is-open --exchange --cal-dt --as-of
 quantagent calendar shift --exchange --origin --n --as-of
-quantagent feature <action>       compute / register / list / inspect
+quantagent feature window --feature-id --definition-version --param-hash --start --end --as-of
+quantagent feature cross-section --event-dt --as-of
+quantagent feature matrix --start --end --feature-ids --asset-ids --as-of
 quantagent model <action>         train / predict / evaluate
 quantagent backtest <action>      run / compare / report
 quantagent portfolio <action>     construct / risk / attribute

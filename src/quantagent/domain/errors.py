@@ -21,3 +21,7 @@ class MissingVisibilityError(DomainError):
 
 class CalendarLookupError(DomainError):
     """日历行缺失、不可见，或 T+N 超出可见交易日。"""
+
+
+class FeatureLookupError(DomainError):
+    """因子读取参数非法，例如 start 晚于 end。"""
