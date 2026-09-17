@@ -24,6 +24,7 @@ def _isolated_settings(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None,
     monkeypatch.setattr("quantagent.cli.db.get_settings", lambda: settings)
     monkeypatch.setattr("quantagent.cli.lake.get_settings", lambda: settings)
     monkeypatch.setattr("quantagent.cli.ingest.get_settings", lambda: settings)
+    monkeypatch.setattr("quantagent.cli.calendar.get_settings", lambda: settings)
     yield
     cache_clear()
 
@@ -69,8 +70,18 @@ def test_root_help_lists_check_db_ingest_and_lake() -> None:
     assert result.exit_code == 0
     assert "check" in result.stdout
     assert "db" in result.stdout
+    assert "calendar" in result.stdout
     assert "ingest" in result.stdout
     assert "lake" in result.stdout
+
+
+@pytest.mark.unit
+def test_calendar_is_open_help_requires_as_of() -> None:
+    result = runner.invoke(app, ["calendar", "is-open", "--help"])
+    assert result.exit_code == 0
+    assert "--as-of" in result.stdout
+    assert "--cal-dt" in result.stdout
+    assert "--exchange" in result.stdout
 
 
 @pytest.mark.unit

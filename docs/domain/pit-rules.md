@@ -37,6 +37,10 @@ applies_to:
 
 ### same_day_close
 
+点事件在业务日收盘后可见。求解为 ``event_field`` 的日期 ``<= as_of``：
+``as_of`` 当天可见，更晚的业务日不可见。本切片只实现这一条；查询路径上
+遇到未实现的规则名必须 fail-closed。
+
 ```yaml
 # equity_eod.yaml
 dataset: mart.equity_eod

@@ -47,6 +47,7 @@ pre-commit 与 CI 都会拦 `scripts/` 目录的出现。
 quantagent ingest tushare trade-cal  交易日历采集
 quantagent lake benchmark-layout  因子长表布局 benchmark
 quantagent lake materialize trade-calendar  交易日历标准化物化
+quantagent calendar is-open / shift  交易日历研究读取（必须 --as-of）
 quantagent feature <action>     因子计算与注册表
 quantagent model <action>       训练与预测
 quantagent backtest <action>    回测

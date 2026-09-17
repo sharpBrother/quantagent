@@ -11,11 +11,13 @@ from quantagent.adapters.lake.feature_value import (
     scan_feature_cross_section,
     scan_feature_window,
 )
+from quantagent.adapters.lake.trade_calendar import LakeCalendarRepository
 
 __all__ = [
     "FEATURE_VALUE_VIEW",
     "EmptyDomainError",
     "LakeAdapterError",
+    "LakeCalendarRepository",
     "build_training_matrix",
     "scan_feature_cross_section",
     "scan_feature_window",
