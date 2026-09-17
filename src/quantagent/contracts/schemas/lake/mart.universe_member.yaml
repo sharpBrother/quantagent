@@ -1,0 +1,38 @@
+dataset: mart.universe_member
+layer: lake
+doc_ref: docs/architecture/derived-datasets.md#universe_member
+temporal_kind: interval
+keys:
+  - universe_id
+  - asset_id
+  - valid_from
+reads: []
+columns:
+  universe_id:
+    dtype: string
+    nullable: false
+    description: 股票池身份，digest(规则配置规范化 JSON)
+  asset_id:
+    dtype: string
+    nullable: false
+    description: 资产身份，股票与 ETF 共表
+  valid_from:
+    dtype: date
+    nullable: false
+    description: 进入池的生效日，不是公告日
+  valid_to:
+    dtype: date
+    nullable: true
+    description: 退出池的生效日；仍在池内为 NULL，禁止哨兵日期
+  member_weight:
+    dtype: float64
+    nullable: true
+    description: 池内权重；等权池为 NULL，不写成 1/N
+  knowledge_dt:
+    dtype: date
+    nullable: false
+    description: 该成员关系的可见日；指数成分取公告日，规则池由输入推导
+  pit_grade:
+    dtype: string
+    nullable: false
+    description: PIT 等级，沿输入木桶继承，写入时自动填写

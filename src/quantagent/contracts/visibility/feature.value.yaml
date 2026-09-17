@@ -1,0 +1,15 @@
+dataset: feature.value
+doc_ref: docs/architecture/feature-storage.md
+temporal_kind: point_event
+event_field: event_dt
+visibility:
+  rule: source_field
+  field: knowledge_dt
+  grade: B
+  rationale: >
+    因子没有发布时间。knowledge_dt 在写入时由全部输入的 knowledge_dt 取
+    最大再加声明延迟自动推导，只允许更严格、不允许更宽松。读取必须用这一
+    列，禁止把 event_dt 当作可见日。推导是本系统规则，数据集级标 B；行级
+    pit_grade 按输入最差继承，不可手工抬升。
+pit_recoverable: true
+recomputable: true

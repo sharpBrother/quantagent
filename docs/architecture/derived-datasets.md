@@ -7,7 +7,8 @@ applies_to:
   - src/quantagent/lake/
   - src/quantagent/features/
   - src/quantagent/strategy/backtest/
-  - src/quantagent/contracts/
+  - src/quantagent/contracts/schemas/lake/
+  - src/quantagent/contracts/visibility/
 supersedes: null
 superseded_by: null
 ---
@@ -171,11 +172,13 @@ feature_metric.knowledge_dt = max(
 | `feature_id` / `definition_version` / `param_hash` | string | 分组所用因子身份 |
 | `universe_id` | string | 股票池 |
 | `horizon` | string | 调仓周期 |
-| `group_no` | int | 分组编号，多空组合用约定的哨兵值 |
+| `group_no` | int | 分组编号；多空组合为 `-1`（身份哨兵，不是把缺失组填成 0） |
 | `group_return` | float64 | 当期分组收益 |
 | `group_nav` | float64 | 分组累计净值 |
-| `pit_report` | struct | 输入的 PIT 等级与不可信区间占比 |
-| `run_id` / `code_version` / `config_digest` | string | 运行身份 |
+| `knowledge_dt` | date | 取因子与所用收益可见日的较晚者，**不是** `event_dt` |
+| `pit_grade` | enum(A/B/C/D) | 输入木桶最差 |
+| `pit_report` | JSON 文本 | 输入的 PIT 等级与不可信区间占比；契约暂无 struct 类型 |
+| `run_id` / `code_version` / `config_digest` | string | 运行身份；`run_id` 计入键 |
 
 **为什么归 signal 而不是 feature。** 它经过了「权重到收益」的执行语义
 ——调仓时点、收益口径、停牌处置、缺价处置全部适用回测语义合同。把它放在
@@ -184,8 +187,12 @@ feature_metric.knowledge_dt = max(
 只能有一处定义。
 
 旧表把 `long_short_nav` 作为独立列重复写在每个 `group_no` 的行上（十分组
-就重复十份同一个值）。改为多空组合占一个约定的 `group_no` 哨兵值，它和
-其他分组共享 schema，也就能走同一套对照测试。
+就重复十份同一个值）。改为多空组合占 `group_no = -1`，它和其他分组共享
+schema，也就能走同一套对照测试。
+
+分组净值也依赖前瞻窗口，因此带 `knowledge_dt`：过滤规则与 `feature_metric`
+相同。没有这一列，`as_of` 过滤会退回到 `event_dt`，把未实现收益当成当日
+可见。
 
 ## ETF 不另开表
 

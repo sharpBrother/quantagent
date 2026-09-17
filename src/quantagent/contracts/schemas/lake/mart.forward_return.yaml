@@ -1,0 +1,51 @@
+dataset: mart.forward_return
+layer: lake
+doc_ref: docs/architecture/derived-datasets.md#forward_return
+temporal_kind: point_event
+event_field: event_dt
+usage: evaluation_only
+keys:
+  - asset_id
+  - event_dt
+  - horizon
+  - return_kind
+  - benchmark_id
+reads:
+  - std.trade_calendar
+columns:
+  asset_id:
+    dtype: string
+    nullable: false
+    description: 资产身份，股票与 ETF 共表
+  event_dt:
+    dtype: date
+    nullable: false
+    description: 前瞻区间起始日，不是可见日
+  horizon:
+    dtype: string
+    nullable: false
+    description: 前瞻窗口，如 1d / 5d / 20d / 60d，是行维度不是列
+  return_kind:
+    dtype: string
+    nullable: false
+    description: total 或 excess
+  benchmark_id:
+    dtype: string
+    nullable: false
+    description: excess 时的基准身份；total 时为 none，不是把超额填成 0
+  value:
+    dtype: float64
+    nullable: false
+    description: 区间收益；缺失不落行，不补 0
+  end_dt:
+    dtype: date
+    nullable: false
+    description: 区间结束日，由交易日历从 event_dt 与 horizon 推出
+  knowledge_dt:
+    dtype: date
+    nullable: false
+    description: 等于 end_dt 的行情可见日，不是 event_dt
+  pit_grade:
+    dtype: string
+    nullable: false
+    description: 继承自行情，写入时自动填写

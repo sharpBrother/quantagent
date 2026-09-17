@@ -1,0 +1,15 @@
+dataset: feature.metric
+doc_ref: docs/architecture/derived-datasets.md#feature_metric
+temporal_kind: point_event
+event_field: event_dt
+visibility:
+  rule: source_field
+  field: knowledge_dt
+  grade: B
+  rationale: >
+    每日截面 IC 按 event_dt 一行存放，但可见日不是 event_dt。knowledge_dt
+    取因子可见日与对应 forward_return 可见日（即 end_dt 行情可见日）的较晚
+    者。因此 as_of=T 时看不到 event_dt=T 的 20 日 IC，那是尚未实现的收益，
+    不是漏存。读取必须用 knowledge_dt，禁止把当日 IC 当作当日可见。
+pit_recoverable: true
+recomputable: true

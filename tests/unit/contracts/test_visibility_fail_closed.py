@@ -100,3 +100,77 @@ def test_orphan_visibility_fails(tmp_path: Path) -> None:
     report = run_check(bundle=bundle, repo_root=repo)
     assert report.ok is False
     assert any("没有对应的 schema" in issue.message for issue in report.issues)
+
+
+@pytest.mark.unit
+def test_feature_value_cannot_read_evaluation_only(tmp_path: Path) -> None:
+    lake = tmp_path / "lake"
+    vis = tmp_path / "visibility"
+    docs = tmp_path / "docs" / "architecture"
+    lake.mkdir(parents=True)
+    vis.mkdir()
+    docs.mkdir(parents=True)
+    (docs / "derived-datasets.md").write_text("# derived\n", encoding="utf-8")
+    (lake / "mart.forward_return.yaml").write_text(
+        dedent(
+            """\
+            dataset: mart.forward_return
+            layer: lake
+            doc_ref: docs/architecture/derived-datasets.md
+            temporal_kind: point_event
+            event_field: event_dt
+            usage: evaluation_only
+            keys: [event_dt]
+            reads: []
+            columns:
+              event_dt:
+                dtype: date
+                nullable: false
+                description: 起始日
+            """
+        ),
+        encoding="utf-8",
+    )
+    (lake / "feature.value.yaml").write_text(
+        dedent(
+            """\
+            dataset: feature.value
+            layer: lake
+            doc_ref: docs/architecture/derived-datasets.md
+            temporal_kind: point_event
+            event_field: event_dt
+            keys: [event_dt]
+            reads: [mart.forward_return]
+            columns:
+              event_dt:
+                dtype: date
+                nullable: false
+                description: 截面日
+            """
+        ),
+        encoding="utf-8",
+    )
+    for name in ("mart.forward_return", "feature.value"):
+        (vis / f"{name}.yaml").write_text(
+            dedent(
+                f"""\
+                dataset: {name}
+                doc_ref: docs/architecture/derived-datasets.md
+                temporal_kind: point_event
+                event_field: event_dt
+                visibility:
+                  rule: same_day_close
+                  grade: A
+                  rationale: 用于测试 evaluation_only 拦截的合法规则
+                pit_recoverable: true
+                """
+            ),
+            encoding="utf-8",
+        )
+    bundle = load_bundle(
+        schema_dirs={"pg": tmp_path / "pg", "ops": tmp_path / "ops", "lake": lake},
+        visibility_dir=vis,
+    )
+    report = run_check(bundle=bundle, repo_root=tmp_path)
+    assert report.ok is False
+    assert any("evaluation_only" in issue.message for issue in report.issues)

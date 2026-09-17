@@ -24,6 +24,14 @@ VisibilityRuleName = Literal[
 ]
 SchemaLayer = Literal["pg", "ops", "lake"]
 ColumnDtype = Literal["date", "datetime", "string", "bool", "int64", "float64"]
+DatasetUsage = Literal["default", "evaluation_only"]
+
+# 分组净值里多空组合的哨兵编号。不是缺失填充，是一种组合身份。
+LONG_SHORT_GROUP_NO = -1
+# 无价格基准时的身份占位。不是把缺失收益填成 0。
+NO_BENCHMARK_ID = "none"
+# 训练特征集不得读取的用法。宽矩阵构建路径必须 fail-closed。
+TRAINING_FEATURE_DATASETS = frozenset({"feature.value"})
 
 _DATASET_RE = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]+)+$")
 _GRADE_RANK = {"A": 0, "B": 1, "C": 2, "D": 3}
@@ -104,6 +112,7 @@ class DatasetSchemaSpec(BaseModel):
     reads: list[str] = Field(default_factory=list)
     event_field: str | None = None
     period_fields: list[str] | None = None
+    usage: DatasetUsage = "default"
 
     @model_validator(mode="after")
     def _keys_exist_and_published_at_nullable(self) -> Self:
@@ -118,6 +127,14 @@ class DatasetSchemaSpec(BaseModel):
             absent = [name for name in self.period_fields if name not in self.columns]
             if absent:
                 raise ValueError(f"period_fields 引用了不存在的列: {absent}")
+        if self.temporal_kind == "interval":
+            for name in ("valid_from", "valid_to"):
+                if name not in self.columns:
+                    raise ValueError(f"interval 必须声明 {name}")
+            valid_to = self.columns["valid_to"]
+            if valid_to.dtype != "date" or not valid_to.nullable:
+                # 仍在池内用 NULL，禁止哨兵日期。
+                raise ValueError("interval.valid_to 必须是可空 date")
         published = self.columns.get("published_at")
         if published is not None and not published.nullable:
             # NULL 表示「源端没有发布时间」；非空会逼人填推测值。

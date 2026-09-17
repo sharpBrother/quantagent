@@ -2,11 +2,13 @@
 title: 因子存储：逻辑格式与物理设计
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 applies_to:
   - src/quantagent/features/
   - src/quantagent/models/matrix/
   - src/quantagent/lake/partitions/
+  - src/quantagent/contracts/schemas/lake/feature.value.yaml
+  - src/quantagent/contracts/visibility/feature.value.yaml
 ---
 
 # 因子存储：逻辑格式与物理设计

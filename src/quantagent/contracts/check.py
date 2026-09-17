@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from quantagent.contracts.loader import ContractBundle, load_bundle
+from quantagent.contracts.spec import TRAINING_FEATURE_DATASETS
 from quantagent.platform.storage.paths import detect_repo_root
 
 if TYPE_CHECKING:
@@ -74,6 +75,7 @@ def run_check(
             report=report,
         )
         _check_reads(schema, loaded, report)
+        _check_evaluation_only_reads(schema, loaded, report)
     for dataset, visibility in loaded.visibilities.items():
         if dataset in loaded.schemas:
             continue
@@ -139,6 +141,23 @@ def _check_reads(schema: DatasetSchemaSpec, bundle: ContractBundle, report: Chec
                 schema.dataset,
                 bundle.schema_paths[schema.dataset],
                 f"reads 引用了尚未声明 schema 的数据集 {upstream}",
+            )
+
+
+def _check_evaluation_only_reads(
+    schema: DatasetSchemaSpec,
+    bundle: ContractBundle,
+    report: CheckReport,
+) -> None:
+    if schema.dataset not in TRAINING_FEATURE_DATASETS:
+        return
+    for upstream in schema.reads:
+        up = bundle.schemas.get(upstream)
+        if up is not None and up.usage == "evaluation_only":
+            report.add(
+                schema.dataset,
+                bundle.schema_paths[schema.dataset],
+                f"不得读取 usage=evaluation_only 的数据集 {upstream}",
             )
 
 

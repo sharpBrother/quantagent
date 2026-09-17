@@ -101,3 +101,20 @@ def test_published_at_must_be_nullable() -> None:
                 "published_at": {"dtype": "datetime", "nullable": False},
             },
         )
+
+
+@pytest.mark.unit
+def test_interval_requires_nullable_valid_to() -> None:
+    with pytest.raises(ValidationError, match="valid_to"):
+        DatasetSchemaSpec(
+            dataset="mart.universe_x",
+            layer="lake",
+            doc_ref="docs/architecture/derived-datasets.md",
+            temporal_kind="interval",
+            keys=["universe_id", "valid_from"],
+            columns={
+                "universe_id": {"dtype": "string", "nullable": False},
+                "valid_from": {"dtype": "date", "nullable": False},
+                "valid_to": {"dtype": "date", "nullable": False},
+            },
+        )
