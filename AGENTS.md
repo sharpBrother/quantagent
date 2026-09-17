@@ -47,7 +47,11 @@
 遇到下列情况**停下来问**：
 
 - 要改变数据口径、时间口径或因子语义
-- 要改**可见性规则（PIT）**、`temporal_kind` 或 `pit_grade`
+- **配置 PIT 规则必须先确认**：新增或修改 `contracts/visibility/` 下任何
+  可见性契约（`rule`、`field`、`grade`、`fallback`、`temporal_kind`、
+  `event_field`、`pit_grade`、`pit_from` 等），先把拟定全文交给项目负责人，
+  **得到明确同意后再写文件**。实现读取路径时不得顺手补 YAML；引擎里实现
+  一条已确认规则，不等于可以替数据集选定规则。
 - 要改写入的目标表、表结构，或产生数据库写入以外的外部副作用
 - 要改公共接口、Protocol 签名、已发布产物的 schema
 - 要改 `frozen/` 下任何冻结制品
