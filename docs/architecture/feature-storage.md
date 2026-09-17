@@ -25,8 +25,12 @@ applies_to:
 
 ## 长表是唯一的交换与保存格式
 
-`var/lake/feature/` 下的长表是因子的事实源。所有跨模块交换、持久化、发布
-都以它为准。
+`var/lake/feature/value/` 下的长表是因子值的事实源。所有跨模块交换、持久
+化、发布都以它为准。
+
+**这份文档只管因子值。** 因子评价指标、因子分组净值、股票池成员、前瞻收益
+是各自独立的数据集，键与层归属见
+[derived-datasets.md](derived-datasets.md)。它们不进这张长表。
 
 ### 字段
 
@@ -34,6 +38,7 @@ applies_to:
 |---|---|---|---|
 | `event_dt` | date | 因子截面日 | 计算输入 |
 | `asset_id` | string | 资产身份 | 计算输入 |
+| `asset_class` | string | 资产类别，如 `stock` / `etf` | 计算输入 |
 | `feature_id` | string | 因子语义身份，如 `mom_20d` | 计算输入 |
 | `definition_version` | string | 计算逻辑版本 | 因子声明 |
 | `param_hash` | string | 参数配置指纹 | 从参数集计算 |
@@ -45,6 +50,12 @@ applies_to:
 
 因子**不带** `published_at` 与 `ingested_at`——那是源层概念，因子没有
 「发布」这件事。
+
+`asset_class` 的存在是因为**不同资产类别共用这一张表**。ETF 的因子值与股票
+的因子值粒度相同（资产 × 日 × 因子），共表；ETF 独有粒度的事实另立 `mart`
+表。旧仓按资产类别复制了一套 `alpha_factory_etf_*` 平行表，理由与否决见
+[derived-datasets.md](derived-datasets.md) 与
+[../adr/2026-09-17-derived-dataset-boundaries.md](../adr/2026-09-17-derived-dataset-boundaries.md)。
 
 ### 身份三段拆分
 
@@ -177,7 +188,7 @@ benchmark 脚本与结论 ADR 一起作为 P1 交付物。脚本保留在仓库�
 -- 示意：某日全因子截面
 PIVOT (
   SELECT asset_id, feature_id, value
-  FROM read_parquet('var/lake/feature/**/*.parquet')
+  FROM read_parquet('var/lake/feature/value/**/*.parquet')
   WHERE event_dt = $event_dt
     AND knowledge_dt <= $as_of
     AND definition_version = ... AND param_hash = ...

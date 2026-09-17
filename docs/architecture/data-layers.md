@@ -23,10 +23,10 @@ applies_to:
 |---|---|---|---|
 | `src` | 源端原生镜像，零加工 | 外部源 | PG `src_*` schema |
 | `std` | 标准化：统一资产标识、单位、字段命名与类型；不做业务口径加工 | `src` | `var/lake/std/` |
-| `mart` | 口径已对齐的可分析事实：行情、财务、成分、持仓、宏观序列、基础信息 | `std` | `var/lake/mart/` |
-| `feature` | 因子与特征面板（长表） | `mart` | `var/lake/feature/` |
+| `mart` | 口径已对齐的可分析事实：行情、财务、成分、持仓、宏观序列、基础信息，以及股票池成员与前瞻收益 | `std` | `var/lake/mart/` |
+| `feature` | 因子值长表与因子评价指标 | `mart` | `var/lake/feature/` |
 | `model` | 模型产物与预测值 | `feature`、`mart` | `var/lake/model/`、`var/artifacts/models/` |
-| `signal` | 策略信号与回测结果 | `model`、`feature`、`mart` | `var/lake/signal/` |
+| `signal` | 策略信号、回测结果与因子分组净值 | `model`、`feature`、`mart` | `var/lake/signal/` |
 | `portfolio` | 组合权重、风险、归因 | `signal`、`mart`、`portfolio`（自身持仓） | `var/lake/portfolio/` |
 | `publish` | 发布契约产物 | 以上任意层，以及 `frozen/` | `publish/` |
 
@@ -126,15 +126,23 @@ PG 只反映源端当前状态，不做 CDC、不保留历史版本。
 var/lake/
 ├── std/         标准化
 ├── mart/        分析事实表
-├── feature/     因子长表
+│   ├── universe_member/  股票池成员区间表
+│   └── forward_return/   前瞻收益（usage: evaluation_only）
+├── feature/
+│   ├── value/       因子值长表
+│   ├── metric/      因子评价指标长表
 │   └── _registry/   因子定义与参数注册表
 ├── model/       模型产物与预测
 ├── signal/      信号与回测结果
+│   └── group_nav/   因子分组净值
 ├── portfolio/   组合、风险、归因
 ├── _matrix/     训练宽矩阵缓存（纯派生，可整体删除重建）
 ├── _vintage/    批次原始快照归档（append-only）
 └── legacy/      从 wx2 冻结迁入的不可重算历史制品（只读）
 ```
+
+每个派生数据集的键、层归属与 `knowledge_dt` 推导见
+[derived-datasets.md](derived-datasets.md)。
 
 分区键、目标文件大小、排序键与压缩参数以 P1 的 benchmark 结论 ADR 为准，
 见 [feature-storage.md](feature-storage.md)。在结论出来之前不固化约定。

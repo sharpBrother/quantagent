@@ -118,6 +118,17 @@ applies_to:
 `diagnostics` 是刻意加的：它让"这次回测有多少样本被特殊处置"成为一等
 结果，而不是藏在日志里。
 
+### 因子分组净值走同一份 nav schema
+
+`vectorized` 内核的因子分组净值落 `var/lake/signal/group_nav/`，在 `nav`
+的基础上加 `(feature_key, group_no)` 两个维度，多空组合占一个约定的
+`group_no` 哨兵值。字段见
+[derived-datasets.md](derived-datasets.md)。
+
+它归 `signal` 层而不是 `feature` 层，因为它经过了权重到收益的执行语义
+——调仓时点、收益口径、停牌与缺价处置全部适用本合同。放在因子层等于把
+这套语义实现两遍，与本文档"语义只能有一处定义"的前提直接冲突。
+
 ## 三、内核按场景分设，共享结果合同
 
 三类研究场景的执行路径本就不同，不预设合并：

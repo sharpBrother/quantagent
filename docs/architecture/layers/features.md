@@ -16,6 +16,7 @@ applies_to:
 | `spec/` | `FeatureSpec` 声明式因子定义：输入依赖、参数、PIT lag、频率 |
 | `library/` | 因子实现，按数据类型分域（price / fundamental / sentiment / macro） |
 | `panel/` | 因子长表的计算编排与写入 |
+| `metric/` | 因子评价指标计算与写入（IC、ICIR、覆盖率、多空收益、单调性、换手） |
 | `registry/` | 因子定义与参数的旁置注册表读写（`var/lake/feature/_registry/`） |
 
 ## 不负责
@@ -25,6 +26,9 @@ applies_to:
 | 训练用宽矩阵物化 | `models.matrix` |
 | 模型训练与预测 | `models` |
 | 信号生成、回测 | `strategy` |
+| 因子分组净值 | `strategy.backtest.vectorized`，因为它含执行语义 |
+| 股票池成员物化、前瞻收益 | `lake` 的 `mart` 层，本层只读 |
+| 因子健康度评级与阈值判定 | `publish`，阈值判定结果不是观测值 |
 | 因子的可见性规则**定义** | `contracts/visibility/`；本层负责按规则推导 |
 
 ## 允许依赖
@@ -39,11 +43,20 @@ applies_to:
 
 ### 长表是唯一格式
 
-因子的交换与保存只有一种格式：`var/lake/feature/` 下的长表。身份分三段——
-`feature_id`（语义身份）、`definition_version`（计算逻辑版本）、`param_hash`
-（参数配置指纹）。配置全文存注册表，长表只存两个短字段。
+因子的交换与保存只有一种格式：`var/lake/feature/value/` 下的长表。身份分
+三段——`feature_id`（语义身份）、`definition_version`（计算逻辑版本）、
+`param_hash`（参数配置指纹）。配置全文存注册表，长表只存两个短字段。
 
 详见 [../feature-storage.md](../feature-storage.md)。
+
+### 评价指标是独立数据集，且不存在当日 IC
+
+`metric/` 产出 `var/lake/feature/metric/`，键含 `(metric_id, window)` 两个
+维度而不是每个指标一列。它的 `knowledge_dt` 取因子与 `forward_return` 可见
+日的**较晚者**——`event_dt = T` 的 20 日 IC 要到 T+20 的收益可见后才能算
+出，所以任何在 `as_of = T` 展示 `event_dt = T` 的 20 日 IC 的界面都是前视。
+
+字段与推导规则见 [../derived-datasets.md](../derived-datasets.md)。
 
 ### knowledge_dt 与 pit_grade 不接受人工填写
 
