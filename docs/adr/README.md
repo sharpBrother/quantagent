@@ -2,7 +2,7 @@
 title: 决策记录索引
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 applies_to:
   - docs/adr/
 ---
@@ -46,3 +46,4 @@ applies_to:
 | 2026-09-16 | [Python 3.12 作为唯一基线](2026-09-16-python-312-baseline.md) |
 | 2026-09-16 | [文档体系去编号化](2026-09-16-docs-without-numbering.md) |
 | 2026-09-17 | [因子配套派生数据集的层归属](2026-09-17-derived-dataset-boundaries.md) |
+| 2026-09-17 | [因子长表 Parquet 物理布局](2026-09-17-feature-value-parquet-layout.md) |

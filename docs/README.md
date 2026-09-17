@@ -2,7 +2,7 @@
 title: 文档导航
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 applies_to:
   - docs/
 ---
@@ -27,7 +27,7 @@ applies_to:
 | [architecture/overview.md](architecture/overview.md) | 系统全貌、分支式依赖图、设计原则 |
 | [architecture/data-layers.md](architecture/data-layers.md) | 数据层职责与允许依赖、PG 双面、Parquet、DuckDB 的边界 |
 | [architecture/ports-and-adapters.md](architecture/ports-and-adapters.md) | domain 纯规则、端口 Protocol、三套适配器、旧仓口径继承 |
-| [architecture/feature-storage.md](architecture/feature-storage.md) | 因子值长表格式、三段身份、训练宽矩阵、物理布局 benchmark |
+| [architecture/feature-storage.md](architecture/feature-storage.md) | 因子值长表格式、三段身份、训练宽矩阵、已冻结的物理布局 |
 | [architecture/derived-datasets.md](architecture/derived-datasets.md) | 派生数据集清单：股票池、前瞻收益、评价指标、分组净值的层归属与键 |
 | [architecture/modeling-extensibility.md](architecture/modeling-extensibility.md) | 建模抽象，线性模型到机器学习的扩展路径 |
 | [architecture/backtest-contract.md](architecture/backtest-contract.md) | 回测语义合同、三类内核、合并的验收标准 |

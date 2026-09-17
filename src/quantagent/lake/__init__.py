@@ -9,8 +9,8 @@
 
 允许依赖：``platform``、``contracts``、``domain``、``adapters``。
 
-物理布局的分区键、目标文件大小、排序键与压缩参数以 benchmark 结论 ADR
-为准，见 ``docs/architecture/feature-storage.md``。
+物理布局的分区键、目标文件大小、排序键与压缩参数以
+``docs/adr/2026-09-17-feature-value-parquet-layout.md`` 为准。
 
 职责定义见 ``docs/architecture/layers/lake.md``。
 """

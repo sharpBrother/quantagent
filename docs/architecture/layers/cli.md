@@ -2,7 +2,7 @@
 title: cli 层职责
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 applies_to:
   - src/quantagent/cli/
 ---
@@ -45,6 +45,7 @@ pre-commit 与 CI 都会拦 `scripts/` 目录的出现。
 
 ```
 quantagent ingest <source>      采集
+quantagent lake benchmark-layout  因子长表布局 benchmark
 quantagent lake <dataset>       物化
 quantagent feature <action>     因子计算与注册表
 quantagent model <action>       训练与预测

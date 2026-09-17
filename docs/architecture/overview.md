@@ -2,7 +2,7 @@
 title: 架构总览
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 applies_to:
   - src/quantagent/
   - orchestration/
@@ -165,7 +165,7 @@ Python 3.12，`uv` 管理依赖与虚拟环境，依赖锁在 `uv.lock`。两套
 
 ## 当前状态
 
-P1 第一刀：`platform` 配置/路径/digest/run log/写闸、契约 YAML 加载、缺
-visibility 时 CI fail-closed、第一个数据集 `std.trade_calendar`。尚未建 PG
-schema，尚未采集。后续阶段与验收标准见
+P1 进行中：`platform`（含 DuckDB 内存会话）、契约 YAML、PG 双面 DDL、
+`feature.value` 物理布局已冻结。尚未采集，`_vintage/` 尚未落第一批快照。
+后续阶段与验收标准见
 [../migration/roadmap.md](../migration/roadmap.md)。

@@ -7,6 +7,7 @@ applies_to:
   - src/quantagent/features/
   - src/quantagent/models/matrix/
   - src/quantagent/lake/partitions/
+  - src/quantagent/lake/layout_bench.py
   - src/quantagent/contracts/schemas/lake/feature.value.yaml
   - src/quantagent/contracts/visibility/feature.value.yaml
 ---
@@ -127,60 +128,32 @@ matrix_id = digest(
 发布。任何从 `_matrix/` 直接取数做分析的行为都是错的——一旦有人这么做，
 缓存就不能随意删除了，它事实上变成第二份因子存储。
 
-## 物理布局：候选方案与实测定夺
+## 物理布局（已冻结）
 
-**日分区只是候选，不写死。** P1 阶段做 benchmark 后出 ADR，在结论出来之前
-不固化约定。
+结论见
+[../adr/2026-09-17-feature-value-parquet-layout.md](../adr/2026-09-17-feature-value-parquet-layout.md)。
+改布局是新 ADR，不是改这几行。
 
-### 待比较的维度
+```
+var/lake/feature/value/asset_class=<stock|etf>/ym=YYYYMM/part-00000.parquet
+```
 
-#### 分区键
+| 参数 | 取值 |
+|---|---|
+| 分区键 | `asset_class` + `ym=YYYYMM` |
+| 排序键 | `(event_dt, asset_id, feature_id, definition_version, param_hash)` |
+| 压缩 | zstd |
+| 目标文件大小 | 128MB 上限，超限切分；偏小的分区不垫 |
 
-候选：`dt=YYYY-MM-DD`（日）、`ym=YYYYMM`（月）、`year=YYYY`；`asset_class`
-与 `freq` 作为前缀分区。
+**`feature_id` 不进分区键。** 全A × 因子数会碎成 KB 级小文件。写入函数硬
+拒绝。
 
-**一条明确的反面约束：`feature_id` 不进分区键。** 全A 约 5500 只乘 200 个
-因子，若按 `(dt, feature_id)` 双层分区会碎成每文件几千行的 KB 级小文件，
-DuckDB 的元数据扫描会被拖垮。分区数量的增长必须是可控的。
+排序键冲突仍然存在：按因子排对单因子长区间更快，按日排对截面和训练矩阵
+更快。冻结按日排，是因为后两条是热路；单因子路径靠 row group 统计，不双
+物化。日分区在合成数据上文件数、体积、三类查询全面更差，关闭。
 
-#### 目标文件大小
-
-在 64–512MB 区间实测。粗估 200 因子时日分区单日约 110 万行，量级尚可；但
-稀疏因子与低频因子（月频宏观、季频财务派生）会显著偏小，可能需要按月分区
-或写入时合并。
-
-不同频率的因子可能需要不同的分区粒度，这也是要实测的一部分。
-
-#### 排序键
-
-这里有真实冲突，两类都是高频查询：
-
-| 排序键 | 友好场景 | 不友好场景 |
-|---|---|---|
-| `(feature_key, asset_id, event_dt)` | 单因子长区间（因子评价、IC 序列） | 全因子截面 |
-| `(event_dt, asset_id, feature_key)` | 全因子截面（组合构建、训练矩阵） | 单因子长区间 |
-
-候选解：择一并依赖 row group 的 min/max 统计兜底；或对热点访问路径做双
-物化（同一份数据两种排序，存储翻倍换查询性能）。实测后决定。
-
-#### 压缩与索引
-
-zstd 各级别与 snappy 的读写权衡；是否对 `asset_id`、`feature_key` 启用
-bloom filter。
-
-### 判据
-
-固定为三项，不以任何单一指标定胜负：
-
-1. **三类代表性查询的 P50/P95 时延**
-   - 单因子长区间：一个 `feature_key`，10 年日频，全市场
-   - 全因子截面：某一天，全部 `feature_key`，全市场
-   - 训练矩阵构建：200 个 `feature_key`，5 年，指定股票池
-2. **存储占用**：总字节数与文件数量
-3. **增量写入成本**：单日新增因子值的写入耗时，含 compaction
-
-benchmark 脚本与结论 ADR 一起作为 P1 交付物。脚本保留在仓库里，因为数据量
-增长后需要重跑。
+重跑：`quantagent lake benchmark-layout --scale paper --rebuild`。数据量
+上台阶后 digest 变了就出新 ADR。
 
 ## 长表到宽表的查询方式
 

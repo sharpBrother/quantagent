@@ -6,6 +6,7 @@ import typer
 
 from quantagent.cli.check import check_app
 from quantagent.cli.db import db_app
+from quantagent.cli.lake import lake_app
 from quantagent.platform.logging import configure_logging
 
 app = typer.Typer(
@@ -15,6 +16,7 @@ app = typer.Typer(
 )
 app.add_typer(check_app, name="check", help="契约与一致性校验")
 app.add_typer(db_app, name="db", help="数据库迁移与状态")
+app.add_typer(lake_app, name="lake", help="Parquet 湖物化与布局 benchmark")
 
 
 @app.callback()

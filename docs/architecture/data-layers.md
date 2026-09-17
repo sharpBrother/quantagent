@@ -2,7 +2,7 @@
 title: 数据分层与存储边界
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 applies_to:
   - src/quantagent/ingest/
   - src/quantagent/lake/
@@ -144,8 +144,10 @@ var/lake/
 每个派生数据集的键、层归属与 `knowledge_dt` 推导见
 [derived-datasets.md](derived-datasets.md)。
 
-分区键、目标文件大小、排序键与压缩参数以 P1 的 benchmark 结论 ADR 为准，
-见 [feature-storage.md](feature-storage.md)。在结论出来之前不固化约定。
+分区键、目标文件大小、排序键与压缩参数以
+[../adr/2026-09-17-feature-value-parquet-layout.md](../adr/2026-09-17-feature-value-parquet-layout.md)
+为准：`feature.value` 为 `asset_class` + `ym` 分区、按
+`(event_dt, asset_id, feature_key)` 排序、zstd。`feature_id` 禁止进分区键。
 
 ## DuckDB
 

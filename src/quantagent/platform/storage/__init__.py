@@ -1,4 +1,4 @@
-"""本地路径与对象布局。DuckDB 会话与 PG 连接工厂不在第一刀。"""
+"""本地路径与对象布局。DuckDB 会话见 ``quantagent.platform.duck``。"""
 
 from quantagent.platform.storage.paths import VarPaths, detect_repo_root, resolve_var_paths
 

@@ -197,8 +197,8 @@ schema，也就能走同一套对照测试。
 ## ETF 不另开表
 
 **因子值、metric、universe、group_nav 全部与股票共表。** `asset_class` 是
-字段，也是候选分区键（见 [feature-storage.md](feature-storage.md) 的物理
-布局实测）。
+字段；因子值表把它用作 hive 分区前缀，见
+[../adr/2026-09-17-feature-value-parquet-layout.md](../adr/2026-09-17-feature-value-parquet-layout.md)。
 
 旧仓 `alpha_factory_etf_factor_metric_d`、
 `alpha_factory_etf_factor_group_nav_d`、`alpha_factory_etf_refresh_publish`

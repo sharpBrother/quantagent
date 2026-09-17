@@ -153,7 +153,7 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 # 缺少 stub 的第三方库
-module = ["duckdb.*", "statsmodels.*", "tushare.*", "lightgbm.*", "pandera.*"]
+module = ["duckdb.*", "pyarrow", "pyarrow.*", "statsmodels.*", "tushare.*", "lightgbm.*", "pandera.*"]
 ignore_missing_imports = true
 
 

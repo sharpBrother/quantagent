@@ -2,7 +2,7 @@
 title: lake 层职责
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 applies_to:
   - src/quantagent/lake/
 ---
@@ -16,9 +16,11 @@ applies_to:
 - **mart 物化**：口径对齐，产出可分析事实表（行情、财务、成分、持仓、宏观
   序列、基础信息）。口径来自 `domain`，本层只执行。
 - **物理布局**：分区键、目标文件大小、排序键、压缩参数、compaction 与小
-  文件合并。
-- **读取入口**：`readers/` 提供 DuckDB 之上的读取封装（被
-  `adapters.lake` 使用）。
+  文件合并。因子值布局以
+  [../adr/2026-09-17-feature-value-parquet-layout.md](../adr/2026-09-17-feature-value-parquet-layout.md)
+  为准。
+- **物化写入**：按冻结布局写 Parquet。读取 SQL 在 `adapters.lake`（import-
+  linter 上 lake 在 adapters 之上，适配器不能反过来依赖本层 readers）。
 
 ## 不负责
 
@@ -43,10 +45,9 @@ applies_to:
   加工之前的数据长什么样」，排查口径问题时失去中间锚点。
 - **物化目标由调用方临时决定**。写哪层、写哪个分区必须由资产定义决定，不能
   由运行时参数随意指定，否则血缘不可信。
-- **分区键拍脑袋定**。物理布局参数以 P1 benchmark 的结论 ADR 为准，见
-  [../feature-storage.md](../feature-storage.md)。尤其 `feature_id` 不进分
-  区键——全A 约 5500 只乘 200 个因子，按 `(dt, feature_id)` 双层分区会碎成
-  KB 级小文件。
+- **分区键拍脑袋定**。物理布局参数以
+  [../adr/2026-09-17-feature-value-parquet-layout.md](../adr/2026-09-17-feature-value-parquet-layout.md)
+  为准。尤其 `feature_id` 不进分区键。
 - **持久化 `.duckdb` 文件**。那会产生第二个事实源，需要独立的备份与迁移
   方案。DuckDB 只做会话级查询引擎。
 - **把可重算的物化结果入 git**。旧仓 `data_registry/` 389M 全量入库、

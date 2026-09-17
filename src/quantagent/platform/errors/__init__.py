@@ -21,3 +21,7 @@ class WriteGateError(PlatformError):
 
 class RunLogError(PlatformError):
     """运行记录无法落盘，或试图覆盖已有 run log。"""
+
+
+class DuckSessionError(PlatformError):
+    """DuckDB 会话无法创建、挂载失败，或试图持久化 ``.duckdb``。"""

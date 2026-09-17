@@ -2,7 +2,7 @@
 title: CLI 与编排
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 applies_to:
   - src/quantagent/cli/
   - orchestration/
@@ -44,6 +44,7 @@ Scheduler 的远端配置，实际触发链条跨了两处。
 
 ```
 quantagent ingest <source> [--start --end --write-db]
+quantagent lake benchmark-layout [--scale tiny|paper --rebuild]
 quantagent lake <dataset> [--partition --rebuild]
 quantagent feature <action>       compute / register / list / inspect
 quantagent model <action>         train / predict / evaluate
