@@ -2,7 +2,7 @@
 title: cli 层职责
 status: active
 created: 2026-09-16
-updated: 2026-09-17
+updated: 2026-09-18
 applies_to:
   - src/quantagent/cli/
 ---
@@ -48,7 +48,9 @@ quantagent ingest tushare trade-cal  交易日历采集
 quantagent lake benchmark-layout  因子长表布局 benchmark
 quantagent lake materialize trade-calendar  交易日历标准化物化
 quantagent calendar is-open / shift  交易日历研究读取（必须 --as-of）
-quantagent feature window / cross-section / matrix  因子长表研究读取（必须 --as-of）
+quantagent feature window / cross-section / matrix / metric  因子长表与评价指标（必须 --as-of）
+quantagent forward-return window  前瞻收益研究读取（必须 --as-of）
+quantagent group-nav window  分组净值研究读取（必须 --as-of）
 quantagent model <action>       训练与预测
 quantagent backtest <action>    回测
 quantagent portfolio <action>   组合与风险

@@ -8,5 +8,14 @@
 
 from quantagent.domain.ports.calendar import CalendarRepository
 from quantagent.domain.ports.feature import FeatureRepository
+from quantagent.domain.ports.feature_metric import FeatureMetricRepository
+from quantagent.domain.ports.forward_return import ForwardReturnRepository
+from quantagent.domain.ports.group_nav import GroupNavRepository
 
-__all__ = ["CalendarRepository", "FeatureRepository"]
+__all__ = [
+    "CalendarRepository",
+    "FeatureMetricRepository",
+    "FeatureRepository",
+    "ForwardReturnRepository",
+    "GroupNavRepository",
+]

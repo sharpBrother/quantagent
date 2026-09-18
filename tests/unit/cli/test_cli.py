@@ -37,6 +37,8 @@ def _isolated_settings(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None,
     monkeypatch.setattr("quantagent.cli.ingest.get_settings", lambda: settings)
     monkeypatch.setattr("quantagent.cli.calendar.get_settings", lambda: settings)
     monkeypatch.setattr("quantagent.cli.feature.get_settings", lambda: settings)
+    monkeypatch.setattr("quantagent.cli.forward_return.get_settings", lambda: settings)
+    monkeypatch.setattr("quantagent.cli.group_nav.get_settings", lambda: settings)
     yield
     cache_clear()
 
@@ -88,6 +90,8 @@ def test_root_help_lists_check_db_ingest_and_lake() -> None:
     assert "db" in text
     assert "calendar" in text
     assert "feature" in text
+    assert "forward-return" in text
+    assert "group-nav" in text
     assert "ingest" in text
     assert "lake" in text
 
@@ -111,6 +115,36 @@ def test_feature_window_help_requires_as_of() -> None:
     assert "--feature-id" in text
     assert "--start" in text
     assert "--end" in text
+
+
+@pytest.mark.unit
+def test_forward_return_window_help_requires_as_of() -> None:
+    result = runner.invoke(app, ["forward-return", "window", "--help"])
+    text = _plain(result)
+    assert result.exit_code == 0
+    assert "--as-of" in text
+    assert "--horizon" in text
+    assert "--return-kind" in text
+
+
+@pytest.mark.unit
+def test_feature_metric_help_requires_as_of() -> None:
+    result = runner.invoke(app, ["feature", "metric", "--help"])
+    text = _plain(result)
+    assert result.exit_code == 0
+    assert "--as-of" in text
+    assert "--metric-id" in text
+    assert "--universe-id" in text
+
+
+@pytest.mark.unit
+def test_group_nav_window_help_requires_as_of() -> None:
+    result = runner.invoke(app, ["group-nav", "window", "--help"])
+    text = _plain(result)
+    assert result.exit_code == 0
+    assert "--as-of" in text
+    assert "--run-id" in text
+    assert "--universe-id" in text
 
 
 @pytest.mark.unit

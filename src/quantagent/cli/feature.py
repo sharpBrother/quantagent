@@ -7,16 +7,18 @@ from typing import Annotated
 
 import typer
 
+from quantagent.adapters.lake.feature_metric import LakeFeatureMetricRepository
 from quantagent.adapters.lake.feature_value import (
     LakeFeatureRepository,
     load_feature_value_visibility,
 )
+from quantagent.adapters.lake.visibility import load_dataset_visibility
 from quantagent.domain.errors import DomainError
 from quantagent.platform.config import get_settings
 from quantagent.platform.errors import ConfigError, DuckSessionError
 from quantagent.platform.storage import detect_repo_root, resolve_var_paths
 
-feature_app = typer.Typer(help="因子长表研究读取。必须传 --as-of。", no_args_is_help=True)
+feature_app = typer.Typer(help="因子长表与评价指标研究读取。必须传 --as-of。", no_args_is_help=True)
 
 
 @feature_app.command("window")
@@ -96,10 +98,58 @@ def feature_matrix(
     typer.echo(f"n={len(rows)} as_of={as_of_dt.isoformat()} {_pit_tag()}")
 
 
+@feature_app.command("metric")
+def feature_metric(
+    *,
+    feature_id: Annotated[str, typer.Option("--feature-id")],
+    definition_version: Annotated[str, typer.Option("--definition-version")],
+    param_hash: Annotated[str, typer.Option("--param-hash")],
+    universe_id: Annotated[str, typer.Option("--universe-id")],
+    horizon: Annotated[str, typer.Option("--horizon")],
+    metric_id: Annotated[str, typer.Option("--metric-id")],
+    window: Annotated[str, typer.Option("--window")],
+    benchmark_id: Annotated[str, typer.Option("--benchmark-id")],
+    start: Annotated[str, typer.Option("--start", help="窗口起点 YYYY-MM-DD")],
+    end: Annotated[str, typer.Option("--end", help="窗口终点 YYYY-MM-DD")],
+    as_of: Annotated[str, typer.Option("--as-of", help="可见日 YYYY-MM-DD，必填")],
+) -> None:
+    repo = _metric_repo()
+    start_dt = _parse_ymd(start, "--start")
+    end_dt = _parse_ymd(end, "--end")
+    as_of_dt = _parse_ymd(as_of, "--as-of")
+    try:
+        rows = repo.scan_window(
+            as_of=as_of_dt,
+            feature_id=feature_id,
+            definition_version=definition_version,
+            param_hash=param_hash,
+            universe_id=universe_id,
+            horizon=horizon,
+            metric_id=metric_id,
+            window=window,
+            benchmark_id=benchmark_id,
+            start=start_dt,
+            end=end_dt,
+        )
+    except (DomainError, ConfigError, DuckSessionError) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    vis = load_dataset_visibility("feature.metric").visibility
+    typer.echo(f"n={len(rows)} as_of={as_of_dt.isoformat()} pit={vis.rule}/{vis.grade}")
+    for row in rows:
+        typer.echo(f"{row.event_dt.isoformat()} {row.value} {row.knowledge_dt.isoformat()}")
+
+
 def _repo() -> LakeFeatureRepository:
     settings = get_settings()
     paths = resolve_var_paths(settings, repo_root=detect_repo_root())
     return LakeFeatureRepository(paths.lake / "feature" / "value")
+
+
+def _metric_repo() -> LakeFeatureMetricRepository:
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    return LakeFeatureMetricRepository(paths.lake / "feature" / "metric")
 
 
 def _pit_tag() -> str:

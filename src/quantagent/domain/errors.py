@@ -25,3 +25,7 @@ class CalendarLookupError(DomainError):
 
 class FeatureLookupError(DomainError):
     """因子读取参数非法，例如 start 晚于 end。"""
+
+
+class InvalidQueryError(DomainError):
+    """读取参数非法，例如 start 晚于 end 或身份字段为空。"""

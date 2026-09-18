@@ -2,7 +2,7 @@
 title: CLI 与编排
 status: active
 created: 2026-09-16
-updated: 2026-09-17
+updated: 2026-09-18
 applies_to:
   - src/quantagent/cli/
   - orchestration/
@@ -51,6 +51,9 @@ quantagent calendar shift --exchange --origin --n --as-of
 quantagent feature window --feature-id --definition-version --param-hash --start --end --as-of
 quantagent feature cross-section --event-dt --as-of
 quantagent feature matrix --start --end --feature-ids --asset-ids --as-of
+quantagent feature metric --feature-id --definition-version --param-hash --universe-id --horizon --metric-id --window --benchmark-id --start --end --as-of
+quantagent forward-return window --horizon --return-kind --benchmark-id --start --end --as-of
+quantagent group-nav window --feature-id --definition-version --param-hash --universe-id --horizon --run-id --start --end --as-of
 quantagent model <action>         train / predict / evaluate
 quantagent backtest <action>      run / compare / report
 quantagent portfolio <action>     construct / risk / attribute

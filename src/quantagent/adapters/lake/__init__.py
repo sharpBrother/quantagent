@@ -5,6 +5,7 @@ Parquet + DuckDB 读取适配。会话由 ``platform.duck`` 创建，本层只�
 """
 
 from quantagent.adapters.lake.errors import EmptyDomainError, LakeAdapterError
+from quantagent.adapters.lake.feature_metric import LakeFeatureMetricRepository
 from quantagent.adapters.lake.feature_value import (
     FEATURE_VALUE_VIEW,
     LakeFeatureRepository,
@@ -12,6 +13,8 @@ from quantagent.adapters.lake.feature_value import (
     scan_feature_cross_section,
     scan_feature_window,
 )
+from quantagent.adapters.lake.forward_return import LakeForwardReturnRepository
+from quantagent.adapters.lake.group_nav import LakeGroupNavRepository
 from quantagent.adapters.lake.trade_calendar import LakeCalendarRepository
 
 __all__ = [
@@ -19,7 +22,10 @@ __all__ = [
     "EmptyDomainError",
     "LakeAdapterError",
     "LakeCalendarRepository",
+    "LakeFeatureMetricRepository",
     "LakeFeatureRepository",
+    "LakeForwardReturnRepository",
+    "LakeGroupNavRepository",
     "build_training_matrix",
     "scan_feature_cross_section",
     "scan_feature_window",
