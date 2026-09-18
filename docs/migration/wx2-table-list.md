@@ -14,8 +14,25 @@ superseded_by: null
 
 # 旧 SQL Server wx2 逐表处置清单
 
-P2 第一个交付物。分类标准见 [wx2-disposition.md](wx2-disposition.md)。
+P2 第一个交付物，**本文件是评审基线**。分类标准见 [wx2-disposition.md](wx2-disposition.md)。
 机器可读副本：[wx2-table-list.yaml](wx2-table-list.yaml)。
+
+## 评审勘误（2026-09-18）
+
+按采集代码与表语义纠正首版误判。去向列写**拟采用的新仓落点**；
+`db/src_tables.yaml` 与 `db/migrations/src/` **尚未改**，迁入前按本表修订。
+
+| 问题类型 | 表 | 纠正 |
+|---|---|---|
+| 算出来的不是源 | `barra_cne6` / `_exposure` / `_factor_return` / `_specific_return` | 类别 2，不进 `src_*` |
+| 算出来的不是源 | `fina_rpt_forecast` / `fina_rpt_forecast_roe` | 类别 2；`_roe_w` 仍为类别 5 |
+| 前缀误导 | `stock_etf_min_price` | 仍是分钟行情源，新表名拟 `etf_min_price`，禁止 `stock_` |
+| 前缀误导 | `stock_min_price` | 个股分钟 OHLC，类别 5；若迁入禁止当因子表名 |
+| schema 跟供应商不一致 | `macro_eco_cal` / `macro_shibor` / `macro_us_treasury_yield` | 拟 `src_tushare.eco_cal` / `shibor` / `us_treasury_yield` |
+| 字典文件夹跟采集不一致 | `fin_income_gen` / `fin_performance_express` / `fin_performance_forecast` | 拟 `src_suntime.*`（zyyx） |
+| 字典文件夹跟采集不一致 | `FIN_APPO_RELE_DATE` | 拟 `src_suntime`（第一批 DDL 现为 `src_wind`） |
+
+`src_macro` 仍留给金十 / FRED / WGC / GPR。Wind `SHIBORPRICES` 与 Tushare `shibor` 不是同一张表。
 
 ## 范围与指针
 
@@ -25,28 +42,27 @@ P2 第一个交付物。分类标准见 [wx2-disposition.md](wx2-disposition.md)
 - **不迁入、不写 PIT YAML。** 迁入前须负责人确认可见性规则
 - 消费者 = 现役模块引用 ∪ 启用中的 `jobs.json` ∪ `data_registry`；采集写入不算消费者
 - 排除：`legacy/` 等已丢弃目录、一次性 `scripts/taskNNNN`、DDL 建表脚本、`data/review/`、网站静态快照
+- 旧字典 `tushare/` 文件夹不能当供应商依据，以 ETL 代码为准
 
 ## 汇总
 
 | 类别 | 张数 |
 |---|---:|
-| 1 源镜像 | 93 |
-| 2 可重算 | 67 |
+| 1 源镜像 | 87 |
+| 2 可重算 | 73 |
 | 3 遗产冻结 | 0 |
 | 4 运维改造 | 26 |
 | 5 无消费者 | 185 |
 | 合计 | 371 |
 
-第一批 `db/src_tables.yaml` 的 59 张全部落在类别 1，去向标注「已收录，本清单不启动迁入」。
-类别 1 中第一批未收录的表只记录，不改 `src_tables.yaml`。
+第一批 `db/src_tables.yaml` 的 59 张仍全部落在类别 1；其中 Tushare 宏观三张与 `FIN_APPO_RELE_DATE` 的 **schema/表名以本清单拟去向为准**，代码侧尚未改。
 类别 3 本轮为 0：历史策略结果表（`strategy_result_*` 等）现役无读取，已归入类别 5。
 
 ## 逐表清单
 
 | 表名 | 行数 | 判定类别 | 判定依据 | 去向 | 附加约束 |
 |---|---|---|---|---|---|
-| `barra_cne6_exposure` | 未查 | 1 源镜像 | 现役：etf_sector_rotation/etf_sector_rotation/data/etf_hq_scorer.py | barra_cne6_exposure → src_*（Barra schema 待定；第一批未收录，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
-| `stock_etf_min_price` | 未查 | 1 源镜像 | 现役：data/ETF四象限推送.py, data/etf_real_trade_v14.py, data/宽基指数配置策略.py 等11处 | stock_etf_min_price → src_*（ETF 分钟行情 schema 待定；第一批未收录，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
+| `stock_etf_min_price` | 未查 | 1 源镜像 | 现役：data/ETF四象限推送.py, data/etf_real_trade_v14.py, data/宽基指数配置策略.py 等11处 | 拟 src_* etf_min_price（ETF 分钟行情；禁止沿用 stock_ 前缀；现不迁） | 旧 wx2 表名仅作指针。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配 |
 | `Bond_BondIndexQuote` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：core/market_data_service.py, strategy_engine/adapters/bond_timing.py | src_jydb.Bond_BondIndexQuote（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `Bond_CBYieldCurveAll` | 未查 | 1 源镜像 | src-plane 点名弱引用（data/test_task.py 等），第二批再评估 | src_jydb.Bond_CBYieldCurveAll（第二批评估，现不迁） | 不定 visibility YAML，须负责人确认后再配 |
 | `C_ED_IndicatorMain` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：macro_regime/config/indicator_registry.yaml, scripts/macro_regime_revalidation/p0_evidence_pit_qualification.py | src_jydb.C_ED_IndicatorMain（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
@@ -62,14 +78,14 @@ P2 第一个交付物。分类标准见 [wx2-disposition.md](wx2-disposition.md)
 | `QT_OSIndexQuote` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：core/market_data_service.py, scripts/run_large_small_style_rotation.py, style_rotation/large_small/contracts.py 等4处 | src_jydb.QT_OSIndexQuote（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `SecuMain` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：scripts/macro_regime_external_revenue_wiring.py | src_jydb.SecuMain（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `SecuMainAll` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：core/market_data_service.py, style_rotation/large_small/phase_e_final_validation.py, scripts/run_large_small_style_rotation.py | src_jydb.SecuMainAll（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
-| `macro_eco_cal` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：core/market_data_service.py | src_macro.macro_eco_cal（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
+| `macro_eco_cal` | 未查 | 1 源镜像 | Tushare pro.eco_cal。第一批 src_tables.yaml；现役：core/market_data_service.py | 拟 src_tushare.eco_cal（现 DDL 为 src_macro.macro_eco_cal；本清单不启动迁入） | 清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `macro_fred_observation` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：core/market_data_service.py | src_macro.macro_fred_observation（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `macro_gpr_daily` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：core/market_data_service.py | src_macro.macro_gpr_daily（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `macro_jin10_china_cpi_yoy` | 未查 | 1 源镜像 | 现役：alpha_factory/etf/timepoint_momentum/engine.py | src_macro.macro_jin10_china_cpi_yoy（第一批未收录，有现役读取，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
 | `macro_jin10_china_ppi_yoy` | 未查 | 1 源镜像 | 现役：alpha_factory/etf/timepoint_momentum/engine.py | src_macro.macro_jin10_china_ppi_yoy（第一批未收录，有现役读取，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
 | `macro_jin10_usa_ism_pmi` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：core/market_data_service.py, gold_timing/contracts.py, scripts/migrate_jin10_period_end.py | src_macro.macro_jin10_usa_ism_pmi（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
-| `macro_shibor` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：macro_regime/config/indicator_registry.yaml, scripts/run_growth_value_final_research.py, scripts/run_growth_value_style_rotation.py 等5处 | src_macro.macro_shibor（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
-| `macro_us_treasury_yield` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：macro_regime/pit.py, scripts/macro_regime_walk_forward_evaluation.py, macro_regime/config/indicator_registry.yaml 等5处 | src_macro.macro_us_treasury_yield（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
+| `macro_shibor` | 未查 | 1 源镜像 | Tushare pro.shibor。第一批 src_tables.yaml；现役：macro_regime/config/indicator_registry.yaml, scripts/run_growth_value_final_research.py, scripts/run_growth_value_style_rotation.py 等5处 | 拟 src_tushare.shibor（现 DDL 为 src_macro.macro_shibor；本清单不启动迁入） | 与 Wind SHIBORPRICES 不是同一张表。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配 |
+| `macro_us_treasury_yield` | 未查 | 1 源镜像 | Tushare pro.us_tycr。第一批 src_tables.yaml；现役：macro_regime/pit.py, scripts/macro_regime_walk_forward_evaluation.py, macro_regime/config/indicator_registry.yaml 等5处 | 拟 src_tushare.us_treasury_yield（现 DDL 为 src_macro.macro_us_treasury_yield；本清单不启动迁入） | 清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `macro_wgc_gold_demand` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：core/market_data_service.py | src_macro.macro_wgc_gold_demand（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `con_forecast_citic` | 未查 | 1 源镜像 | src-plane 点名弱引用（data/test_task.py 等），第二批再评估 | src_suntime.con_forecast_citic（第二批评估，现不迁） | 不定 visibility YAML，须负责人确认后再配 |
 | `con_forecast_roll_stk` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/gateway.py, agent_style_rotation/expectation_engine.py 等5处 | src_suntime.con_forecast_roll_stk（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
@@ -77,16 +93,12 @@ P2 第一个交付物。分类标准见 [wx2-disposition.md](wx2-disposition.md)
 | `con_forecast_stk_ttm` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：agent_style_rotation/consensus_fttm_wide_builder.py, agent_style_rotation/data_gateway.py, data/宽基指数配置策略2.py | src_suntime.con_forecast_stk_ttm（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `der_diver_stk` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：core/raw_loader.py, enhanced_optimizer/factors/exposure.py | src_suntime.der_diver_stk（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `der_prob_excess_stock` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py, alpha_factory/growth_events.py, alpha_factory/layered_universe.py | src_suntime.der_prob_excess_stock（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
+| `FIN_APPO_RELE_DATE` | 未查 | 1 源镜像 | 朝阳 zyyx_to_sql 写入，不是 Wind。第一批 src_tables.yaml；现役：strategy/growth_stock.py, strategy/growth_stock_2.py | 拟 src_suntime.FIN_APPO_RELE_DATE（第一批 DDL 现为 src_wind；本清单不启动迁入） | 清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
+| `fin_income_gen` | 未查 | 1 源镜像 | 现役：factors/factor_event_2.py | 拟 src_suntime.fin_income_gen（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁） | 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配 |
+| `fin_performance_express` | 未查 | 1 源镜像 | 现役：factors/factor_event_2.py | 拟 src_suntime.fin_performance_express（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁） | 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配 |
+| `fin_performance_forecast` | 未查 | 1 源镜像 | 现役：factors/factor_event_2.py | 拟 src_suntime.fin_performance_forecast（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁） | 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配 |
 | `rpt_earnings_adjust` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/pf_nap/materialization.py, alpha_factory/pf_nap/qualification.py 等7处 | src_suntime.rpt_earnings_adjust（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `rpt_forecast_stk` | 未查 | 1 源镜像 | src-plane 点名弱引用（data/test_task.py 等），第二批再评估 | src_suntime.rpt_forecast_stk（第二批评估，现不迁） | 不定 visibility YAML，须负责人确认后再配 |
-| `barra_cne6` | 未查 | 1 源镜像 | 现役：alpha_factory/data_gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json, alpha_factory/refresh_performance_factor_fast_ic.py 等11处 | barra_cne6 → src_*（Barra schema 待定；第一批未收录，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
-| `barra_cne6_factor_return` | 未查 | 1 源镜像 | 现役：enhanced_optimizer/risk_models/barra_risk_gemini.py | barra_cne6_factor_return → src_*（Barra schema 待定；第一批未收录，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
-| `barra_cne6_specific_return` | 未查 | 1 源镜像 | 现役：enhanced_optimizer/risk_models/barra_risk_gemini.py | barra_cne6_specific_return → src_*（Barra schema 待定；第一批未收录，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
-| `fin_income_gen` | 未查 | 1 源镜像 | 现役：factors/factor_event_2.py | src_tushare.fin_income_gen（第一批未收录，有现役读取，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
-| `fin_performance_express` | 未查 | 1 源镜像 | 现役：factors/factor_event_2.py | src_tushare.fin_performance_express（第一批未收录，有现役读取，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
-| `fin_performance_forecast` | 未查 | 1 源镜像 | 现役：factors/factor_event_2.py | src_tushare.fin_performance_forecast（第一批未收录，有现役读取，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
-| `fina_rpt_forecast` | 未查 | 1 源镜像 | 现役：factors/factor_rpt.py | src_tushare.fina_rpt_forecast（第一批未收录，有现役读取，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
-| `fina_rpt_forecast_roe` | 未查 | 1 源镜像 | 现役：data/etf_trend_strategy.py | src_tushare.fina_rpt_forecast_roe（第一批未收录，有现役读取，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
 | `fund_share` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：core/market_data_service.py, data/etf_real_trade_v14.py, etf_sector_rotation/etf_sector_rotation/data/minute_data.py 等5处 | src_tushare.fund_share（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `mapping_industry_etf` | 未查 | 1 源镜像 | 手维护/映射参考表，无法从 vendor 行情重算；现役：data/ETF四象限推送.py, data/etf_real_trade_v14.py, data/情绪择时推送.py 等8处 | 待定落点（src_ref / frozen / 配置），现不迁 | 非 vendor 行情，不进第一批 src_*。不定 visibility YAML，须负责人确认后再配 |
 | `strategy_citics_list` | 未查 | 1 源镜像 | 手维护/映射参考表，无法从 vendor 行情重算；现役：data/宽基指数配置策略2.py | 待定落点（src_ref / frozen / 配置），现不迁 | 非 vendor 行情，不进第一批 src_*。不定 visibility YAML，须负责人确认后再配 |
@@ -133,11 +145,11 @@ P2 第一个交付物。分类标准见 [wx2-disposition.md](wx2-disposition.md)
 | `CBONDTRADINGSUSPENSION` | 未查 | 1 源镜像 | 现役：strategy/convbond_backtest.py, strategy/可转债套利.py | src_wind.CBONDTRADINGSUSPENSION（第一批未收录，有现役读取，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
 | `CCBONDVALUATION` | 未查 | 1 源镜像 | 现役：strategy/convbond_backtest.py, strategy/可转债套利.py | src_wind.CCBONDVALUATION（第一批未收录，有现役读取，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
 | `CHINAMUTUALFUNDSTOCKPORTFOLIO` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py | src_wind.CHINAMUTUALFUNDSTOCKPORTFOLIO（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
-| `FIN_APPO_RELE_DATE` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：strategy/growth_stock.py, strategy/growth_stock_2.py | src_wind.FIN_APPO_RELE_DATE（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `FXEODPRICES` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：core/market_data_service.py, strategy/ah_premium_hk_backtest.py | src_wind.FXEODPRICES（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `HKEXCALENDAR` | 未查 | 1 源镜像 | 现役：strategy/ah_premium_hk_backtest.py, strategy/generic_backtest_framework.py | src_wind.HKEXCALENDAR（第一批未收录，有现役读取，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
 | `SHIBORPRICES` | 未查 | 1 源镜像 | src-plane 点名弱引用（data/test_task.py 等），第二批再评估 | src_wind.SHIBORPRICES（第二批评估，现不迁） | 不定 visibility YAML，须负责人确认后再配 |
 | `SWINDEXMEMBERS` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：strategy/ah_premium_hk_backtest.py | src_wind.SWINDEXMEMBERS（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
+| `barra_cne6_exposure` | 未查 | 2 可重算 | 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：etf_sector_rotation/etf_sector_rotation/data/etf_hq_scorer.py | 不迁 wx2 行；新仓 features 重算 | 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配 |
 | `alpha_factory_alert_d` | 未查 | 2 可重算 | 现役：scripts/resolve_alpha_factory_stale_canary_alert.py | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
 | `alpha_factory_factor_value_d` | 未查 | 2 可重算 | 现役：alpha_factory/pf_nap/materialization.py | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
 | `alpha_factory_factor_version` | 未查 | 2 可重算 | 现役：alpha_factory/registry.py, scripts/alpha_factory_pf_multidate_coverage_audit.py | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
@@ -191,7 +203,12 @@ P2 第一个交付物。分类标准见 [wx2-disposition.md](wx2-disposition.md)
 | `stock_real_kurt` | 未查 | 2 可重算 | 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
 | `stock_rpt_excess_num` | 未查 | 2 可重算 | 现役：factors/factor_event.py, factors/factor_event_2.py | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
 | `stock_tr_umr` | 未查 | 2 可重算 | 现役：alpha_factory/policies/pf_historical_factor_source_availability_v3.json | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
+| `barra_cne6` | 未查 | 2 可重算 | 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：alpha_factory/data_gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json, alpha_factory/refresh_performance_factor_fast_ic.py 等11处 | 不迁 wx2 行；新仓 features 重算 | 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配 |
+| `barra_cne6_factor_return` | 未查 | 2 可重算 | 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：enhanced_optimizer/risk_models/barra_risk_gemini.py | 不迁 wx2 行；新仓 features 重算 | 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配 |
+| `barra_cne6_specific_return` | 未查 | 2 可重算 | 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：enhanced_optimizer/risk_models/barra_risk_gemini.py | 不迁 wx2 行；新仓 features 重算 | 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配 |
 | `etf_ratio` | 未查 | 2 可重算 | 现役：alpha_factory/etf/scripts/analyze_etf_factor_tradability.py, core/market_data_service.py, scripts/run_asset_allocation_backtest.py 等15处 | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
+| `fina_rpt_forecast` | 未查 | 2 可重算 | wind_to_sql_am 加工/重算，不是 Tushare 源表。 现役：factors/factor_rpt.py | 不迁 wx2 行；新仓按一致预期链路重算 | 不进 src_*。不定 visibility YAML，须负责人确认后再配 |
+| `fina_rpt_forecast_roe` | 未查 | 2 可重算 | wind_to_sql_am 加工/重算，不是 Tushare 源表。 现役：data/etf_trend_strategy.py | 不迁 wx2 行；新仓按一致预期链路重算 | 不进 src_*。不定 visibility YAML，须负责人确认后再配 |
 | `market_heat_limit_num` | 未查 | 2 可重算 | 现役：data/情绪择时推送.py | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
 | `market_heat_up_down_num` | 未查 | 2 可重算 | 现役：data/情绪择时推送.py | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
 | `performance_factor` | 未查 | 2 可重算 | 现役：alpha_factory/data_gateway.py, alpha_factory/discover_performance_factor_singles.py, alpha_factory/performance_factor_score.py 等23处 | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
@@ -270,7 +287,7 @@ P2 第一个交付物。分类标准见 [wx2-disposition.md](wx2-disposition.md)
 | `stock_min_avg_amt_skew` | 未查 | 5 无消费者 | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
 | `stock_min_avg_amt_sr` | 未查 | 5 无消费者 | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
 | `stock_min_avg_amt_std` | 未查 | 5 无消费者 | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
-| `stock_min_price` | 未查 | 5 无消费者 | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
+| `stock_min_price` | 未查 | 5 无消费者 | 个股分钟 OHLC，不是因子；现役无引用 | 不迁移；若将来迁入拟 src_* .stock_min_price 以外的分钟表名，禁止沿用 stock_ 前缀当因子 | 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配 |
 | `stock_ocac_5m` | 未查 | 5 无消费者 | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
 | `stock_ocac_umr` | 未查 | 5 无消费者 | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
 | `stock_payout_his` | 未查 | 5 无消费者 | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
@@ -331,7 +348,7 @@ P2 第一个交付物。分类标准见 [wx2-disposition.md](wx2-disposition.md)
 | `fina_income` | 未查 | 5 无消费者 | 仅采集写入：data/wind_to_sql_am.py | 不迁移 | 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配 |
 | `fina_indicator` | 未查 | 5 无消费者 | 仅采集写入：data/wind_to_sql_am.py | 不迁移 | 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配 |
 | `fina_rating_targetprice` | 未查 | 5 无消费者 | 字典或代码有记载，现役模块/启用调度/data_registry 均无引用 | 不迁移 | 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配 |
-| `fina_rpt_forecast_roe_w` | 未查 | 5 无消费者 | 字典或代码有记载，现役模块/启用调度/data_registry 均无引用 | 不迁移 | 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配 |
+| `fina_rpt_forecast_roe_w` | 未查 | 5 无消费者 | fina_rpt_forecast_roe 旁表/重算产物，不是 Tushare 源；现役无引用 | 不迁移 | 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配 |
 | `fund_daily_indicator` | 未查 | 5 无消费者 | 仅采集写入：data/wind_to_sql_am.py | 不迁移 | 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配 |
 | `fund_description` | 未查 | 5 无消费者 | 字典或代码有记载，现役模块/启用调度/data_registry 均无引用 | 不迁移 | 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配 |
 | `fund_em_value_est` | 未查 | 5 无消费者 | 仅采集写入：data/tushare_data_pm.py | 不迁移 | 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配 |

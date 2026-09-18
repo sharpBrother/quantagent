@@ -1,36 +1,26 @@
-# 由旧仓 jobs.json ∪ 现役代码 ∪ data_registry 反查生成。
-# 机器可读源；人读 docs/migration/wx2-table-list.md。
+# 由旧仓 jobs.json ∪ 现役代码 ∪ data_registry 反查生成，并经 2026-09-18 评审勘误。
+# 机器可读源；人读 docs/migration/wx2-table-list.md。本文件是分类与拟去向的评审基线。
 old_repo: pycharm_workspace
 old_commit: 7c506d51160e57385fd85217edece815268ffd55
 row_count_note: 本机未连 SQL Server wx2，行数一律未查
 pit_note: 本清单不定版 visibility / 不写 PIT YAML，须负责人逐表确认后再配
-migrate_note: 清单完成前不启动迁入
+migrate_note: 清单为评审基线，不启动迁入；拟改名/改 schema 的表先改 DDL 再迁
 counts:
   total: 371
-  c1: 93
-  c2: 67
+  c1: 87
+  c2: 73
   c3: 0
   c4: 26
   c5: 185
 tables:
-- name: barra_cne6_exposure
-  folder: barra
-  nature: barra
-  row_count: 未查
-  category: 1
-  reason: 现役：etf_sector_rotation/etf_sector_rotation/data/etf_hq_scorer.py
-  dest: barra_cne6_exposure → src_*（Barra schema 待定；第一批未收录，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
-  src_batch1: false
-  origin: code
 - name: stock_etf_min_price
   folder: factors
   nature: vendor_minutes
   row_count: 未查
   category: 1
   reason: 现役：data/ETF四象限推送.py, data/etf_real_trade_v14.py, data/宽基指数配置策略.py 等11处
-  dest: stock_etf_min_price → src_*（ETF 分钟行情 schema 待定；第一批未收录，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
+  dest: 拟 src_* etf_min_price（ETF 分钟行情；禁止沿用 stock_ 前缀；现不迁）
+  extra: 旧 wx2 表名仅作指针。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
 - name: Bond_BondIndexQuote
@@ -195,9 +185,10 @@ tables:
   nature: vendor
   row_count: 未查
   category: 1
-  reason: 第一批 src_tables.yaml；现役：core/market_data_service.py
-  dest: src_macro.macro_eco_cal（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  reason: Tushare pro.eco_cal。第一批 src_tables.yaml；现役：core/market_data_service.py
+  dest: 拟 src_tushare.eco_cal（现 DDL 为 src_macro.macro_eco_cal；本清单不启动迁入）
+  extra: 清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。存量 pit_recoverable:false。不定 visibility
+    YAML，须负责人确认后再配
   src_batch1: true
   origin: src_tables_yaml
 - name: macro_fred_observation
@@ -256,10 +247,12 @@ tables:
   nature: vendor
   row_count: 未查
   category: 1
-  reason: 第一批 src_tables.yaml；现役：macro_regime/config/indicator_registry.yaml, scripts/run_growth_value_final_research.py,
-    scripts/run_growth_value_style_rotation.py 等5处
-  dest: src_macro.macro_shibor（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  reason: Tushare pro.shibor。第一批 src_tables.yaml；现役：macro_regime/config/indicator_registry.yaml,
+    scripts/run_growth_value_final_research.py, scripts/run_growth_value_style_rotation.py
+    等5处
+  dest: 拟 src_tushare.shibor（现 DDL 为 src_macro.macro_shibor；本清单不启动迁入）
+  extra: 与 Wind SHIBORPRICES 不是同一张表。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定
+    visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: src_tables_yaml
 - name: macro_us_treasury_yield
@@ -267,10 +260,11 @@ tables:
   nature: vendor
   row_count: 未查
   category: 1
-  reason: 第一批 src_tables.yaml；现役：macro_regime/pit.py, scripts/macro_regime_walk_forward_evaluation.py,
+  reason: Tushare pro.us_tycr。第一批 src_tables.yaml；现役：macro_regime/pit.py, scripts/macro_regime_walk_forward_evaluation.py,
     macro_regime/config/indicator_registry.yaml 等5处
-  dest: src_macro.macro_us_treasury_yield（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  dest: 拟 src_tushare.us_treasury_yield（现 DDL 为 src_macro.macro_us_treasury_yield；本清单不启动迁入）
+  extra: 清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。存量 pit_recoverable:false。不定 visibility
+    YAML，须负责人确认后再配
   src_batch1: true
   origin: src_tables_yaml
 - name: macro_wgc_gold_demand
@@ -347,6 +341,48 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+- name: FIN_APPO_RELE_DATE
+  folder: suntime
+  nature: vendor
+  row_count: 未查
+  category: 1
+  reason: 朝阳 zyyx_to_sql 写入，不是 Wind。第一批 src_tables.yaml；现役：strategy/growth_stock.py,
+    strategy/growth_stock_2.py
+  dest: 拟 src_suntime.FIN_APPO_RELE_DATE（第一批 DDL 现为 src_wind；本清单不启动迁入）
+  extra: 清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。存量 pit_recoverable:false。不定 visibility
+    YAML，须负责人确认后再配
+  src_batch1: true
+  origin: dictionary_manifest
+- name: fin_income_gen
+  folder: suntime
+  nature: vendor
+  row_count: 未查
+  category: 1
+  reason: 现役：factors/factor_event_2.py
+  dest: 拟 src_suntime.fin_income_gen（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁）
+  extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配
+  src_batch1: false
+  origin: dictionary_manifest
+- name: fin_performance_express
+  folder: suntime
+  nature: vendor
+  row_count: 未查
+  category: 1
+  reason: 现役：factors/factor_event_2.py
+  dest: 拟 src_suntime.fin_performance_express（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁）
+  extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配
+  src_batch1: false
+  origin: dictionary_manifest
+- name: fin_performance_forecast
+  folder: suntime
+  nature: vendor
+  row_count: 未查
+  category: 1
+  reason: 现役：factors/factor_event_2.py
+  dest: 拟 src_suntime.fin_performance_forecast（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁）
+  extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配
+  src_batch1: false
+  origin: dictionary_manifest
 - name: rpt_earnings_adjust
   folder: suntime
   nature: vendor
@@ -366,87 +402,6 @@ tables:
   reason: src-plane 点名弱引用（data/test_task.py 等），第二批再评估
   dest: src_suntime.rpt_forecast_stk（第二批评估，现不迁）
   extra: 不定 visibility YAML，须负责人确认后再配
-  src_batch1: false
-  origin: dictionary_manifest
-- name: barra_cne6
-  folder: tushare
-  nature: barra
-  row_count: 未查
-  category: 1
-  reason: 现役：alpha_factory/data_gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json,
-    alpha_factory/refresh_performance_factor_fast_ic.py 等11处
-  dest: barra_cne6 → src_*（Barra schema 待定；第一批未收录，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
-  src_batch1: false
-  origin: dictionary_manifest
-- name: barra_cne6_factor_return
-  folder: tushare
-  nature: barra
-  row_count: 未查
-  category: 1
-  reason: 现役：enhanced_optimizer/risk_models/barra_risk_gemini.py
-  dest: barra_cne6_factor_return → src_*（Barra schema 待定；第一批未收录，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
-  src_batch1: false
-  origin: dictionary_md
-- name: barra_cne6_specific_return
-  folder: tushare
-  nature: barra
-  row_count: 未查
-  category: 1
-  reason: 现役：enhanced_optimizer/risk_models/barra_risk_gemini.py
-  dest: barra_cne6_specific_return → src_*（Barra schema 待定；第一批未收录，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
-  src_batch1: false
-  origin: dictionary_md
-- name: fin_income_gen
-  folder: tushare
-  nature: vendor
-  row_count: 未查
-  category: 1
-  reason: 现役：factors/factor_event_2.py
-  dest: src_tushare.fin_income_gen（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
-  src_batch1: false
-  origin: dictionary_manifest
-- name: fin_performance_express
-  folder: tushare
-  nature: vendor
-  row_count: 未查
-  category: 1
-  reason: 现役：factors/factor_event_2.py
-  dest: src_tushare.fin_performance_express（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
-  src_batch1: false
-  origin: dictionary_manifest
-- name: fin_performance_forecast
-  folder: tushare
-  nature: vendor
-  row_count: 未查
-  category: 1
-  reason: 现役：factors/factor_event_2.py
-  dest: src_tushare.fin_performance_forecast（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
-  src_batch1: false
-  origin: dictionary_manifest
-- name: fina_rpt_forecast
-  folder: tushare
-  nature: vendor
-  row_count: 未查
-  category: 1
-  reason: 现役：factors/factor_rpt.py
-  dest: src_tushare.fina_rpt_forecast（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
-  src_batch1: false
-  origin: dictionary_manifest
-- name: fina_rpt_forecast_roe
-  folder: tushare
-  nature: vendor
-  row_count: 未查
-  category: 1
-  reason: 现役：data/etf_trend_strategy.py
-  dest: src_tushare.fina_rpt_forecast_roe（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
 - name: fund_share
@@ -939,16 +894,6 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
-- name: FIN_APPO_RELE_DATE
-  folder: wind
-  nature: vendor
-  row_count: 未查
-  category: 1
-  reason: 第一批 src_tables.yaml；现役：strategy/growth_stock.py, strategy/growth_stock_2.py
-  dest: src_wind.FIN_APPO_RELE_DATE（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
-  src_batch1: true
-  origin: dictionary_manifest
 - name: FXEODPRICES
   folder: wind
   nature: vendor
@@ -989,6 +934,16 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+- name: barra_cne6_exposure
+  folder: barra
+  nature: derived
+  row_count: 未查
+  category: 2
+  reason: 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：etf_sector_rotation/etf_sector_rotation/data/etf_hq_scorer.py
+  dest: 不迁 wx2 行；新仓 features 重算
+  extra: 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配
+  src_batch1: false
+  origin: code
 - name: alpha_factory_alert_d
   folder: derived
   nature: derived
@@ -1539,6 +1494,38 @@ tables:
   extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+- name: barra_cne6
+  folder: tushare
+  nature: derived
+  row_count: 未查
+  category: 2
+  reason: 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：alpha_factory/data_gateway.py,
+    alpha_factory/policies/pf_historical_factor_source_availability_v3.json, alpha_factory/refresh_performance_factor_fast_ic.py
+    等11处
+  dest: 不迁 wx2 行；新仓 features 重算
+  extra: 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配
+  src_batch1: false
+  origin: dictionary_manifest
+- name: barra_cne6_factor_return
+  folder: tushare
+  nature: derived
+  row_count: 未查
+  category: 2
+  reason: 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：enhanced_optimizer/risk_models/barra_risk_gemini.py
+  dest: 不迁 wx2 行；新仓 features 重算
+  extra: 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配
+  src_batch1: false
+  origin: dictionary_md
+- name: barra_cne6_specific_return
+  folder: tushare
+  nature: derived
+  row_count: 未查
+  category: 2
+  reason: 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：enhanced_optimizer/risk_models/barra_risk_gemini.py
+  dest: 不迁 wx2 行；新仓 features 重算
+  extra: 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配
+  src_batch1: false
+  origin: dictionary_md
 - name: etf_ratio
   folder: tushare
   nature: derived
@@ -1548,6 +1535,26 @@ tables:
     scripts/run_asset_allocation_backtest.py 等15处
   dest: 不迁 wx2 行；新仓 features/mart 重算
   extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  src_batch1: false
+  origin: dictionary_manifest
+- name: fina_rpt_forecast
+  folder: tushare
+  nature: derived
+  row_count: 未查
+  category: 2
+  reason: wind_to_sql_am 加工/重算，不是 Tushare 源表。 现役：factors/factor_rpt.py
+  dest: 不迁 wx2 行；新仓按一致预期链路重算
+  extra: 不进 src_*。不定 visibility YAML，须负责人确认后再配
+  src_batch1: false
+  origin: dictionary_manifest
+- name: fina_rpt_forecast_roe
+  folder: tushare
+  nature: derived
+  row_count: 未查
+  category: 2
+  reason: wind_to_sql_am 加工/重算，不是 Tushare 源表。 现役：data/etf_trend_strategy.py
+  dest: 不迁 wx2 行；新仓按一致预期链路重算
+  extra: 不进 src_*。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
 - name: market_heat_limit_num
@@ -2341,12 +2348,12 @@ tables:
   origin: dictionary_manifest
 - name: stock_min_price
   folder: factors
-  nature: derived
+  nature: vendor_minutes
   row_count: 未查
   category: 5
-  reason: 派生/应用表，现役无引用
-  dest: 不迁移
-  extra: 旧仓 7c506d511
+  reason: 个股分钟 OHLC，不是因子；现役无引用
+  dest: 不迁移；若将来迁入拟 src_* .stock_min_price 以外的分钟表名，禁止沿用 stock_ 前缀当因子
+  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_ocac_5m
@@ -2951,10 +2958,10 @@ tables:
   origin: dictionary_manifest
 - name: fina_rpt_forecast_roe_w
   folder: tushare
-  nature: vendor
+  nature: derived
   row_count: 未查
   category: 5
-  reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
+  reason: fina_rpt_forecast_roe 旁表/重算产物，不是 Tushare 源；现役无引用
   dest: 不迁移
   extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
@@ -3799,3 +3806,4 @@ tables:
   extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+review_baseline: 2026-09-18 按采集代码纠正分类与拟去向；DDL 未改

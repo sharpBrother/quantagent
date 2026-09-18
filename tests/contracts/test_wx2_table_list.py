@@ -96,3 +96,37 @@ def test_markdown_table_matches_yaml(repo_root: Path) -> None:
     assert "不迁入" in md
     assert "不定版 visibility" in md or "不写 PIT YAML" in md
     assert payload["old_commit"] in md
+
+
+@pytest.mark.contracts
+def test_review_baseline_corrections(repo_root: Path) -> None:
+    """评审基线：算出来的不进 src_*，schema 跟采集源走，禁止误用 stock_ 前缀。"""
+    listed = {row["name"]: row for row in _load_list(repo_root)["tables"]}
+
+    for name in (
+        "barra_cne6",
+        "barra_cne6_exposure",
+        "barra_cne6_factor_return",
+        "barra_cne6_specific_return",
+        "fina_rpt_forecast",
+        "fina_rpt_forecast_roe",
+    ):
+        assert listed[name]["category"] == 2, name
+
+    etf_min = listed["stock_etf_min_price"]
+    assert etf_min["category"] == 1
+    assert "etf_min_price" in etf_min["dest"]
+    assert "禁止沿用 stock_" in etf_min["dest"]
+
+    assert "src_tushare.eco_cal" in listed["macro_eco_cal"]["dest"]
+    assert "src_tushare.shibor" in listed["macro_shibor"]["dest"]
+    assert "src_tushare.us_treasury_yield" in listed["macro_us_treasury_yield"]["dest"]
+
+    for name in (
+        "fin_income_gen",
+        "fin_performance_express",
+        "fin_performance_forecast",
+        "FIN_APPO_RELE_DATE",
+    ):
+        assert "src_suntime" in listed[name]["dest"], name
+        assert listed[name]["category"] == 1, name
