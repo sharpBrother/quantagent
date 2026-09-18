@@ -2,7 +2,7 @@
 title: 旧仓代码模块处置清点
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-18
 applies_to:
   - docs/migration/roadmap.md
   - src/quantagent/
@@ -11,7 +11,8 @@ applies_to:
 # 旧仓代码模块处置清点
 
 范围：`pycharm_workspace` 的**代码模块**。数据表见
-[../migration/wx2-disposition.md](../migration/wx2-disposition.md)，文档与
+[../migration/wx2-table-list.md](../migration/wx2-table-list.md)（标准见
+[../migration/wx2-disposition.md](../migration/wx2-disposition.md)），文档与
 制品见 [../migration/docs-and-artifacts-disposition.md](../migration/docs-and-artifacts-disposition.md)。
 
 ## 处置类别

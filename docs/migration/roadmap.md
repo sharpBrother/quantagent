@@ -2,7 +2,7 @@
 title: 迁移路线 P0–P6
 status: active
 created: 2026-09-16
-updated: 2026-09-17
+updated: 2026-09-18
 applies_to:
   - src/quantagent/
   - orchestration/
@@ -92,7 +92,7 @@ PG schema 可整体 drop 重建（此时无真实数据）。`var/lake/` 可整�
 
 ### 内容
 
-1. **先产出 `wx2` 逐表处置清单**（见 [wx2-disposition.md](wx2-disposition.md)）
+1. **先产出 `wx2` 逐表处置清单**（标准见 [wx2-disposition.md](wx2-disposition.md)，清单见 [wx2-table-list.md](wx2-table-list.md)）。清单已产出，迁入仍未开始。
 2. 按类别分别执行：源数据迁 `src_*`，派生数据不迁，不可重算历史冻结到
    `var/lake/legacy/`，控制状态重新建模到 `ops_*`，无消费者不迁
 3. Wind / Tushare / JYDB / 朝阳永续 / 宏观 ETL 重写为 Dagster asset
@@ -102,8 +102,9 @@ PG schema 可整体 drop 重建（此时无真实数据）。`var/lake/` 可整�
 
 ### 顺序约束
 
-**清单未完成前不启动任何迁移动作。** 先迁一部分再定清单，会出现"已经迁
-进来但发现应该不迁"，而删除已迁入的数据比一开始不迁麻烦得多。
+**清单已产出，迁入仍未开始。** 先迁一部分再补清单，会出现"已经迁进来但发现
+应该不迁"，而删除已迁入的数据比一开始不迁麻烦得多。类别 1 补收录与
+visibility 定版须负责人确认后再动。
 
 ### 验收标准
 

@@ -2,9 +2,12 @@
 title: wx2 逐表处置标准
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-18
 applies_to:
   - db/migrations/
+  - db/src_tables.yaml
+  - docs/migration/wx2-table-list.md
+  - docs/migration/wx2-table-list.yaml
   - src/quantagent/ingest/
   - src/quantagent/contracts/visibility/
 ---
@@ -135,8 +138,10 @@ Dagster 的运行存储会承担一部分职责（物化事件、运行记录）
 理由：如果先迁一部分再定清单，会出现"已经迁进来但发现应该不迁"的情况，
 而删除已迁入的数据比一开始不迁麻烦得多——它可能已经有了下游依赖。
 
-清单以本文档的表格形式逐项记录：表名、行数、判定类别、判定依据（哪个消费者
-或为什么零消费者）、去向、附加约束落实情况。
+逐表清单在 [wx2-table-list.md](wx2-table-list.md)（机器可读副本
+[wx2-table-list.yaml](wx2-table-list.yaml)）：表名、行数、判定类别、判定依据、
+去向、附加约束。旧仓指针 `pycharm_workspace@7c506d511`。行数未连 wx2，一律未查。
+**清单已产出，仍不启动迁入，不定版 visibility YAML。**
 
 ## 迁移期的只读适配器
 
@@ -153,6 +158,7 @@ P2 期间需要一个只读的 SQL Server 适配器用于读取 `wx2` 存量。�
 ## 与其他两份清单的分工
 
 - 代码模块：[../architecture/legacy-inventory.md](../architecture/legacy-inventory.md)
+- 数据表：[wx2-table-list.md](wx2-table-list.md)
 - 文档与制品：[docs-and-artifacts-disposition.md](docs-and-artifacts-disposition.md)
 
 三份清单的分类标准不同，不要互相套用：代码看"逻辑是否还要用"，数据表看
