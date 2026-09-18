@@ -90,9 +90,13 @@ def test_src_tables_yaml_are_class_1(repo_root: Path) -> None:
 def test_markdown_table_matches_yaml(repo_root: Path) -> None:
     payload = _load_list(repo_root)
     md = (repo_root / "docs" / "migration" / "wx2-table-list.md").read_text(encoding="utf-8")
-    names = TABLE_ROW.findall(md)
+    _, sep, table = md.partition("## 逐表清单")
+    assert sep, "markdown 缺少 ## 逐表清单"
+    names = TABLE_ROW.findall(table)
     yaml_names = [row["name"] for row in payload["tables"]]
     assert names == yaml_names, "markdown 逐表清单必须与 yaml 同序同名"
+    assert "| 表名 | 行数 | 判定类别 | 需PIT |" in md
+    assert "## 无需 PIT 的表" in md
     assert "不迁入" in md
     assert "不定版 visibility" in md or "不写 PIT YAML" in md
     assert payload["old_commit"] in md
@@ -102,6 +106,7 @@ def test_markdown_table_matches_yaml(repo_root: Path) -> None:
 def test_review_baseline_corrections(repo_root: Path) -> None:
     """评审基线：算出来的不进 src_*，schema 跟采集源走，禁止误用 stock_ 前缀。"""
     listed = {row["name"]: row for row in _load_list(repo_root)["tables"]}
+    md = (repo_root / "docs" / "migration" / "wx2-table-list.md").read_text(encoding="utf-8")
 
     for name in (
         "barra_cne6",
@@ -153,6 +158,7 @@ def test_review_baseline_corrections(repo_root: Path) -> None:
     for name in no_pit:
         assert listed[name].get("pit_required") is False, name
         assert "无需 PIT" in listed[name]["extra"], name
+        assert f"`{name}`" in md, name
     assert listed["AINDEXMEMBERS"].get("pit_required") is not False
     assert listed["trade_cal"].get("pit_required") is not False
     assert listed["ASHARESECNINDUSTRIESCLASS"].get("pit_required") is not False
