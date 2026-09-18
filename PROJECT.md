@@ -259,19 +259,44 @@ Alpha 因子库、IC、RankIC、ICIR、Turnover、Decay。因子长表是唯一�
 
 # 当前阶段
 
-**P1 底座已形成，P2 已产出 wx2 逐表处置清单；存量迁入尚未开始。**
+**P2 进行中：两份处置清单已产出，存量迁入尚未开始。**
 
-截至 2026-09-18，代码已包含 platform（配置 / 路径 / digest / run log /
-写闸）、PG 双面迁移文件与迁移命令、源镜像写入保护、Tushare 交易日历采集
-与 std 物化、因子布局 benchmark，以及日历、因子值、股票池成员、前瞻收益、因子指标、
-分组净值的带 `as_of` 读取接口和相应测试。
-
-这说明代码能力已落地，不代表所有 PG 迁移、真实数据采集与阶段验收都已完成。
-因子计算、模型、回测内核、Agent、publish 与 Dagster 编排仍以骨架为主，
-`apps/web/` 尚未实现，完整研究到静态展厅的链路尚未贯通。
-
-阶段划分、每阶段验收标准与回滚点见
+截至 2026-09-18。阶段划分与验收见
 [`docs/migration/roadmap.md`](docs/migration/roadmap.md)。
+
+## 已落地（P0 / P1）
+
+- 工程基建：uv、ruff、mypy、import-linter、pytest 四类分层、pre-commit、CI
+- `platform`：配置、`VAR_ROOT`、digest、run log、写库双闸、DuckDB 会话（不落
+  `.duckdb`）
+- PG 双面 schema 与 `quantagent db migrate`；第一批 **59** 张源镜像 DDL。
+  schema 已按供应商回写：Tushare 宏观三张为 `src_tushare.eco_cal` /
+  `shibor` / `us_treasury_yield`，`FIN_APPO_RELE_DATE` 在 `src_suntime`
+- 采集与物化：Tushare 交易日历写入 PG，再物化为 `std.trade_calendar`
+- 声明式 PIT：已实现 `same_day_close` 与 `source_field`，其余规则
+  fail-closed。旧仓互相冲突的口径已裁定，写入
+  [`docs/domain/pit-rules.md`](docs/domain/pit-rules.md)，目前没有待裁定。
+  visibility YAML 只覆盖已接线的 7 个数据集，未对 wx2 源表批量配置
+- 研究读取（强制 `--as-of`）：日历、因子值、因子指标、股票池成员、前瞻收益、
+  分组净值；memory 与 lake 契约对拍。除日历外，湖里多数还没有真实分区
+- 因子长表物理布局 benchmark 已出 ADR
+
+## 已产出、未执行（P2 清单）
+
+- [`docs/migration/wx2-table-list.md`](docs/migration/wx2-table-list.md)：
+  wx2 **371** 张逐表处置（评审基线，不迁入）
+- [`docs/migration/docs-and-artifacts-list.md`](docs/migration/docs-and-artifacts-list.md)：
+  旧仓文档与制品 **245** 项（评审基线；冻结制品迁入在 P5）
+
+## 未开始
+
+P2 剩余：按类别迁入 wx2、迁移期只读 MSSQL 适配器、ETL 改写为 Dagster
+asset、逐表 visibility YAML（须确认后再配）、除日历外的源采集。
+
+P3–P6：旧仓口径 golden 对拍、因子计算、模型与回测内核、Agent、publish、
+`apps/web/`、旧仓封存。仍以骨架为主。
+
+本地 PG 仅测试。代码能力不等于真实库已迁完，也不等于研究到静态展厅已贯通。
 
 ## 默认非目标
 
