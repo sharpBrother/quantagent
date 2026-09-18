@@ -51,6 +51,7 @@ quantagent calendar is-open / shift  交易日历研究读取（必须 --as-of�
 quantagent feature window / cross-section / matrix / metric  因子长表与评价指标（必须 --as-of）
 quantagent forward-return window  前瞻收益研究读取（必须 --as-of）
 quantagent group-nav window  分组净值研究读取（必须 --as-of）
+quantagent universe members  股票池成员研究读取（必须 --as-of）
 quantagent model <action>       训练与预测
 quantagent backtest <action>    回测
 quantagent portfolio <action>   组合与风险

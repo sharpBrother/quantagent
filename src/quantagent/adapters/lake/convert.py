@@ -17,6 +17,25 @@ def as_date(value: object) -> date:
     raise InvalidQueryError(f"无法转为 date: {value!r}")
 
 
+def as_optional_date(value: object) -> date | None:
+    if value is None:
+        return None
+    if type(value).__name__ in {"NaTType", "NAType"}:
+        return None
+    if isinstance(value, float) and isnan(value):
+        return None
+    return as_date(value)
+
+
+def optional_float(value: object) -> float | None:
+    """等权池的 member_weight 为 NULL，不得补 0 或 1/N。"""
+    if value is None:
+        return None
+    if isinstance(value, float) and isnan(value):
+        return None
+    return require_float(value)
+
+
 def as_datetime(value: object) -> datetime:
     if isinstance(value, datetime):
         return value

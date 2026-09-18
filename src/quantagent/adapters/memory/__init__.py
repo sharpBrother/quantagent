@@ -8,6 +8,7 @@ from quantagent.adapters.memory.feature_metric import MemoryFeatureMetricReposit
 from quantagent.adapters.memory.feature_value import MemoryFeatureRepository
 from quantagent.adapters.memory.forward_return import MemoryForwardReturnRepository
 from quantagent.adapters.memory.group_nav import MemoryGroupNavRepository
+from quantagent.adapters.memory.universe_member import MemoryUniverseRepository
 
 __all__ = [
     "MemoryCalendarRepository",
@@ -15,4 +16,5 @@ __all__ = [
     "MemoryFeatureRepository",
     "MemoryForwardReturnRepository",
     "MemoryGroupNavRepository",
+    "MemoryUniverseRepository",
 ]

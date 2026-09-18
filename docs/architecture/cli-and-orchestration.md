@@ -54,6 +54,7 @@ quantagent feature matrix --start --end --feature-keys --asset-ids --as-of
 quantagent feature metric --feature-id --definition-version --param-hash --universe-id --horizon --metric-id --window --benchmark-id --start --end --as-of
 quantagent forward-return window --horizon --return-kind --benchmark-id --start --end --as-of
 quantagent group-nav window --feature-id --definition-version --param-hash --universe-id --horizon --run-id --start --end --as-of
+quantagent universe members --universe-id --dt --as-of
 quantagent model <action>         train / predict / evaluate
 quantagent backtest <action>      run / compare / report
 quantagent portfolio <action>     construct / risk / attribute

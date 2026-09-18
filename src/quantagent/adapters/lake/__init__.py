@@ -16,6 +16,7 @@ from quantagent.adapters.lake.feature_value import (
 from quantagent.adapters.lake.forward_return import LakeForwardReturnRepository
 from quantagent.adapters.lake.group_nav import LakeGroupNavRepository
 from quantagent.adapters.lake.trade_calendar import LakeCalendarRepository
+from quantagent.adapters.lake.universe_member import LakeUniverseRepository
 
 __all__ = [
     "FEATURE_VALUE_VIEW",
@@ -26,6 +27,7 @@ __all__ = [
     "LakeFeatureRepository",
     "LakeForwardReturnRepository",
     "LakeGroupNavRepository",
+    "LakeUniverseRepository",
     "build_training_matrix",
     "scan_feature_cross_section",
     "scan_feature_window",

@@ -41,6 +41,7 @@ def _isolated_settings(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None,
     monkeypatch.setattr("quantagent.cli.feature.get_settings", lambda: settings)
     monkeypatch.setattr("quantagent.cli.forward_return.get_settings", lambda: settings)
     monkeypatch.setattr("quantagent.cli.group_nav.get_settings", lambda: settings)
+    monkeypatch.setattr("quantagent.cli.universe.get_settings", lambda: settings)
     yield
     cache_clear()
 
@@ -94,6 +95,7 @@ def test_root_help_lists_check_db_ingest_and_lake() -> None:
     assert "feature" in text
     assert "forward-return" in text
     assert "group-nav" in text
+    assert "universe" in text
     assert "ingest" in text
     assert "lake" in text
 
@@ -146,6 +148,16 @@ def test_group_nav_window_help_requires_as_of() -> None:
     assert result.exit_code == 0
     assert "--as-of" in text
     assert "--run-id" in text
+    assert "--universe-id" in text
+
+
+@pytest.mark.unit
+def test_universe_members_help_requires_as_of() -> None:
+    result = runner.invoke(app, ["universe", "members", "--help"])
+    text = _plain(result)
+    assert result.exit_code == 0
+    assert "--as-of" in text
+    assert "--dt" in text
     assert "--universe-id" in text
 
 

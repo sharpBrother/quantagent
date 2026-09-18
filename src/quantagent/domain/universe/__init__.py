@@ -1,4 +1,6 @@
-"""quantagent/domain/universe
+"""股票池成员区间规则。仓储只取行；命中区间在这里算。"""
 
-骨架占位。职责定义见 docs/architecture/layers/。
-"""
+from quantagent.domain.universe.interval import interval_contains
+from quantagent.domain.universe.member import UniverseMember
+
+__all__ = ["UniverseMember", "interval_contains"]

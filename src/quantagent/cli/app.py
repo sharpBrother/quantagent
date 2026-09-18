@@ -12,6 +12,7 @@ from quantagent.cli.forward_return import forward_return_app
 from quantagent.cli.group_nav import group_nav_app
 from quantagent.cli.ingest import ingest_app
 from quantagent.cli.lake import lake_app
+from quantagent.cli.universe import universe_app
 from quantagent.platform.logging import configure_logging
 
 app = typer.Typer(
@@ -27,6 +28,7 @@ app.add_typer(forward_return_app, name="forward-return", help="前瞻收益研�
 app.add_typer(group_nav_app, name="group-nav", help="分组净值研究读取")
 app.add_typer(ingest_app, name="ingest", help="外部源采集")
 app.add_typer(lake_app, name="lake", help="Parquet 湖物化与布局 benchmark")
+app.add_typer(universe_app, name="universe", help="股票池成员研究读取")
 
 
 @app.callback()

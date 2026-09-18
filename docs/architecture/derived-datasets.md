@@ -83,6 +83,10 @@ superseded_by: null
 区间模型不矛盾：有公告日的源仍可把 `knowledge_dt` 填得更早；Wind 成分现在
 没有这个字段。规则过滤池的 `knowledge_dt` 仍由输入推导。
 
+读取走 `UniverseRepository.members_at(as_of, dt, universe_id)`：区间命中
+是闭区间 `valid_from <= dt AND (valid_to IS NULL OR valid_to >= dt)`，再
+叠加 `knowledge_dt <= as_of`。调用方不手写区间条件。空池 fail-closed。
+
 ## forward_return：落 mart，但必须防泄漏
 
 前瞻收益是行情派生的口径事实，不是因子，所以归 `mart`。但它天然含未来
