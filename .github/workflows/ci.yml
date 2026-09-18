@@ -83,18 +83,31 @@ jobs:
   web:
     name: 前端检查
     runs-on: ubuntu-latest
-    # apps/web 在 P5 阶段落地，此前跳过
-    if: ${{ hashFiles('apps/web/package.json') != '' }}
+    # apps/web 在 P5 阶段落地。hashFiles 不能用在 job 级 if：求值发生在
+    # runner checkout 之前，函数根本不存在。先检出再判断。
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: 检测 apps/web
+        id: web
+        run: |
+          if [ -f apps/web/package.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "apps/web 尚未落地，跳过前端检查"
+          fi
+      - if: steps.web.outputs.present == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - run: npm ci
+      - if: steps.web.outputs.present == 'true'
+        run: npm ci
         working-directory: apps/web
-      - run: npm run lint
+      - if: steps.web.outputs.present == 'true'
+        run: npm run lint
         working-directory: apps/web
-      - run: npm run typecheck
+      - if: steps.web.outputs.present == 'true'
+        run: npm run typecheck
         working-directory: apps/web
