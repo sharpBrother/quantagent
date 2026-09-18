@@ -1331,26 +1331,6 @@ CREATE TABLE src_wind."ASHAREMARGINTRADE" (
     PRIMARY KEY ("OBJECT_ID")
 );
 
-CREATE TABLE src_wind."FIN_APPO_RELE_DATE" (
-    "ID" integer NOT NULL,
-    "COMPANY_CODE" varchar(20),
-    "STOCK_CODE" varchar(20),
-    "STOCK_NAME" varchar(100),
-    "REPORT_YEAR" integer,
-    "REPORT_QUARTER" integer,
-    "APPO_NUM" integer,
-    "DECLARE_DATE" timestamp,
-    "APPO_RELE_DATE" timestamp,
-    "IS_VALID" integer,
-    "ENTRYTIME" timestamp,
-    "UPDATETIME" timestamp,
-    "TMSTAMP" bigint,
-    _batch_id bigint NOT NULL REFERENCES src_wind._batch (_batch_id),
-    _ingested_at timestamptz NOT NULL,
-    _row_hash char(64) NOT NULL,
-    PRIMARY KEY ("ID")
-);
-
 CREATE TABLE src_wind."ASHAREPROFITNOTICE" (
     "OBJECT_ID" varchar(100) NOT NULL,
     "S_INFO_WINDCODE" varchar(40),

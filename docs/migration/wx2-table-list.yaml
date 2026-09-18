@@ -202,9 +202,8 @@ tables:
   row_count: 未查
   category: 1
   reason: Tushare pro.eco_cal。第一批 src_tables.yaml；现役：core/market_data_service.py
-  dest: 拟 src_tushare.eco_cal（现 DDL 为 src_macro.macro_eco_cal；本清单不启动迁入）
-  extra: 清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。存量 pit_recoverable:false。不定 visibility
-    YAML，须负责人确认后再配
+  dest: src_tushare.eco_cal（第一批已收录，本清单不启动迁入）
+  extra: 旧 wx2 表名 macro_eco_cal。存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: src_tables_yaml
   pit_required: true
@@ -272,9 +271,8 @@ tables:
   reason: Tushare pro.shibor。第一批 src_tables.yaml；现役：macro_regime/config/indicator_registry.yaml,
     scripts/run_growth_value_final_research.py, scripts/run_growth_value_style_rotation.py
     等5处
-  dest: 拟 src_tushare.shibor（现 DDL 为 src_macro.macro_shibor；本清单不启动迁入）
-  extra: 与 Wind SHIBORPRICES 不是同一张表。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定
-    visibility YAML，须负责人确认后再配
+  dest: src_tushare.shibor（第一批已收录，本清单不启动迁入）
+  extra: 与 Wind SHIBORPRICES 不是同一张表。旧 wx2 表名 macro_shibor。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: src_tables_yaml
   pit_required: true
@@ -285,9 +283,8 @@ tables:
   category: 1
   reason: Tushare pro.us_tycr。第一批 src_tables.yaml；现役：macro_regime/pit.py, scripts/macro_regime_walk_forward_evaluation.py,
     macro_regime/config/indicator_registry.yaml 等5处
-  dest: 拟 src_tushare.us_treasury_yield（现 DDL 为 src_macro.macro_us_treasury_yield；本清单不启动迁入）
-  extra: 清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。存量 pit_recoverable:false。不定 visibility
-    YAML，须负责人确认后再配
+  dest: src_tushare.us_treasury_yield（第一批已收录，本清单不启动迁入）
+  extra: 旧 wx2 表名 macro_us_treasury_yield。存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: src_tables_yaml
   pit_required: true
@@ -379,9 +376,8 @@ tables:
   category: 1
   reason: 朝阳 zyyx_to_sql 写入，不是 Wind。第一批 src_tables.yaml；现役：strategy/growth_stock.py,
     strategy/growth_stock_2.py
-  dest: 拟 src_suntime.FIN_APPO_RELE_DATE（第一批 DDL 现为 src_wind；本清单不启动迁入）
-  extra: 清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。存量 pit_recoverable:false。不定 visibility
-    YAML，须负责人确认后再配
+  dest: src_suntime.FIN_APPO_RELE_DATE（第一批已收录，本清单不启动迁入）
+  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true

@@ -70,19 +70,27 @@ def test_counts_match_rows(repo_root: Path) -> None:
 def test_src_tables_yaml_are_class_1(repo_root: Path) -> None:
     """第一批源镜像必须全部出现在清单且为类别 1。本测试不授权迁入。"""
     src = yaml.safe_load((repo_root / "db" / "src_tables.yaml").read_text(encoding="utf-8"))
-    listed = {row["name"]: row for row in _load_list(repo_root)["tables"]}
+    listed_rows = _load_list(repo_root)["tables"]
+    listed = {row["name"]: row for row in listed_rows}
+    schemas = src["schemas"]
     missing: list[str] = []
     wrong: list[str] = []
     for item in src["tables"]:
         name = item["name"]
-        if name not in listed:
-            missing.append(name)
-            continue
-        if listed[name]["category"] != 1:
-            wrong.append(f"{name}: category={listed[name]['category']}")
-        if not listed[name].get("src_batch1"):
-            wrong.append(f"{name}: src_batch1 应为 true")
-    assert not missing, "src_tables.yaml 有表未进清单：\n" + "\n".join(missing)
+        schema = schemas[item["source"]]
+        row = listed.get(name)
+        if row is None:
+            needle = f"{schema}.{name}"
+            hits = [item_row for item_row in listed_rows if needle in str(item_row["dest"])]
+            if not hits:
+                missing.append(needle)
+                continue
+            row = hits[0]
+        if row["category"] != 1:
+            wrong.append(f"{schema}.{name}: category={row['category']}")
+        if not row.get("src_batch1"):
+            wrong.append(f"{schema}.{name}: src_batch1 应为 true")
+    assert not missing, "src_tables.yaml 有表未进清单 dest：\n" + "\n".join(missing)
     assert not wrong, "第一批源表分类错误：\n" + "\n".join(wrong)
 
 

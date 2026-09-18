@@ -47,8 +47,15 @@ def test_tech_columns_and_quoted_native_names(repo_root: Path) -> None:
         encoding="utf-8"
     )
     assert 'PRIMARY KEY ("exchange", "cal_date")' in tushare
+    assert '"yield" numeric(18, 3) NOT NULL' in tushare
+    assert 'CREATE TABLE src_tushare."eco_cal"' in tushare
+    suntime = (repo_root / "db" / "migrations" / "src" / "0006_suntime.sql").read_text(
+        encoding="utf-8"
+    )
+    assert 'CREATE TABLE src_suntime."FIN_APPO_RELE_DATE"' in suntime
+    assert 'CREATE TABLE src_wind."FIN_APPO_RELE_DATE"' not in wind
     macro = (repo_root / "db" / "migrations" / "src" / "0007_macro.sql").read_text(encoding="utf-8")
-    assert '"yield" numeric(18, 3) NOT NULL' in macro
+    assert "macro_eco_cal" not in macro
 
 
 @pytest.mark.unit

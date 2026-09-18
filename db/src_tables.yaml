@@ -1,6 +1,7 @@
 # 第一批进入 PG 研究数据面的源镜像。
 # 收录标准：现役下游（研究/脚本）有真实读取。零下游 36 张不建；
 # 仅 data/test_task.py 弱引用的表放到第二批。
+# schema 跟供应商：Tushare 宏观三张进 src_tushare（短名）；FIN_APPO_RELE_DATE 进 src_suntime。
 schemas:
   wind: src_wind
   tushare: src_tushare
@@ -56,8 +57,6 @@ tables:
   - source: wind
     name: ASHAREMARGINTRADE
   - source: wind
-    name: FIN_APPO_RELE_DATE
-  - source: wind
     name: ASHAREPROFITNOTICE
   - source: wind
     name: ASHARETRADINGSUSPENSION
@@ -77,6 +76,12 @@ tables:
     name: fund_share
   - source: tushare
     name: tushare_ths_industry_mapping_citics
+  - source: tushare
+    name: eco_cal
+  - source: tushare
+    name: shibor
+  - source: tushare
+    name: us_treasury_yield
   - source: jydb
     name: C_ED_MacroIndicatorData
   - source: jydb
@@ -113,6 +118,8 @@ tables:
     name: der_prob_excess_stock
   - source: suntime
     name: der_diver_stk
+  - source: suntime
+    name: FIN_APPO_RELE_DATE
   - source: macro
     name: macro_jin10_usa_ism_pmi
   - source: macro
@@ -121,9 +128,3 @@ tables:
     name: macro_fred_observation
   - source: macro
     name: macro_gpr_daily
-  - source: macro
-    name: macro_eco_cal
-  - source: macro
-    name: macro_shibor
-  - source: macro
-    name: macro_us_treasury_yield

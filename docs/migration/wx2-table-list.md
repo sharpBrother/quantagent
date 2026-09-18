@@ -21,8 +21,9 @@ PIT 口径见 [../domain/pit-rules.md](../domain/pit-rules.md)。
 
 ## 评审勘误（2026-09-18）
 
-按采集代码与表语义纠正首版误判。去向列写**拟采用的新仓落点**；
-`db/src_tables.yaml` 与 `db/migrations/src/` **尚未改**，迁入前按本表修订。
+按采集代码与表语义纠正首版误判。去向列写**拟采用的新仓落点**。
+Tushare 宏观三张与 `FIN_APPO_RELE_DATE` 已按本表回写 `db/src_tables.yaml`
+与 `db/migrations/src/`；其余拟去向仍未改 DDL。**仍不启动迁入。**
 
 | 问题类型 | 表 | 纠正 |
 |---|---|---|
@@ -31,9 +32,9 @@ PIT 口径见 [../domain/pit-rules.md](../domain/pit-rules.md)。
 | 算出来的不是源 | `fina_rpt_forecast` / `fina_rpt_forecast_roe` | 类别 2；`_roe_w` 仍为类别 5 |
 | 前缀误导 | `stock_etf_min_price` | 仍是分钟行情源，新表名拟 `etf_min_price`，禁止 `stock_` |
 | 前缀误导 | `stock_min_price` | 个股分钟 OHLC，类别 5；若迁入禁止当因子表名 |
-| schema 跟供应商不一致 | `macro_eco_cal` / `macro_shibor` / `macro_us_treasury_yield` | 拟 `src_tushare.eco_cal` / `shibor` / `us_treasury_yield` |
-| 字典文件夹跟采集不一致 | `fin_income_gen` / `fin_performance_express` / `fin_performance_forecast` | 拟 `src_suntime.*`（zyyx） |
-| 字典文件夹跟采集不一致 | `FIN_APPO_RELE_DATE` | 拟 `src_suntime`（第一批 DDL 现为 `src_wind`） |
+| schema 跟供应商不一致 | `macro_eco_cal` / `macro_shibor` / `macro_us_treasury_yield` | 已回写 `src_tushare.eco_cal` / `shibor` / `us_treasury_yield` |
+| 字典文件夹跟采集不一致 | `fin_income_gen` / `fin_performance_express` / `fin_performance_forecast` | 拟 `src_suntime.*`（zyyx；第一批未收录） |
+| 字典文件夹跟采集不一致 | `FIN_APPO_RELE_DATE` | 已回写 `src_suntime` |
 | 无需 PIT | 代码表、证券主数据、对照映射 | `pit_required: false`，不写 visibility，不得当 PIT 数据集读 |
 | 当前名册 | `strategy_etf_list*` | 命名 `universe_etf_*`，暂不设 PIT，类似 `ASHAREDESCRIPTION` |
 | 成分 PIT | `AINDEXMEMBERS*` 等 | 延续旧仓 `S_CON_INDATE`/`OUTDATE` 对 `as_of` 闭区间切片 |
@@ -112,7 +113,8 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | 合计 | 371 |
 | 其中无需 PIT | 25 |
 
-第一批 `db/src_tables.yaml` 的 59 张仍全部落在类别 1；其中 Tushare 宏观三张与 `FIN_APPO_RELE_DATE` 的 **schema/表名以本清单拟去向为准**，代码侧尚未改。
+第一批 `db/src_tables.yaml` 的 59 张仍全部落在类别 1。Tushare 宏观三张与
+`FIN_APPO_RELE_DATE` 已按拟去向回写 DDL；其余拟去向（如 `fin_*`、`etf_min_price`）仍未改。
 类别 3 本轮为 0：历史策略结果表（`strategy_result_*` 等）现役无读取，已归入类别 5。
 
 ## 逐表清单
@@ -135,14 +137,14 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `QT_OSIndexQuote` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：core/market_data_service.py, scripts/run_large_small_style_rotation.py, style_rotation/large_small/contracts.py 等4处 | src_jydb.QT_OSIndexQuote（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `SecuMain` | 未查 | 1 源镜像 | 否 | 第一批 src_tables.yaml；现役：scripts/macro_regime_external_revenue_wiring.py | src_jydb.SecuMain（第一批已收录，本清单不启动迁入） | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。 |
 | `SecuMainAll` | 未查 | 1 源镜像 | 否 | 第一批 src_tables.yaml；现役：core/market_data_service.py, style_rotation/large_small/phase_e_final_validation.py, scripts/run_large_small_style_rotation.py | src_jydb.SecuMainAll（第一批已收录，本清单不启动迁入） | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。 |
-| `macro_eco_cal` | 未查 | 1 源镜像 | 是 | Tushare pro.eco_cal。第一批 src_tables.yaml；现役：core/market_data_service.py | 拟 src_tushare.eco_cal（现 DDL 为 src_macro.macro_eco_cal；本清单不启动迁入） | 清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
+| `macro_eco_cal` | 未查 | 1 源镜像 | 是 | Tushare pro.eco_cal。第一批 src_tables.yaml；现役：core/market_data_service.py | src_tushare.eco_cal（第一批已收录，本清单不启动迁入） | 旧 wx2 表名 macro_eco_cal。存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `macro_fred_observation` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：core/market_data_service.py | src_macro.macro_fred_observation（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `macro_gpr_daily` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：core/market_data_service.py | src_macro.macro_gpr_daily（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `macro_jin10_china_cpi_yoy` | 未查 | 1 源镜像 | 是 | 现役：alpha_factory/etf/timepoint_momentum/engine.py | src_macro.macro_jin10_china_cpi_yoy（第一批未收录，有现役读取，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `macro_jin10_china_ppi_yoy` | 未查 | 1 源镜像 | 是 | 现役：alpha_factory/etf/timepoint_momentum/engine.py | src_macro.macro_jin10_china_ppi_yoy（第一批未收录，有现役读取，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `macro_jin10_usa_ism_pmi` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：core/market_data_service.py, gold_timing/contracts.py, scripts/migrate_jin10_period_end.py | src_macro.macro_jin10_usa_ism_pmi（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
-| `macro_shibor` | 未查 | 1 源镜像 | 是 | Tushare pro.shibor。第一批 src_tables.yaml；现役：macro_regime/config/indicator_registry.yaml, scripts/run_growth_value_final_research.py, scripts/run_growth_value_style_rotation.py 等5处 | 拟 src_tushare.shibor（现 DDL 为 src_macro.macro_shibor；本清单不启动迁入） | 与 Wind SHIBORPRICES 不是同一张表。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配 |
-| `macro_us_treasury_yield` | 未查 | 1 源镜像 | 是 | Tushare pro.us_tycr。第一批 src_tables.yaml；现役：macro_regime/pit.py, scripts/macro_regime_walk_forward_evaluation.py, macro_regime/config/indicator_registry.yaml 等5处 | 拟 src_tushare.us_treasury_yield（现 DDL 为 src_macro.macro_us_treasury_yield；本清单不启动迁入） | 清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
+| `macro_shibor` | 未查 | 1 源镜像 | 是 | Tushare pro.shibor。第一批 src_tables.yaml；现役：macro_regime/config/indicator_registry.yaml, scripts/run_growth_value_final_research.py, scripts/run_growth_value_style_rotation.py 等5处 | src_tushare.shibor（第一批已收录，本清单不启动迁入） | 与 Wind SHIBORPRICES 不是同一张表。旧 wx2 表名 macro_shibor。不定 visibility YAML，须负责人确认后再配 |
+| `macro_us_treasury_yield` | 未查 | 1 源镜像 | 是 | Tushare pro.us_tycr。第一批 src_tables.yaml；现役：macro_regime/pit.py, scripts/macro_regime_walk_forward_evaluation.py, macro_regime/config/indicator_registry.yaml 等5处 | src_tushare.us_treasury_yield（第一批已收录，本清单不启动迁入） | 旧 wx2 表名 macro_us_treasury_yield。存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `macro_wgc_gold_demand` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：core/market_data_service.py | src_macro.macro_wgc_gold_demand（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `con_forecast_citic` | 未查 | 1 源镜像 | 是 | src-plane 点名弱引用（data/test_task.py 等），第二批再评估 | src_suntime.con_forecast_citic（第二批评估，现不迁） | visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `con_forecast_roll_stk` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/gateway.py, agent_style_rotation/expectation_engine.py 等5处 | src_suntime.con_forecast_roll_stk（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
@@ -150,7 +152,7 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `con_forecast_stk_ttm` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/consensus_fttm_wide_builder.py, agent_style_rotation/data_gateway.py, data/宽基指数配置策略2.py | src_suntime.con_forecast_stk_ttm（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `der_diver_stk` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：core/raw_loader.py, enhanced_optimizer/factors/exposure.py | src_suntime.der_diver_stk（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `der_prob_excess_stock` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py, alpha_factory/growth_events.py, alpha_factory/layered_universe.py | src_suntime.der_prob_excess_stock（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。(declare_date < adj) OR (entrytime < adj)，任一字段早于调仓日即可见；不是双字段都可见。 |
-| `FIN_APPO_RELE_DATE` | 未查 | 1 源镜像 | 是 | 朝阳 zyyx_to_sql 写入，不是 Wind。第一批 src_tables.yaml；现役：strategy/growth_stock.py, strategy/growth_stock_2.py | 拟 src_suntime.FIN_APPO_RELE_DATE（第一批 DDL 现为 src_wind；本清单不启动迁入） | 清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
+| `FIN_APPO_RELE_DATE` | 未查 | 1 源镜像 | 是 | 朝阳 zyyx_to_sql 写入，不是 Wind。第一批 src_tables.yaml；现役：strategy/growth_stock.py, strategy/growth_stock_2.py | src_suntime.FIN_APPO_RELE_DATE（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `fin_income_gen` | 未查 | 1 源镜像 | 是 | 现役：factors/factor_event_2.py | 拟 src_suntime.fin_income_gen（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁） | 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `fin_performance_express` | 未查 | 1 源镜像 | 是 | 现役：factors/factor_event_2.py | 拟 src_suntime.fin_performance_express（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁） | 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `fin_performance_forecast` | 未查 | 1 源镜像 | 是 | 现役：factors/factor_event_2.py | 拟 src_suntime.fin_performance_forecast（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁） | 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
