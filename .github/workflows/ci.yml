@@ -69,15 +69,24 @@ jobs:
 
       # 一般文件 512KB 上限。frozen/ 单独放宽到 4MB：冻结制品不可重算，
       # 体积由制品本身决定（旧仓 bond_timing 的 nav.csv 就有 1MB）。
+      # 不用管道 while：Actions 默认 bash -eo pipefail，最后一次
+      # `[ size -gt limit ]` 为假时管道整体失败，会在没有任何超限文件时
+      # 误报。
       - name: 禁止超大文件入库
         run: |
-          large=$(git ls-files | while read -r f; do
+          large=""
+          while IFS= read -r f; do
             [ -f "$f" ] || continue
             case "$f" in frozen/*) limit=4194304 ;; *) limit=524288 ;; esac
-            [ "$(wc -c <"$f")" -gt "$limit" ] && echo "$f"
-          done)
+            size=$(wc -c <"$f")
+            if [ "$size" -gt "$limit" ]; then
+              large="${large}${f} (${size} bytes)"$'\n'
+            fi
+          done < <(git ls-files)
           if [ -n "$large" ]; then
-            echo "以下文件超过体积上限："; echo "$large"; exit 1
+            echo "以下文件超过体积上限："
+            printf '%s' "$large"
+            exit 1
           fi
 
   web:
