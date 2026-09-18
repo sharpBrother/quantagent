@@ -16,6 +16,7 @@ from quantagent.adapters.lake import (
     scan_feature_cross_section,
     scan_feature_window,
 )
+from quantagent.domain.feature_value import FeatureKey
 from quantagent.platform.duck import duck_session, register_parquet
 
 if TYPE_CHECKING:
@@ -129,7 +130,7 @@ def test_training_matrix_pivots_visible_values(feature_dir: Path) -> None:
             visible_on_or_before=date(2024, 1, 10),
             start=date(2024, 1, 3),
             end=date(2024, 1, 3),
-            feature_ids=["mom_20d", "turn_20d"],
+            feature_keys=[FeatureKey("mom_20d", "v1", "p0"), FeatureKey("turn_20d", "v1", "p0")],
             asset_ids=["A0000", "A0001"],
         )
     names = set(table.column_names)
@@ -155,6 +156,6 @@ def test_training_matrix_empty_universe_fails_closed(feature_dir: Path) -> None:
             visible_on_or_before=date(2024, 1, 10),
             start=date(2024, 1, 1),
             end=date(2024, 1, 31),
-            feature_ids=["mom_20d"],
+            feature_keys=[FeatureKey("mom_20d", "v1", "p0")],
             asset_ids=[],
         )

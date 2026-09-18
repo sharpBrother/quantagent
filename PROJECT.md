@@ -259,9 +259,16 @@ Alpha 因子库、IC、RankIC、ICIR、Turnover、Decay。因子长表是唯一�
 
 # 当前阶段
 
-**P1 第一刀：platform（配置 / 路径 / digest / run log / 写闸）、契约加载
-与 fail-closed 检查、交易日历契约、`quantagent check contracts` /
-`quantagent db status`。尚未建 PG schema、尚未接采集。**
+**P1 底座已形成，P2 已产出 wx2 逐表处置清单；存量迁入尚未开始。**
+
+截至 2026-09-18，代码已包含 platform（配置 / 路径 / digest / run log /
+写闸）、PG 双面迁移文件与迁移命令、源镜像写入保护、Tushare 交易日历采集
+与 std 物化、因子布局 benchmark，以及日历、因子值、前瞻收益、因子指标、
+分组净值的带 `as_of` 读取接口和相应测试。
+
+这说明代码能力已落地，不代表所有 PG 迁移、真实数据采集与阶段验收都已完成。
+因子计算、模型、回测内核、Agent、publish 与 Dagster 编排仍以骨架为主，
+`apps/web/` 尚未实现，完整研究到静态展厅的链路尚未贯通。
 
 阶段划分、每阶段验收标准与回滚点见
 [`docs/migration/roadmap.md`](docs/migration/roadmap.md)。

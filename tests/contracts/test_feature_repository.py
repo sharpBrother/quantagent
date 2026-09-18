@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
@@ -13,9 +14,10 @@ from quantagent.adapters.lake.feature_value import LakeFeatureRepository
 from quantagent.adapters.memory.feature_value import MemoryFeatureRepository
 from quantagent.contracts.spec import VisibilityContract
 from quantagent.domain.errors import EmptyDomainError, FeatureLookupError
-from quantagent.domain.feature_value import FeatureMatrixRow, FeatureValue
+from quantagent.domain.feature_value import FeatureKey, FeatureMatrixRow, FeatureValue
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
     from pathlib import Path
 
     from quantagent.domain.ports.feature import FeatureRepository
@@ -108,20 +110,20 @@ def _contract() -> VisibilityContract:
     )
 
 
-def _write_parquet(path: Path) -> Path:
+def _write_parquet(path: Path, *, rows: Sequence[FeatureValue] = _ROWS) -> Path:
     table = pa.table(
         {
-            "event_dt": pa.array([row.event_dt for row in _ROWS], type=pa.date32()),
-            "asset_id": [row.asset_id for row in _ROWS],
-            "asset_class": [row.asset_class for row in _ROWS],
-            "feature_id": [row.feature_id for row in _ROWS],
-            "definition_version": [row.definition_version for row in _ROWS],
-            "param_hash": [row.param_hash for row in _ROWS],
-            "value": pa.array([row.value for row in _ROWS], type=pa.float64()),
-            "knowledge_dt": pa.array([row.knowledge_dt for row in _ROWS], type=pa.date32()),
-            "pit_grade": [row.pit_grade for row in _ROWS],
-            "computed_at": pa.array([row.computed_at for row in _ROWS], type=pa.timestamp("us")),
-            "run_id": [row.run_id for row in _ROWS],
+            "event_dt": pa.array([row.event_dt for row in rows], type=pa.date32()),
+            "asset_id": [row.asset_id for row in rows],
+            "asset_class": [row.asset_class for row in rows],
+            "feature_id": [row.feature_id for row in rows],
+            "definition_version": [row.definition_version for row in rows],
+            "param_hash": [row.param_hash for row in rows],
+            "value": pa.array([row.value for row in rows], type=pa.float64()),
+            "knowledge_dt": pa.array([row.knowledge_dt for row in rows], type=pa.date32()),
+            "pit_grade": [row.pit_grade for row in rows],
+            "computed_at": pa.array([row.computed_at for row in rows], type=pa.timestamp("us")),
+            "run_id": [row.run_id for row in rows],
         }
     )
     dest = path / "part-00000.parquet"
@@ -145,7 +147,7 @@ def _scan_matrix(repo: FeatureRepository, *, as_of: date) -> tuple[FeatureMatrix
         as_of=as_of,
         start=date(2024, 1, 3),
         end=date(2024, 1, 3),
-        feature_ids=["mom_20d", "turn_20d"],
+        feature_keys=[FeatureKey("mom_20d", "v1", "p0"), FeatureKey("turn_20d", "v1", "p0")],
         asset_ids=["A0000", "A0001"],
     )
 
@@ -181,7 +183,7 @@ def _assert_repo(repo: FeatureRepository) -> None:
             as_of=as_of,
             start=date(2024, 1, 1),
             end=date(2024, 1, 31),
-            feature_ids=["mom_20d"],
+            feature_keys=[FeatureKey("mom_20d", "v1", "p0")],
             asset_ids=[],
         )
     with pytest.raises(FeatureLookupError):
@@ -212,3 +214,91 @@ def test_lake_feature_matches_memory(tmp_path: Path) -> None:
         as_of=as_of, event_dt=date(2024, 1, 3)
     ) == memory.scan_cross_section(as_of=as_of, event_dt=date(2024, 1, 3))
     assert _scan_matrix(lake, as_of=as_of) == _scan_matrix(memory, as_of=as_of)
+
+
+@pytest.fixture(params=["memory", "lake"])
+def matrix_repo_factory(
+    request: pytest.FixtureRequest, tmp_path: Path
+) -> Callable[[Sequence[FeatureValue]], FeatureRepository]:
+    def make(rows: Sequence[FeatureValue]) -> FeatureRepository:
+        if request.param == "memory":
+            return MemoryFeatureRepository(rows, contract=_contract())
+        source = _write_parquet(tmp_path, rows=rows)
+        return LakeFeatureRepository(source, contract=_contract())
+
+    return make
+
+
+def _matrix_for(
+    repo: FeatureRepository, keys: Sequence[FeatureKey]
+) -> tuple[FeatureMatrixRow, ...]:
+    return repo.build_training_matrix(
+        as_of=date(2024, 1, 10),
+        start=date(2024, 1, 3),
+        end=date(2024, 1, 3),
+        feature_keys=keys,
+        asset_ids=["A0000"],
+    )
+
+
+@pytest.mark.contracts
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize(
+    "version,param,expected", [("v1", "p0", 2.0), ("v2", "p0", 99.0), ("v1", "p1", 42.0)]
+)
+def test_matrix_selects_complete_identity(
+    matrix_repo_factory: Callable[[Sequence[FeatureValue]], FeatureRepository],
+    reverse: bool,
+    version: str,
+    param: str,
+    expected: float,
+) -> None:
+    original = _ROWS[1]
+    rows = [
+        original,
+        replace(original, definition_version="v2", value=99.0),
+        replace(original, param_hash="p1", value=42.0),
+    ]
+    if reverse:
+        rows.reverse()
+    repo = matrix_repo_factory(rows)
+    result = _matrix_for(repo, [FeatureKey("mom_20d", version, param)])
+    assert result[0].values == {"mom_20d": expected}
+
+
+@pytest.mark.contracts
+@pytest.mark.parametrize(
+    "keys",
+    [
+        [],
+        [FeatureKey("mom_20d", "", "p0")],
+        [FeatureKey("mom_20d", "v1", "p0"), FeatureKey("mom_20d", "v2", "p0")],
+        [FeatureKey("mom_20d", "v1", "p0"), FeatureKey("mom_20d", "v1", "p1")],
+        [FeatureKey("mom_20d", "v1", "p0"), FeatureKey("mom_20d", "v1", "p0")],
+    ],
+)
+def test_matrix_rejects_invalid_identity_selection(
+    matrix_repo_factory: Callable[[Sequence[FeatureValue]], FeatureRepository],
+    keys: list[FeatureKey],
+) -> None:
+    repo = matrix_repo_factory(_ROWS)
+    with pytest.raises((EmptyDomainError, FeatureLookupError)):
+        _matrix_for(repo, keys)
+
+
+@pytest.mark.contracts
+def test_matrix_rejects_duplicate_cells(
+    matrix_repo_factory: Callable[[Sequence[FeatureValue]], FeatureRepository],
+) -> None:
+    repo = matrix_repo_factory([_ROWS[1], _ROWS[1]])
+    with pytest.raises(FeatureLookupError, match="矩阵单元重复"):
+        _matrix_for(repo, [FeatureKey("mom_20d", "v1", "p0")])
+
+
+@pytest.mark.contracts
+def test_matrix_does_not_fallback_to_another_identity(
+    matrix_repo_factory: Callable[[Sequence[FeatureValue]], FeatureRepository],
+) -> None:
+    repo = matrix_repo_factory(_ROWS)
+    with pytest.raises(EmptyDomainError):
+        _matrix_for(repo, [FeatureKey("mom_20d", "v9", "p0")])

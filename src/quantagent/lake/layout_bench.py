@@ -23,6 +23,7 @@ from quantagent.adapters.lake import (
     scan_feature_window,
 )
 from quantagent.adapters.lake.feature_value import load_feature_value_visibility
+from quantagent.domain.feature_value import FeatureKey
 from quantagent.domain.pit import pit_cutoff
 from quantagent.lake.partitions.layout import FeatureValueLayout
 from quantagent.lake.partitions.write import write_feature_value_parquet
@@ -289,7 +290,7 @@ def _time_queries(
                 visible_on_or_before=cutoff.on_or_before,
                 start=matrix_start,
                 end=last_event,
-                feature_ids=feature_ids,
+                feature_keys=[FeatureKey(fid, "v1", "p0") for fid in feature_ids],
                 asset_ids=asset_ids,
             )
 

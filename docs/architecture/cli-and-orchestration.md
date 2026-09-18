@@ -50,7 +50,7 @@ quantagent calendar is-open --exchange --cal-dt --as-of
 quantagent calendar shift --exchange --origin --n --as-of
 quantagent feature window --feature-id --definition-version --param-hash --start --end --as-of
 quantagent feature cross-section --event-dt --as-of
-quantagent feature matrix --start --end --feature-ids --asset-ids --as-of
+quantagent feature matrix --start --end --feature-keys --asset-ids --as-of
 quantagent feature metric --feature-id --definition-version --param-hash --universe-id --horizon --metric-id --window --benchmark-id --start --end --as-of
 quantagent forward-return window --horizon --return-kind --benchmark-id --start --end --as-of
 quantagent group-nav window --feature-id --definition-version --param-hash --universe-id --horizon --run-id --start --end --as-of
@@ -61,6 +61,16 @@ quantagent publish <action>       build / validate / diff
 quantagent db <action>            migrate / status / ddl-dump
 quantagent check <action>         contracts / docs / frozen / lineage
 ```
+
+矩阵的 `--feature-keys` 接收 JSON 数组，必须逐因子提供完整身份，例如：
+
+```sh
+quantagent feature matrix --start 2024-01-01 --end 2024-01-31 --as-of 2024-02-01 \
+  --asset-ids A0000 \
+  --feature-keys '[{"feature_id":"mom_20d","definition_version":"v1","param_hash":"p0"}]'
+```
+
+原 `--feature-ids` 已移除，不自动选择最新版本或默认参数。
 
 `quantagent --help` 是「这个系统有哪些能力」的权威答案。Typer 自动生成，
 不需要单独维护命令索引——旧仓需要维护脚本清单文档，那份文档必然过期。

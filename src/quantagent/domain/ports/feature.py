@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import date
 
-    from quantagent.domain.feature_value import FeatureMatrixRow, FeatureValue
+    from quantagent.domain.feature_value import FeatureKey, FeatureMatrixRow, FeatureValue
 
 
 class FeatureRepository(Protocol):
@@ -43,8 +43,8 @@ class FeatureRepository(Protocol):
         as_of: date,
         start: date,
         end: date,
-        feature_ids: Sequence[str],
+        feature_keys: Sequence[FeatureKey],
         asset_ids: Sequence[str],
     ) -> tuple[FeatureMatrixRow, ...]:
-        """指定股票池与因子集合上的训练宽表。空域与空 id 列表 fail-closed。"""
+        """每个因子列指定唯一完整身份；重复身份或重复单元报错，空域 fail-closed。"""
         ...

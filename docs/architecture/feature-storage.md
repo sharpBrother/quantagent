@@ -2,7 +2,7 @@
 title: 因子存储：逻辑格式与物理设计
 status: active
 created: 2026-09-16
-updated: 2026-09-17
+updated: 2026-09-18
 applies_to:
   - src/quantagent/features/
   - src/quantagent/models/matrix/
@@ -104,6 +104,15 @@ var/lake/feature/_registry/
 具体规则与等级定义见 [../domain/pit-rules.md](../domain/pit-rules.md)。
 
 ## 训练用宽矩阵是可重建的派生物化
+
+当前 `FeatureRepository.build_training_matrix` 接收 `feature_keys`，每项为
+`FeatureKey(feature_id, definition_version, param_hash)`。矩阵仍以 `feature_id`
+作为列名，每个列名只能选择一个完整身份；重复请求（含不同版本或参数）直接
+报错。筛选后的同一资产、日期、因子单元出现多行也报错，不再以输入顺序选值。
+未选中的版本不会作为缺失值的回退；局部缺失保持 `None`，全空域报错。
+
+当前只按研究截止日 `as_of` 过滤，历史逐决策时点的可见性校验暂缓；不能据此
+宣称历史回测无前视。下述 `matrix_id` 与缓存为后续建模设计，尚未实现。
 
 不要求每次训练都全量 pivot。`models/matrix/` 按需物化宽矩阵到
 `var/lake/_matrix/`，由一个组合键唯一确定：

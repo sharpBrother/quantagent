@@ -6,7 +6,12 @@ from datetime import date, datetime
 from typing import TYPE_CHECKING
 
 from quantagent.domain.errors import EmptyDomainError, FeatureLookupError
-from quantagent.domain.feature_value import FeatureMatrixRow, FeatureValue
+from quantagent.domain.feature_value import (
+    FeatureKey,
+    FeatureMatrixRow,
+    FeatureValue,
+    validate_matrix_features,
+)
 from quantagent.domain.pit import is_cutoff_visible, pit_cutoff
 
 if TYPE_CHECKING:
@@ -92,23 +97,26 @@ class MemoryFeatureRepository:
         as_of: date,
         start: date,
         end: date,
-        feature_ids: Sequence[str],
+        feature_keys: Sequence[FeatureKey],
         asset_ids: Sequence[str],
     ) -> tuple[FeatureMatrixRow, ...]:
         if start > end:
             raise FeatureLookupError("start 晚于 end")
-        features = list(feature_ids)
+        keys = validate_matrix_features(feature_keys)
+        features = [key.feature_id for key in keys]
         assets = list(asset_ids)
-        if not features:
-            raise EmptyDomainError("feature_ids 为空，拒绝查询")
         if not assets:
             raise EmptyDomainError("asset_ids 为空，拒绝查询")
         cutoff = pit_cutoff(self._contract, as_of=as_of)
-        feature_set = set(features)
+        feature_set = set(keys)
         asset_set = set(assets)
         grouped: dict[tuple[str, date], dict[str, float]] = {}
         for row in self._rows:
-            if row.asset_id not in asset_set or row.feature_id not in feature_set:
+            if (
+                row.asset_id not in asset_set
+                or FeatureKey(row.feature_id, row.definition_version, row.param_hash)
+                not in feature_set
+            ):
                 continue
             if not start <= row.event_dt <= end:
                 continue
@@ -116,9 +124,10 @@ class MemoryFeatureRepository:
                 continue
             key = (row.asset_id, row.event_dt)
             bucket = grouped.setdefault(key, {})
-            # 与 DuckDB first(value) 对齐：按输入行顺序取首次出现的值。
-            if row.feature_id not in bucket:
-                bucket[row.feature_id] = row.value
+            # 同一完整身份重复落入单元时不能靠输入顺序消解。
+            if row.feature_id in bucket:
+                raise FeatureLookupError(f"矩阵单元重复: {key} {row.feature_id}")
+            bucket[row.feature_id] = row.value
         if not grouped:
             raise EmptyDomainError("训练矩阵源行为空，拒绝 pivot")
         return tuple(

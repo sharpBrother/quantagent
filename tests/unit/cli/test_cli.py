@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import re
 from typing import TYPE_CHECKING
+from unittest.mock import Mock
 
 import pytest
 from typer.testing import CliRunner
 
 from quantagent.cli.app import app
+from quantagent.domain.feature_value import FeatureKey
 from quantagent.platform.config import cache_clear
 from quantagent.platform.config.settings import Settings
 
@@ -200,3 +202,63 @@ def test_lake_benchmark_layout_help() -> None:
     assert result.exit_code == 0
     assert "--scale" in text
     assert "--rebuild" in text
+
+
+@pytest.mark.unit
+def test_feature_matrix_passes_complete_identity(monkeypatch: pytest.MonkeyPatch) -> None:
+    repo = Mock()
+    repo.build_training_matrix.return_value = ()
+    monkeypatch.setattr("quantagent.cli.feature._repo", lambda: repo)
+    result = runner.invoke(
+        app,
+        [
+            "feature",
+            "matrix",
+            "--start",
+            "2024-01-01",
+            "--end",
+            "2024-01-31",
+            "--as-of",
+            "2024-02-01",
+            "--asset-ids",
+            "A0000",
+            "--feature-keys",
+            '[{"feature_id":"mom_20d","definition_version":"v2","param_hash":"p1"}]',
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert repo.build_training_matrix.call_args.kwargs["feature_keys"] == (
+        FeatureKey("mom_20d", "v2", "p1"),
+    )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "mom_20d",
+        "[]",
+        '[{"feature_id":"mom_20d"}]',
+        '[{"feature_id":"mom_20d","definition_version":1,"param_hash":"p0"}]',
+    ],
+)
+def test_feature_matrix_rejects_incomplete_keys(raw: str) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "feature",
+            "matrix",
+            "--start",
+            "2024-01-01",
+            "--end",
+            "2024-01-31",
+            "--as-of",
+            "2024-02-01",
+            "--asset-ids",
+            "A0000",
+            "--feature-keys",
+            raw,
+        ],
+    )
+    assert result.exit_code == 2, result.output
+    assert "--feature-keys" in _plain(result)

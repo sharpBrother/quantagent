@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import date, datetime
 from typing import Annotated
 
@@ -14,6 +15,7 @@ from quantagent.adapters.lake.feature_value import (
 )
 from quantagent.adapters.lake.visibility import load_dataset_visibility
 from quantagent.domain.errors import DomainError
+from quantagent.domain.feature_value import FeatureKey
 from quantagent.platform.config import get_settings
 from quantagent.platform.errors import ConfigError, DuckSessionError
 from quantagent.platform.storage import detect_repo_root, resolve_var_paths
@@ -76,7 +78,12 @@ def feature_cross_section(
 def feature_matrix(
     start: Annotated[str, typer.Option("--start", help="窗口起点 YYYY-MM-DD")],
     end: Annotated[str, typer.Option("--end", help="窗口终点 YYYY-MM-DD")],
-    feature_ids: Annotated[str, typer.Option("--feature-ids", help="逗号分隔的因子 id")],
+    feature_keys: Annotated[
+        str,
+        typer.Option(
+            "--feature-keys", help="JSON 数组，每项包含 feature_id、definition_version、param_hash"
+        ),
+    ],
     asset_ids: Annotated[str, typer.Option("--asset-ids", help="逗号分隔的资产 id")],
     as_of: Annotated[str, typer.Option("--as-of", help="可见日 YYYY-MM-DD，必填")],
 ) -> None:
@@ -89,7 +96,7 @@ def feature_matrix(
             as_of=as_of_dt,
             start=start_dt,
             end=end_dt,
-            feature_ids=_csv_ids(feature_ids, "--feature-ids"),
+            feature_keys=_parse_feature_keys(feature_keys),
             asset_ids=_csv_ids(asset_ids, "--asset-ids"),
         )
     except (DomainError, ConfigError, DuckSessionError) as exc:
@@ -169,3 +176,25 @@ def _parse_ymd(raw: str, flag: str) -> date:
         return datetime.strptime(raw.strip(), "%Y-%m-%d").date()
     except ValueError as exc:
         raise typer.BadParameter(f"{flag} 必须是 YYYY-MM-DD", param_hint=flag) from exc
+
+
+def _parse_feature_keys(raw: str) -> tuple[FeatureKey, ...]:
+    try:
+        items = json.loads(raw)
+        fields = {"feature_id", "definition_version", "param_hash"}
+        if not isinstance(items, list) or not items:
+            raise ValueError("必须是非空数组")
+        keys = []
+        for item in items:
+            if (
+                not isinstance(item, dict)
+                or set(item) != fields
+                or not all(isinstance(v, str) for v in item.values())
+            ):
+                raise ValueError("每项必须且只能包含三个字符串身份字段")
+            keys.append(
+                FeatureKey(item["feature_id"], item["definition_version"], item["param_hash"])
+            )
+        return tuple(keys)
+    except (ValueError, TypeError) as exc:
+        raise typer.BadParameter(str(exc), param_hint="--feature-keys") from exc

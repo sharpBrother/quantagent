@@ -21,7 +21,12 @@ from quantagent.domain.errors import (
     FeatureLookupError,
     MissingVisibilityError,
 )
-from quantagent.domain.feature_value import FeatureMatrixRow, FeatureValue
+from quantagent.domain.feature_value import (
+    FeatureKey,
+    FeatureMatrixRow,
+    FeatureValue,
+    validate_matrix_features,
+)
 from quantagent.domain.pit import pit_cutoff
 from quantagent.platform.duck import assert_ident, duck_session, register_parquet
 
@@ -67,7 +72,7 @@ SELECT asset_id, event_dt, feature_id, value
 FROM {view}
 WHERE {visibility_column} <= $visible_on_or_before
   AND event_dt BETWEEN $start AND $end
-  AND feature_id IN (SELECT UNNEST($feature_ids))
+  AND ({identity_filter})
   AND asset_id IN (SELECT UNNEST($asset_ids))
 """
 
@@ -143,13 +148,14 @@ class LakeFeatureRepository:
         as_of: date,
         start: date,
         end: date,
-        feature_ids: Sequence[str],
+        feature_keys: Sequence[FeatureKey],
         asset_ids: Sequence[str],
     ) -> tuple[FeatureMatrixRow, ...]:
         if start > end:
             raise FeatureLookupError("start 晚于 end")
         cutoff = pit_cutoff(self._contract, as_of=as_of)
-        features = list(feature_ids)
+        keys = validate_matrix_features(feature_keys)
+        features = [key.feature_id for key in keys]
         try:
             with duck_session() as conn:
                 register_parquet(conn, FEATURE_VALUE_VIEW, self._source)
@@ -159,7 +165,7 @@ class LakeFeatureRepository:
                     visible_on_or_before=cutoff.on_or_before,
                     start=start,
                     end=end,
-                    feature_ids=features,
+                    feature_keys=keys,
                     asset_ids=list(asset_ids),
                 )
         except LakeEmptyDomainError as exc:
@@ -228,29 +234,51 @@ def build_training_matrix(
     visible_on_or_before: date,
     start: date,
     end: date,
-    feature_ids: Sequence[str],
+    feature_keys: Sequence[FeatureKey],
     asset_ids: Sequence[str],
     view: str = FEATURE_VALUE_VIEW,
 ) -> pa.Table:
     """指定股票池与因子集合上的训练宽表。空域 fail-closed。"""
     ident = assert_ident(view)
     column = assert_ident(visibility_column)
-    features = _require_nonempty("feature_ids", feature_ids)
+    keys = validate_matrix_features(feature_keys)
+    features = [key.feature_id for key in keys]
+    identity_filter = " OR ".join(
+        f"(feature_id = $fid_{i} AND definition_version = $version_{i} AND param_hash = $param_{i})"
+        for i in range(len(keys))
+    )
+    identity_params = {
+        name: value
+        for i, key in enumerate(keys)
+        for name, value in (
+            (f"fid_{i}", key.feature_id),
+            (f"version_{i}", key.definition_version),
+            (f"param_{i}", key.param_hash),
+        )
+    }
     assets = _require_nonempty("asset_ids", asset_ids)
     tmp = assert_ident("_feature_matrix_src")
     conn.execute(
-        _MATRIX_SRC_SQL.format(view=ident, tmp=tmp, visibility_column=column),
+        _MATRIX_SRC_SQL.format(
+            view=ident, tmp=tmp, visibility_column=column, identity_filter=identity_filter
+        ),
         {
             "visible_on_or_before": visible_on_or_before,
             "start": start,
             "end": end,
-            "feature_ids": features,
+            **identity_params,
             "asset_ids": assets,
         },
     )
     n_src = conn.execute(f"SELECT count(*) FROM {tmp}").fetchone()
     if n_src is None or n_src[0] == 0:
         raise LakeEmptyDomainError("训练矩阵源行为空，拒绝 pivot")
+    duplicate = conn.execute(
+        f"SELECT asset_id, event_dt, feature_id FROM {tmp} "
+        "GROUP BY asset_id, event_dt, feature_id HAVING count(*) > 1 LIMIT 1"
+    ).fetchone()
+    if duplicate is not None:
+        raise FeatureLookupError(f"矩阵单元重复: {duplicate}")
     in_list = ", ".join(_sql_string(fid) for fid in features)
     return conn.execute(
         f"""
