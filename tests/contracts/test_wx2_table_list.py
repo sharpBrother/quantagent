@@ -185,3 +185,11 @@ def test_review_baseline_corrections(repo_root: Path) -> None:
     assert "universe_etf_*" in md
     assert "`strategy_etf_list`" in md
     assert listed["strategy_etf_list"]["dest"] in md
+    for name in (
+        "ASHAREINCOME",
+        "ASHAREBALANCESHEET",
+        "ASHARECASHFLOW",
+        "ASHAREFINANCIALINDICATOR",
+    ):
+        assert "ANN_DT<=as_of" in listed[name]["extra"], name
+    assert "ANN_DT <= as_of" in md

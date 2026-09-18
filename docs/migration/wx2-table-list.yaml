@@ -669,7 +669,8 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/consensus_fttm_wide_builder.py,
     agent_style_rotation/data_gateway.py, enhanced_optimizer/factors/exposure.py 等5处
   dest: src_wind.ASHAREBALANCESHEET（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: 存量 pit_recoverable:false。ANN_DT<=as_of（调仓日当天可见）；raw_loader 的 <adj
+    因 adj_date 是调仓日，不是另一套规则。
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -681,7 +682,8 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, agent_style_rotation/lifecycle_engine.py,
     enhanced_optimizer/factors/exposure.py
   dest: src_wind.ASHARECASHFLOW（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: 存量 pit_recoverable:false。ANN_DT<=as_of（调仓日当天可见）；raw_loader 的 <adj
+    因 adj_date 是调仓日，不是另一套规则。
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -741,7 +743,8 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/data_gateway.py,
     alpha_factory/refresh_performance_factor_fast_ic.py 等12处
   dest: src_wind.ASHAREFINANCIALINDICATOR（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: 存量 pit_recoverable:false。ANN_DT<=as_of（调仓日当天可见）；raw_loader 的 <adj
+    因 adj_date 是调仓日，不是另一套规则。
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -753,7 +756,8 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/consensus_fttm_wide_builder.py,
     agent_style_rotation/data_gateway.py, core/raw_loader.py 等8处
   dest: src_wind.ASHAREINCOME（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: 存量 pit_recoverable:false。ANN_DT<=as_of（调仓日当天可见）；raw_loader 的 <adj
+    因 adj_date 是调仓日，不是另一套规则。
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
