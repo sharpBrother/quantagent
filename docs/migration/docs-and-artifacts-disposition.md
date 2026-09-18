@@ -2,12 +2,14 @@
 title: 旧仓文档与制品处置标准
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-18
 applies_to:
   - frozen/
   - docs/adr/
   - docs/research/
   - tests/contracts/
+  - docs/migration/docs-and-artifacts-list.md
+  - docs/migration/docs-and-artifacts-list.yaml
 ---
 
 # 旧仓文档与制品处置标准
@@ -146,8 +148,10 @@ outputs/bond_timing_exhibit_freeze/
    执行。不一致的归入第五类（自相矛盾）。
 4. **剩余的默认归入第四或第五类**，但每一项都要有一行判定依据。
 
-清单以本文档的表格形式逐项记录，是 P5 的交付物。冻结制品的迁移在 P5，
-但**清单本身要在 P2 完成**——因为它决定了哪些东西不能在清理旧仓时被删掉。
+清单已产出，见 [docs-and-artifacts-list.md](docs-and-artifacts-list.md)
+（机器可读 [docs-and-artifacts-list.yaml](docs-and-artifacts-list.yaml)）。
+**P5 才执行**冻结制品迁入与口径改写；本清单是评审基线，不启动迁入。
+清单在 P2 完成，因为它决定了哪些东西不能在清理旧仓时被删掉。
 
 ## 与代码模块清点的分工
 

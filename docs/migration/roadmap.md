@@ -98,7 +98,7 @@ PG schema 可整体 drop 重建（此时无真实数据）。`var/lake/` 可整�
 3. Wind / Tushare / JYDB / 朝阳永续 / 宏观 ETL 重写为 Dagster asset
 4. **逐源逐表按旧仓下游取数规则定 visibility**（`data_gateway` 等），
    缺证据或冲突再问；写 `pit_grade` / `pit_from`
-5. 文档与制品处置清单产出（执行在 P5，但清单要在这里完成）
+5. 文档与制品处置清单已产出（见 [docs-and-artifacts-list.md](docs-and-artifacts-list.md)；执行在 P5）
 
 ### 顺序约束
 
