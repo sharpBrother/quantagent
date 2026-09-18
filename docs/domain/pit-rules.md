@@ -80,6 +80,7 @@ YAML**，也**不得作为 PIT 查询的数据集**（fail-closed 仍然成立�
 | 金十中国 CPI/PPI | 公布日对齐交易日，**含当日** | 与 ISM 分数据集，不要合成一条规则 |
 | FRED / GPR | vintage 严格 `< as_of`，禁止用观测日当可见日 | `source_field` 首次 vintage |
 | `FIN_APPO_RELE_DATE` | `DECLARE_DATE < as_of` | `source_field` `field=DECLARE_DATE`，不含当日 |
+| 朝阳超预期 `der_prob_excess_stock` | `(declare_date < adj) OR (entrytime < adj)` | 任一字段早于调仓日即可见，不是双字段都可见。现有 `source_field` 只切一列，YAML 未写 |
 | `fund_share` | `trade_date` 区间，MDS **不**前值填充 | `same_day_close`；禁止 ffill |
 | 指数 / 行业成分 `AINDEXMEMBERS*` | `S_CON_INDATE <= as_of` 且 `(OUTDATE IS NULL OR OUTDATE >= as_of)` | 区间命中，闭区间；源表无公告日，`knowledge_dt = valid_from = INDATE` |
 | 当前名册 `strategy_etf_list*` | 无历史进出，类似 `ASHAREDESCRIPTION` | **不配 PIT**，不得当 PIT 数据集读 |
@@ -93,8 +94,7 @@ YAML**，也**不得作为 PIT 查询的数据集**（fail-closed 仍然成立�
 
 ### 待裁定（旧仓互相冲突，未写 YAML）
 
-1. **`der_prob_excess_stock`**：`(declare_date < adj) OR (entrytime < adj)`，比双字段都可见更松。
-2. **成长事件 `confirm_date`**：ETF 路径 `<= T`；成长策略 / universe 用调仓日前第 2 个交易日。
+1. **成长事件 `confirm_date`**：ETF 路径 `<= T`；成长策略 / universe 用调仓日前第 2 个交易日。
 
 金十 ISM 的 `< T` 与 CPI/PPI 的含当日已按数据集分开，不再问。WGC 旧文档自认非严格 PIT，迁入前单独标 grade。
 

@@ -193,3 +193,5 @@ def test_review_baseline_corrections(repo_root: Path) -> None:
     ):
         assert "ANN_DT<=as_of" in listed[name]["extra"], name
     assert "ANN_DT <= as_of" in md
+    assert "OR (entrytime < adj)" in listed["der_prob_excess_stock"]["extra"]
+    assert "(declare_date < adj) OR (entrytime < adj)" in md

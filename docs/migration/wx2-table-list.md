@@ -38,6 +38,7 @@ PIT 口径见 [../domain/pit-rules.md](../domain/pit-rules.md)。
 | 当前名册 | `strategy_etf_list*` | 命名 `universe_etf_*`，暂不设 PIT，类似 `ASHAREDESCRIPTION` |
 | 成分 PIT | `AINDEXMEMBERS*` 等 | 延续旧仓 `S_CON_INDATE`/`OUTDATE` 对 `as_of` 闭区间切片 |
 | 财报 PIT | `ASHAREINCOME` 等 | `ANN_DT <= as_of`，调仓日当天可见；`raw_loader` 的 `< adj` 是因为 `adj_date` 是调仓日 |
+| 超预期 PIT | `der_prob_excess_stock` | `(declare_date < adj) OR (entrytime < adj)`，任一字段早于调仓日即可见 |
 
 `src_macro` 仍留给金十 / FRED / WGC / GPR。Wind `SHIBORPRICES` 与 Tushare `shibor` 不是同一张表。
 
@@ -147,7 +148,7 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `con_forecast_stk` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/consensus_fttm_wide_builder.py, agent_style_rotation/data_gateway.py, alpha_factory/etf/gateway.py 等12处 | src_suntime.con_forecast_stk（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `con_forecast_stk_ttm` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/consensus_fttm_wide_builder.py, agent_style_rotation/data_gateway.py, data/宽基指数配置策略2.py | src_suntime.con_forecast_stk_ttm（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `der_diver_stk` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：core/raw_loader.py, enhanced_optimizer/factors/exposure.py | src_suntime.der_diver_stk（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
-| `der_prob_excess_stock` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py, alpha_factory/growth_events.py, alpha_factory/layered_universe.py | src_suntime.der_prob_excess_stock（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
+| `der_prob_excess_stock` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py, alpha_factory/growth_events.py, alpha_factory/layered_universe.py | src_suntime.der_prob_excess_stock（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。(declare_date < adj) OR (entrytime < adj)，任一字段早于调仓日即可见；不是双字段都可见。 |
 | `FIN_APPO_RELE_DATE` | 未查 | 1 源镜像 | 是 | 朝阳 zyyx_to_sql 写入，不是 Wind。第一批 src_tables.yaml；现役：strategy/growth_stock.py, strategy/growth_stock_2.py | 拟 src_suntime.FIN_APPO_RELE_DATE（第一批 DDL 现为 src_wind；本清单不启动迁入） | 清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `fin_income_gen` | 未查 | 1 源镜像 | 是 | 现役：factors/factor_event_2.py | 拟 src_suntime.fin_income_gen（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁） | 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `fin_performance_express` | 未查 | 1 源镜像 | 是 | 现役：factors/factor_event_2.py | 拟 src_suntime.fin_performance_express（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁） | 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。visibility 从旧仓下游取数反推；缺证据或冲突再问 |

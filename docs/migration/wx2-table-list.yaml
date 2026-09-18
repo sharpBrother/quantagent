@@ -368,7 +368,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py, alpha_factory/growth_events.py,
     alpha_factory/layered_universe.py
   dest: src_suntime.der_prob_excess_stock（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: 存量 pit_recoverable:false。(declare_date < adj) OR (entrytime < adj)，任一字段早于调仓日即可见；不是双字段都可见。
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
