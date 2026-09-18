@@ -100,6 +100,17 @@ def test_markdown_table_matches_yaml(repo_root: Path) -> None:
     assert "不迁入" in md
     assert "旧仓下游" in md or "data_gateway" in md
     assert payload["old_commit"] in md
+    _assert_markdown_tables_contiguous(md)
+
+
+def _assert_markdown_tables_contiguous(md: str) -> None:
+    """GFM 在表头分隔行后空一行会把表拆开。"""
+    lines = md.splitlines()
+    broken: list[str] = []
+    for idx, line in enumerate(lines[:-1]):
+        if re.fullmatch(r"\|[-: |]+\|", line) and lines[idx + 1] == "":
+            broken.append(f"L{idx + 1}: {line}")
+    assert not broken, "表头分隔行后不能空行：\n" + "\n".join(broken)
 
 
 @pytest.mark.contracts
