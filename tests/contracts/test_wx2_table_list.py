@@ -113,6 +113,13 @@ def test_review_baseline_corrections(repo_root: Path) -> None:
     ):
         assert listed[name]["category"] == 2, name
 
+    assert "feature.value" in listed["barra_cne6"]["dest"]
+    assert "不建 barra_*" in listed["barra_cne6"]["dest"]
+    assert "feature.value" in listed["barra_cne6_exposure"]["dest"]
+    assert "不建表" in listed["barra_cne6_factor_return"]["dest"]
+    assert "进不了 feature.value" in listed["barra_cne6_factor_return"]["dest"]
+    assert "不进 feature.value" in listed["barra_cne6_specific_return"]["dest"]
+
     etf_min = listed["stock_etf_min_price"]
     assert etf_min["category"] == 1
     assert "etf_min_price" in etf_min["dest"]

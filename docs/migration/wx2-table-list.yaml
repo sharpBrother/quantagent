@@ -939,9 +939,9 @@ tables:
   nature: derived
   row_count: 未查
   category: 2
-  reason: 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：etf_sector_rotation/etf_sector_rotation/data/etf_hq_scorer.py
-  dest: 不迁 wx2 行；新仓 features 重算
-  extra: 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配
+  reason: 本地 Barra 风格暴露，由 enhanced_optimizer 重算，不是 vendor 源。 现役：etf_sector_rotation/etf_sector_rotation/data/etf_hq_scorer.py
+  dest: 不迁 wx2 行；不建表。与 barra_cne6 同一套暴露，写入 feature.value
+  extra: 字典误标 Tushare。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: code
 - name: alpha_factory_alert_d
@@ -1499,11 +1499,12 @@ tables:
   nature: derived
   row_count: 未查
   category: 2
-  reason: 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：alpha_factory/data_gateway.py,
+  reason: 本地 Barra 风格暴露，由 enhanced_optimizer 重算，不是 vendor 源。 现役：alpha_factory/data_gateway.py,
     alpha_factory/policies/pf_historical_factor_source_availability_v3.json, alpha_factory/refresh_performance_factor_fast_ic.py
     等11处
-  dest: 不迁 wx2 行；新仓 features 重算
-  extra: 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配
+  dest: 不迁 wx2 行；不建 barra_* 表。风格暴露写入 feature.value（旧 alpha_factory_factor_value_d
+    后继），feature_id 如 barra_cne6.ernqlt
+  extra: 字典误标 Tushare。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
 - name: barra_cne6_factor_return
@@ -1511,9 +1512,9 @@ tables:
   nature: derived
   row_count: 未查
   category: 2
-  reason: 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：enhanced_optimizer/risk_models/barra_risk_gemini.py
-  dest: 不迁 wx2 行；新仓 features 重算
-  extra: 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配
+  reason: 风格因子收益，横截面回归产物，不是 vendor 源。现役：enhanced_optimizer/risk_models/barra_risk_gemini.py
+  dest: 不迁、不建表。粒度是日期×风格，进不了 feature.value；优化器现算
+  extra: 不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_md
 - name: barra_cne6_specific_return
@@ -1521,9 +1522,9 @@ tables:
   nature: derived
   row_count: 未查
   category: 2
-  reason: 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：enhanced_optimizer/risk_models/barra_risk_gemini.py
-  dest: 不迁 wx2 行；新仓 features 重算
-  extra: 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配
+  reason: 特异收益/残差，横截面回归产物，不是 vendor 源。现役：enhanced_optimizer/risk_models/barra_risk_gemini.py
+  dest: 不迁、不建表。风险残差，优化器现算，不进 feature.value
+  extra: 不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_md
 - name: etf_ratio
@@ -3806,4 +3807,4 @@ tables:
   extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
-review_baseline: 2026-09-18 按采集代码纠正分类与拟去向；DDL 未改
+review_baseline: 2026-09-18 勘误；Barra 暴露并入 feature.value，不建 barra_* 表

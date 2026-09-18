@@ -24,7 +24,8 @@ P2 第一个交付物，**本文件是评审基线**。分类标准见 [wx2-disp
 
 | 问题类型 | 表 | 纠正 |
 |---|---|---|
-| 算出来的不是源 | `barra_cne6` / `_exposure` / `_factor_return` / `_specific_return` | 类别 2，不进 `src_*` |
+| 算出来的不是源 | `barra_cne6` / `_exposure` | 类别 2；暴露写入 `feature.value`，不建 `barra_*` 表 |
+| 算出来的不是源 | `barra_cne6_factor_return` / `_specific_return` | 类别 2；不建表，优化器现算，不进 `feature.value` |
 | 算出来的不是源 | `fina_rpt_forecast` / `fina_rpt_forecast_roe` | 类别 2；`_roe_w` 仍为类别 5 |
 | 前缀误导 | `stock_etf_min_price` | 仍是分钟行情源，新表名拟 `etf_min_price`，禁止 `stock_` |
 | 前缀误导 | `stock_min_price` | 个股分钟 OHLC，类别 5；若迁入禁止当因子表名 |
@@ -57,6 +58,7 @@ P2 第一个交付物，**本文件是评审基线**。分类标准见 [wx2-disp
 
 第一批 `db/src_tables.yaml` 的 59 张仍全部落在类别 1；其中 Tushare 宏观三张与 `FIN_APPO_RELE_DATE` 的 **schema/表名以本清单拟去向为准**，代码侧尚未改。
 类别 3 本轮为 0：历史策略结果表（`strategy_result_*` 等）现役无读取，已归入类别 5。
+
 
 ## 逐表清单
 
@@ -149,7 +151,7 @@ P2 第一个交付物，**本文件是评审基线**。分类标准见 [wx2-disp
 | `HKEXCALENDAR` | 未查 | 1 源镜像 | 现役：strategy/ah_premium_hk_backtest.py, strategy/generic_backtest_framework.py | src_wind.HKEXCALENDAR（第一批未收录，有现役读取，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配 |
 | `SHIBORPRICES` | 未查 | 1 源镜像 | src-plane 点名弱引用（data/test_task.py 等），第二批再评估 | src_wind.SHIBORPRICES（第二批评估，现不迁） | 不定 visibility YAML，须负责人确认后再配 |
 | `SWINDEXMEMBERS` | 未查 | 1 源镜像 | 第一批 src_tables.yaml；现役：strategy/ah_premium_hk_backtest.py | src_wind.SWINDEXMEMBERS（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
-| `barra_cne6_exposure` | 未查 | 2 可重算 | 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：etf_sector_rotation/etf_sector_rotation/data/etf_hq_scorer.py | 不迁 wx2 行；新仓 features 重算 | 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配 |
+| `barra_cne6_exposure` | 未查 | 2 可重算 | 本地 Barra 风格暴露，由 enhanced_optimizer 重算，不是 vendor 源。 现役：etf_sector_rotation/etf_sector_rotation/data/etf_hq_scorer.py | 不迁 wx2 行；不建表。与 barra_cne6 同一套暴露，写入 feature.value | 字典误标 Tushare。不定 visibility YAML，须负责人确认后再配 |
 | `alpha_factory_alert_d` | 未查 | 2 可重算 | 现役：scripts/resolve_alpha_factory_stale_canary_alert.py | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
 | `alpha_factory_factor_value_d` | 未查 | 2 可重算 | 现役：alpha_factory/pf_nap/materialization.py | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
 | `alpha_factory_factor_version` | 未查 | 2 可重算 | 现役：alpha_factory/registry.py, scripts/alpha_factory_pf_multidate_coverage_audit.py | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
@@ -203,9 +205,9 @@ P2 第一个交付物，**本文件是评审基线**。分类标准见 [wx2-disp
 | `stock_real_kurt` | 未查 | 2 可重算 | 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
 | `stock_rpt_excess_num` | 未查 | 2 可重算 | 现役：factors/factor_event.py, factors/factor_event_2.py | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
 | `stock_tr_umr` | 未查 | 2 可重算 | 现役：alpha_factory/policies/pf_historical_factor_source_availability_v3.json | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
-| `barra_cne6` | 未查 | 2 可重算 | 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：alpha_factory/data_gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json, alpha_factory/refresh_performance_factor_fast_ic.py 等11处 | 不迁 wx2 行；新仓 features 重算 | 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配 |
-| `barra_cne6_factor_return` | 未查 | 2 可重算 | 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：enhanced_optimizer/risk_models/barra_risk_gemini.py | 不迁 wx2 行；新仓 features 重算 | 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配 |
-| `barra_cne6_specific_return` | 未查 | 2 可重算 | 本地 Barra 风格暴露/因子收益，由 enhanced_optimizer 重算，不是 vendor 源。 现役：enhanced_optimizer/risk_models/barra_risk_gemini.py | 不迁 wx2 行；新仓 features 重算 | 字典误标 Tushare。不进 src_*。不定 visibility YAML，须负责人确认后再配 |
+| `barra_cne6` | 未查 | 2 可重算 | 本地 Barra 风格暴露，由 enhanced_optimizer 重算，不是 vendor 源。 现役：alpha_factory/data_gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json, alpha_factory/refresh_performance_factor_fast_ic.py 等11处 | 不迁 wx2 行；不建 barra_* 表。风格暴露写入 feature.value（旧 alpha_factory_factor_value_d 后继），feature_id 如 barra_cne6.ernqlt | 字典误标 Tushare。不定 visibility YAML，须负责人确认后再配 |
+| `barra_cne6_factor_return` | 未查 | 2 可重算 | 风格因子收益，横截面回归产物，不是 vendor 源。现役：enhanced_optimizer/risk_models/barra_risk_gemini.py | 不迁、不建表。粒度是日期×风格，进不了 feature.value；优化器现算 | 不定 visibility YAML，须负责人确认后再配 |
+| `barra_cne6_specific_return` | 未查 | 2 可重算 | 特异收益/残差，横截面回归产物，不是 vendor 源。现役：enhanced_optimizer/risk_models/barra_risk_gemini.py | 不迁、不建表。风险残差，优化器现算，不进 feature.value | 不定 visibility YAML，须负责人确认后再配 |
 | `etf_ratio` | 未查 | 2 可重算 | 现役：alpha_factory/etf/scripts/analyze_etf_factor_tradability.py, core/market_data_service.py, scripts/run_asset_allocation_backtest.py 等15处 | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配 |
 | `fina_rpt_forecast` | 未查 | 2 可重算 | wind_to_sql_am 加工/重算，不是 Tushare 源表。 现役：factors/factor_rpt.py | 不迁 wx2 行；新仓按一致预期链路重算 | 不进 src_*。不定 visibility YAML，须负责人确认后再配 |
 | `fina_rpt_forecast_roe` | 未查 | 2 可重算 | wind_to_sql_am 加工/重算，不是 Tushare 源表。 现役：data/etf_trend_strategy.py | 不迁 wx2 行；新仓按一致预期链路重算 | 不进 src_*。不定 visibility YAML，须负责人确认后再配 |
