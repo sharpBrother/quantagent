@@ -142,7 +142,8 @@ Dagster 的运行存储会承担一部分职责（物化事件、运行记录）
 [wx2-table-list.yaml](wx2-table-list.yaml)）：表名、行数、判定类别、判定依据、
 去向、附加约束。**该清单是评审基线**（2026-09-18 已按采集代码勘误分类与拟去向）。
 旧仓指针 `pycharm_workspace@7c506d511`。行数未连 wx2，一律未查。
-**仍不启动迁入，不定版 visibility YAML。** `src_tables.yaml` / DDL 尚未按清单拟去向改名。
+**仍不启动迁入。** visibility 从旧仓下游取数反推，缺证据或冲突再问。
+`src_tables.yaml` / DDL 尚未按清单拟去向改名。
 
 ## 迁移期的只读适配器
 

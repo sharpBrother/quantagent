@@ -2,7 +2,7 @@
 title: 数据契约体系
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-18
 applies_to:
   - src/quantagent/contracts/
   - tests/contracts/
@@ -99,7 +99,8 @@ temporal_kind: period_with_revision
 
 ### 改可见性规则
 
-最重的一类，因为它会改变所有历史 `knowledge_dt`：
+最重的一类，因为它会改变所有历史 `knowledge_dt`。首次从旧仓下游取数反推
+写入 YAML 不算变更；改已有规则才走下面四步。
 
 1. **变更前跑影响评估**：多少数据集、多少因子、多少已发布结论的
    `knowledge_dt` 会变

@@ -98,7 +98,7 @@ def test_markdown_table_matches_yaml(repo_root: Path) -> None:
     assert "| 表名 | 行数 | 判定类别 | 需PIT |" in md
     assert "## 无需 PIT 的表" in md
     assert "不迁入" in md
-    assert "不定版 visibility" in md or "不写 PIT YAML" in md
+    assert "旧仓下游" in md or "data_gateway" in md
     assert payload["old_commit"] in md
 
 

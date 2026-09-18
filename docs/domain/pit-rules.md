@@ -51,6 +51,24 @@ YAML**，也**不得作为 PIT 查询的数据集**（fail-closed 仍然成立�
 逐表标记见 [../migration/wx2-table-list.md](../migration/wx2-table-list.md)
 的 `pit_required`。
 
+## 规则从哪来
+
+新仓不重新发明可见日。以旧仓 `pycharm_workspace` 现役下游为准：公共
+`latest_visible_by_key`（`visible_col <= as_of`），以及各研究线 gateway
+里对具体表的日期过滤。多处一致则直接写 YAML；缺证据、冲突、或旧码与
+已确认新口径矛盾时再问。
+
+已从旧仓钉死、写契约时直接用：
+
+| 家族 | 旧仓过滤 | 新规则 |
+|---|---|---|
+| 交易所日频（价 / 衍生指标 / 指数 / 行业指数） | `TRADE_DT = as_of` 或区间两端 | `same_day_close`，`event_field=TRADE_DT`，grade A |
+| 利润表 / 现金流 / 财务指标 | `ANN_DT <= as_of`，同报告期留最后一次公告；`ANN_DT` 空则该行不可见 | `source_field` `field=ANN_DT`，**不**加 `statutory_deadline` fallback |
+| 朝阳一致预期 `con_forecast_stk*` | `con_date` 落在查询区间 | `source_field` `field=con_date` |
+| 盈利预测调整 `rpt_earnings_adjust` | `current_create_date` | `source_field` `field=current_create_date` |
+
+公共 PIT 原语只保证 `visible_col <= as_of`；具体列由调用方传入。
+
 ## 规则文件
 
 放 `src/quantagent/contracts/visibility/`，与代码一同版本化，一个数据集

@@ -20,7 +20,7 @@ tables:
   category: 1
   reason: 现役：data/ETF四象限推送.py, data/etf_real_trade_v14.py, data/宽基指数配置策略.py 等11处
   dest: 拟 src_* etf_min_price（ETF 分钟行情；禁止沿用 stock_ 前缀；现不迁）
-  extra: 旧 wx2 表名仅作指针。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配
+  extra: 旧 wx2 表名仅作指针。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -31,7 +31,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py, strategy_engine/adapters/bond_timing.py
   dest: src_jydb.Bond_BondIndexQuote（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_md
   pit_required: true
@@ -42,7 +42,7 @@ tables:
   category: 1
   reason: src-plane 点名弱引用（data/test_task.py 等），第二批再评估
   dest: src_jydb.Bond_CBYieldCurveAll（第二批评估，现不迁）
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_md
   pit_required: true
@@ -65,7 +65,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py, scripts/macro_regime_revalidation/industrial_value_added_p2_input_freeze.py,
     scripts/macro_regime_revalidation/macro_family_qualification.py 等11处
   dest: src_jydb.C_ED_MacroIndicatorData（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -77,7 +77,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py, scripts/macro_regime_revalidation/macro_family_qualification.py,
     scripts/macro_style_evaluation_contract.py 等7处
   dest: src_jydb.C_IN_IndicatorDataV（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -100,7 +100,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：scripts/macro_regime_external_revenue_wiring.py,
     scripts/macro_regime_walk_forward_evaluation.py, macro_regime/pools.py
   dest: src_jydb.DZ_MainOperIncome（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -111,7 +111,7 @@ tables:
   category: 1
   reason: src-plane 点名弱引用（data/test_task.py 等），第二批再评估
   dest: src_jydb.ED_FixedInvestment（第二批评估，现不迁）
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -123,7 +123,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：macro_regime/config/indicator_registry.yaml, macro_regime/pit.py,
     scripts/run_large_small_style_rotation.py 等5处
   dest: src_jydb.ED_MoneySupply（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -135,7 +135,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：scripts/macro_risk_revalidation/task0350/identity_pins.py,
     scripts/macro_risk_revalidation/task0350/source_catalog.py
   dest: src_jydb.ED_SocialFinancing（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -146,7 +146,7 @@ tables:
   category: 1
   reason: src-plane 点名弱引用（data/test_task.py 等），第二批再评估
   dest: src_jydb.IN_ManufacturingPMI（第二批评估，现不迁）
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -157,7 +157,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py, strategy_engine/adapters/gold_timing.py
   dest: src_jydb.QT_GoldTradeMarket（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_md
   pit_required: true
@@ -169,7 +169,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py, scripts/run_large_small_style_rotation.py,
     style_rotation/large_small/contracts.py 等4处
   dest: src_jydb.QT_OSIndexQuote（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_md
   pit_required: true
@@ -215,7 +215,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py
   dest: src_macro.macro_fred_observation（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: src_tables_yaml
   pit_required: true
@@ -226,7 +226,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py
   dest: src_macro.macro_gpr_daily（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: src_tables_yaml
   pit_required: true
@@ -237,7 +237,7 @@ tables:
   category: 1
   reason: 现役：alpha_factory/etf/timepoint_momentum/engine.py
   dest: src_macro.macro_jin10_china_cpi_yoy（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
+  extra: 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
   pit_required: true
@@ -248,7 +248,7 @@ tables:
   category: 1
   reason: 现役：alpha_factory/etf/timepoint_momentum/engine.py
   dest: src_macro.macro_jin10_china_ppi_yoy（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
+  extra: 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
   pit_required: true
@@ -260,7 +260,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py, gold_timing/contracts.py,
     scripts/migrate_jin10_period_end.py
   dest: src_macro.macro_jin10_usa_ism_pmi（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: src_tables_yaml
   pit_required: true
@@ -298,7 +298,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py
   dest: src_macro.macro_wgc_gold_demand（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: src_tables_yaml
   pit_required: true
@@ -309,7 +309,7 @@ tables:
   category: 1
   reason: src-plane 点名弱引用（data/test_task.py 等），第二批再评估
   dest: src_suntime.con_forecast_citic（第二批评估，现不迁）
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -321,7 +321,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/gateway.py,
     agent_style_rotation/expectation_engine.py 等5处
   dest: src_suntime.con_forecast_roll_stk（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -333,7 +333,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/consensus_fttm_wide_builder.py,
     agent_style_rotation/data_gateway.py, alpha_factory/etf/gateway.py 等12处
   dest: src_suntime.con_forecast_stk（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -345,7 +345,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/consensus_fttm_wide_builder.py,
     agent_style_rotation/data_gateway.py, data/宽基指数配置策略2.py
   dest: src_suntime.con_forecast_stk_ttm（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -356,7 +356,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：core/raw_loader.py, enhanced_optimizer/factors/exposure.py
   dest: src_suntime.der_diver_stk（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -368,7 +368,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py, alpha_factory/growth_events.py,
     alpha_factory/layered_universe.py
   dest: src_suntime.der_prob_excess_stock（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -392,7 +392,7 @@ tables:
   category: 1
   reason: 现役：factors/factor_event_2.py
   dest: 拟 src_suntime.fin_income_gen（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁）
-  extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配
+  extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -403,7 +403,7 @@ tables:
   category: 1
   reason: 现役：factors/factor_event_2.py
   dest: 拟 src_suntime.fin_performance_express（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁）
-  extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配
+  extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -414,7 +414,7 @@ tables:
   category: 1
   reason: 现役：factors/factor_event_2.py
   dest: 拟 src_suntime.fin_performance_forecast（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁）
-  extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配
+  extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -426,7 +426,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/pf_nap/materialization.py,
     alpha_factory/pf_nap/qualification.py 等7处
   dest: src_suntime.rpt_earnings_adjust（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -437,7 +437,7 @@ tables:
   category: 1
   reason: src-plane 点名弱引用（data/test_task.py 等），第二批再评估
   dest: src_suntime.rpt_forecast_stk（第二批评估，现不迁）
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -449,7 +449,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py, data/etf_real_trade_v14.py,
     etf_sector_rotation/etf_sector_rotation/data/minute_data.py 等5处
   dest: src_tushare.fund_share（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -527,7 +527,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/data_gateway.py,
     alpha_factory/etf/gateway.py 等91处
   dest: src_tushare.trade_cal（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -562,7 +562,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/gateway.py,
     alpha_factory/etf/timepoint_momentum/engine.py 等43处
   dest: src_wind.AINDEXEODPRICES（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -585,7 +585,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/timepoint_momentum/engine.py,
     core/market_data_service.py 等9处
   dest: src_wind.AINDEXINDUSTRIESEODCITICS（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -597,7 +597,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py, alpha_factory/etf/gateway.py,
     alpha_factory/etf/timepoint_momentum/engine.py 等34处
   dest: src_wind.AINDEXMEMBERS（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -609,7 +609,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py, core/market_data_service.py,
     core/raw_loader.py 等9处
   dest: src_wind.AINDEXMEMBERSCITICS（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -621,7 +621,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, core/market_data_service.py,
     data/宽基指数配置策略2.py 等5处
   dest: src_wind.AINDEXMEMBERSCITICS2（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -633,7 +633,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, core/market_data_service.py,
     data/宽基指数配置策略2.py 等4处
   dest: src_wind.AINDEXMEMBERSCITICS3（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -645,7 +645,7 @@ tables:
   reason: 现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/timepoint_momentum/engine.py,
     core/market_data_service.py
   dest: src_wind.AINDEXMEMBERSCITICSZL（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
+  extra: 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
   pit_required: true
@@ -657,7 +657,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/gateway.py,
     core/market_data_service.py 等15处
   dest: src_wind.AINDEXVALUATION（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -669,7 +669,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/consensus_fttm_wide_builder.py,
     agent_style_rotation/data_gateway.py, enhanced_optimizer/factors/exposure.py 等5处
   dest: src_wind.ASHAREBALANCESHEET（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -681,7 +681,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, agent_style_rotation/lifecycle_engine.py,
     enhanced_optimizer/factors/exposure.py
   dest: src_wind.ASHARECASHFLOW（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -705,7 +705,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：data/宽基指数配置策略2.py, factors/factor_fundamental.py,
     scripts/audit_stock_adjusted_return_qualification.py
   dest: src_wind.ASHAREDIVIDEND（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -717,7 +717,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/data_gateway.py,
     alpha_factory/etf/gateway.py 等42处
   dest: src_wind.ASHAREEODDERIVATIVEINDICATOR（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -729,7 +729,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：alpha_factory/all_a_canonical_scene.py, alpha_factory/data_gateway.py,
     alpha_factory/etf/gateway.py 等56处
   dest: src_wind.ASHAREEODPRICES（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -741,7 +741,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/data_gateway.py,
     alpha_factory/refresh_performance_factor_fast_ic.py 等12处
   dest: src_wind.ASHAREFINANCIALINDICATOR（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -753,7 +753,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/consensus_fttm_wide_builder.py,
     agent_style_rotation/data_gateway.py, core/raw_loader.py 等8处
   dest: src_wind.ASHAREINCOME（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -764,7 +764,7 @@ tables:
   category: 1
   reason: src-plane 点名弱引用（data/test_task.py 等），第二批再评估
   dest: src_wind.ASHAREINSIDEHOLDER（第二批评估，现不迁）
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -775,7 +775,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：data/ETF四象限推送.py, factors/factor_etf_margin.py
   dest: src_wind.ASHAREMARGINTRADE（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -786,7 +786,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py, data/情绪择时推送.py
   dest: src_wind.ASHAREMARGINTRADESUM（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -797,7 +797,7 @@ tables:
   category: 1
   reason: src-plane 点名弱引用（data/test_task.py 等），第二批再评估
   dest: src_wind.ASHAREMJRHOLDERTRADE（第二批评估，现不迁）
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -809,7 +809,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py, factors/daily_factor.py,
     factors/factor_etf.py
   dest: src_wind.ASHAREMONEYFLOW（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -820,7 +820,7 @@ tables:
   category: 1
   reason: src-plane 点名弱引用（data/test_task.py 等），第二批再评估
   dest: src_wind.ASHAREPROFITEXPRESS（第二批评估，现不迁）
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -831,7 +831,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：factors/factor_event.py
   dest: src_wind.ASHAREPROFITNOTICE（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -843,7 +843,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py, core/universe_provider.py,
     data/宽基指数配置策略2.py 等7处
   dest: src_wind.ASHAREST（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -854,7 +854,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：factors/factor_etf.py
   dest: src_wind.ASHARETRADINGSUSPENSION（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -865,7 +865,7 @@ tables:
   category: 1
   reason: 现役：strategy/convbond_backtest.py, strategy/可转债套利.py
   dest: src_wind.CBONDCONVPRICE（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
+  extra: 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
   pit_required: true
@@ -877,7 +877,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py, data/宽基指数配置策略.py, data/宽基指数配置策略2.py
     等11处
   dest: src_wind.CBONDCURVECNBD（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -889,7 +889,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py, scripts/backfill_bond_curve_csi.py,
     scripts/run_large_small_style_rotation.py 等5处
   dest: src_wind.CBONDCURVECSI（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_md
   pit_required: true
@@ -900,7 +900,7 @@ tables:
   category: 1
   reason: 现役：strategy/convbond_backtest.py, strategy/可转债套利.py
   dest: src_wind.CBONDEODPRICES（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
+  extra: 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
   pit_required: true
@@ -913,7 +913,7 @@ tables:
     scripts/macro_regime_revalidation/macro_family_qualification.py, scripts/macro_regime_revalidation/pit_lineage_requalification.py
     等6处
   dest: src_wind.CBONDPRICESREPO（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -924,7 +924,7 @@ tables:
   category: 1
   reason: 现役：strategy/convbond_backtest.py, strategy/可转债套利.py
   dest: src_wind.CBONDPUT（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
+  extra: 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
   pit_required: true
@@ -936,7 +936,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：scripts/macro_regime_revalidation/policy_rate_event_p0.py,
     scripts/macro_regime_revalidation/pit_lineage_requalification.py
   dest: src_wind.CBONDREPO（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -947,7 +947,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py, scripts/macro_regime_revalidation/r007_dr007_funding_stress_source_pit_qualification.py
   dest: src_wind.CBONDREPOANDIBLEODPRICES（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -958,7 +958,7 @@ tables:
   category: 1
   reason: 现役：strategy/convbond_backtest.py, strategy/可转债套利.py
   dest: src_wind.CBONDTRADINGSUSPENSION（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
+  extra: 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
   pit_required: true
@@ -969,7 +969,7 @@ tables:
   category: 1
   reason: 现役：strategy/convbond_backtest.py, strategy/可转债套利.py
   dest: src_wind.CCBONDVALUATION（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
+  extra: 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
   pit_required: true
@@ -980,7 +980,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py
   dest: src_wind.CHINAMUTUALFUNDSTOCKPORTFOLIO（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -991,7 +991,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py, strategy/ah_premium_hk_backtest.py
   dest: src_wind.FXEODPRICES（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -1002,7 +1002,7 @@ tables:
   category: 1
   reason: 现役：strategy/ah_premium_hk_backtest.py, strategy/generic_backtest_framework.py
   dest: src_wind.HKEXCALENDAR（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
+  extra: 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
   pit_required: true
@@ -1013,7 +1013,7 @@ tables:
   category: 1
   reason: src-plane 点名弱引用（data/test_task.py 等），第二批再评估
   dest: src_wind.SHIBORPRICES（第二批评估，现不迁）
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_md
   pit_required: true
@@ -1024,7 +1024,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：strategy/ah_premium_hk_backtest.py
   dest: src_wind.SWINDEXMEMBERS（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -1035,7 +1035,7 @@ tables:
   category: 2
   reason: 本地 Barra 风格暴露，由 enhanced_optimizer 重算，不是 vendor 源。 现役：etf_sector_rotation/etf_sector_rotation/data/etf_hq_scorer.py
   dest: 不迁 wx2 行；不建表。与 barra_cne6 同一套暴露，写入 feature.value
-  extra: 字典误标 Tushare。不定 visibility YAML，须负责人确认后再配
+  extra: 字典误标 Tushare。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: alpha_factory_alert_d
@@ -1045,7 +1045,7 @@ tables:
   category: 2
   reason: 现役：scripts/resolve_alpha_factory_stale_canary_alert.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: alpha_factory_factor_value_d
@@ -1055,7 +1055,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/pf_nap/materialization.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: alpha_factory_factor_version
@@ -1065,7 +1065,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/registry.py, scripts/alpha_factory_pf_multidate_coverage_audit.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: alpha_factory_group_nav_d
@@ -1075,7 +1075,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/website_numeric_delta.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: alpha_factory_metric_d
@@ -1085,7 +1085,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/publish_factor_json.py, alpha_factory/website_numeric_delta.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: alpha_factory_universe_member_d
@@ -1095,7 +1095,7 @@ tables:
   category: 2
   reason: 现役：scripts/alpha_factory_pf_market_cap_authority_trace.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: con_forecast_stk_fttm_wide
@@ -1106,7 +1106,7 @@ tables:
   reason: 现役：agent_style_rotation/consensus_fttm_wide_builder.py, agent_style_rotation/data_gateway.py,
     agent_style_rotation/incremental_refresh_consensus_fttm_wide.py 等9处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: crowd_data
@@ -1116,7 +1116,7 @@ tables:
   category: 2
   reason: 现役：data/style_crowd_data.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: crowd_data_2
@@ -1126,7 +1126,7 @@ tables:
   category: 2
   reason: 现役：data/style_crowd_data.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: etf_hq_score
@@ -1136,7 +1136,7 @@ tables:
   category: 2
   reason: 现役：etf_sector_rotation/etf_sector_rotation/scripts/refresh_etf_hq_score.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: style_rotation_asset_state
@@ -1147,7 +1147,7 @@ tables:
   reason: 现役：agent_style_rotation/refresh_asset_state.py, agent_style_rotation/score_engine.py,
     data_registry/style_rotation/research_dashboard.json 等11处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: style_rotation_expectation_factor_d
@@ -1158,7 +1158,7 @@ tables:
   reason: 现役：agent_style_rotation/asset_state_engine.py, agent_style_rotation/refresh_dimension_factors.py,
     agent_style_rotation/score_engine.py 等9处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: style_rotation_fundamental_factor_d
@@ -1169,7 +1169,7 @@ tables:
   reason: 现役：agent_style_rotation/asset_state_engine.py, agent_style_rotation/lifecycle_engine.py,
     agent_style_rotation/refresh_dimension_factors.py 等12处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: style_rotation_lifecycle
@@ -1180,7 +1180,7 @@ tables:
   reason: 现役：agent_style_rotation/asset_state_engine.py, agent_style_rotation/refresh_dimension_factors.py,
     agent_style_rotation/score_engine.py 等11处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: style_rotation_price_d
@@ -1190,7 +1190,7 @@ tables:
   category: 2
   reason: 现役：data_registry/style_rotation/research_dashboard.json, scripts/style_rotation_full_backtest_report.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: style_rotation_price_factor_d
@@ -1201,7 +1201,7 @@ tables:
   reason: 现役：agent_style_rotation/asset_state_engine.py, agent_style_rotation/refresh_dimension_factors.py,
     agent_style_rotation/score_engine.py 等7处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: style_rotation_score
@@ -1212,7 +1212,7 @@ tables:
   reason: 现役：agent_style_rotation/refresh_score.py, scripts/style_rotation_evidence_validation.py,
     scripts/style_rotation_monitor_release.py 等5处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: style_rotation_score_d
@@ -1222,7 +1222,7 @@ tables:
   category: 2
   reason: 现役：data_registry/style_rotation/research_dashboard.json, scripts/style_rotation_full_backtest_report.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: alpha_factory_etf_factor_group_nav_d
@@ -1233,7 +1233,7 @@ tables:
   reason: 现役：alpha_factory/etf/gateway.py, scripts/analyze_etf_factor_effectiveness.py,
     alpha_factory/etf/persistence.py 等6处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: alpha_factory_etf_factor_metric_d
@@ -1244,7 +1244,7 @@ tables:
   reason: 现役：alpha_factory/etf/gateway.py, scripts/analyze_etf_factor_effectiveness.py,
     alpha_factory/etf/persistence.py 等6处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: index_abnormal_margin_intensity
@@ -1254,7 +1254,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py, factors/factor_etf_margin.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_md
 - name: index_avg_mom
@@ -1264,7 +1264,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py, scripts/backfill_index_avg_mom.py, alpha_factory/etf/combination_research.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: index_consistency
@@ -1274,7 +1274,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: index_day_potential
@@ -1284,7 +1284,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py, data_registry/factors/etf_factor_rolling_monitor_freeze.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: index_institute_buy_percent
@@ -1294,7 +1294,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: index_margin_intensity
@@ -1304,7 +1304,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py, factors/factor_etf_margin.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_md
 - name: index_overnight_ret
@@ -1314,7 +1314,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py, data_registry/factors/etf_factor_rolling_monitor_freeze.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: index_small_buy_ratio
@@ -1324,7 +1324,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: index_trade_elasticity
@@ -1334,7 +1334,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: index_up_beta
@@ -1344,7 +1344,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_abso_umr
@@ -1354,7 +1354,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_actlargemedcut
@@ -1365,7 +1365,7 @@ tables:
   reason: 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v1.json,
     alpha_factory/policies/pf_historical_factor_source_availability_v2.json 等4处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_core_down
@@ -1376,7 +1376,7 @@ tables:
   reason: 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v1.json,
     alpha_factory/policies/pf_historical_factor_source_availability_v2.json 等6处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_core_up
@@ -1387,7 +1387,7 @@ tables:
   reason: 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v2.json,
     alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_corr_vrlag
@@ -1397,7 +1397,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_corr_vrlaglarge
@@ -1407,7 +1407,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_cutamp
@@ -1417,7 +1417,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_did_ratio
@@ -1429,7 +1429,7 @@ tables:
     alpha_factory/refresh_performance_factor_fast_ic.py, alpha_factory/registered/registered_factors.json
     等6处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_event_aog
@@ -1439,7 +1439,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_event_delta_roe
@@ -1449,7 +1449,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_event_high250
@@ -1459,7 +1459,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py, factors/factor_event.py, factors/factor_event_2.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_event_high_growth
@@ -1470,7 +1470,7 @@ tables:
   reason: 现役：alpha_factory/data_gateway.py, alpha_factory/etf/gateway.py, factors/factor_event.py
     等5处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_event_sue
@@ -1481,7 +1481,7 @@ tables:
   reason: 现役：alpha_factory/etf/gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json,
     factors/factor_event.py 等4处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_event_surprising
@@ -1492,7 +1492,7 @@ tables:
   reason: 现役：alpha_factory/data_gateway.py, alpha_factory/etf/gateway.py, factors/factor_event.py
     等5处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_mif
@@ -1503,7 +1503,7 @@ tables:
   reason: 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json,
     factors/daily_factor.py 等5处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_moneyflowh
@@ -1513,7 +1513,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_nap_adj_ratio
@@ -1524,7 +1524,7 @@ tables:
   reason: 现役：alpha_factory/pf_nap/evidence.py, alpha_factory/pf_nap/materialization.py,
     alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_ratio
@@ -1535,7 +1535,7 @@ tables:
   reason: 现役：alpha_factory/data_gateway.py, alpha_factory/factor_testing_legacy_compat.py,
     alpha_factory/publish_alpha_factory_registry.py 等7处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_ratio_realdownvar
@@ -1545,7 +1545,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_ratio_realupvar
@@ -1555,7 +1555,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_real_kurt
@@ -1565,7 +1565,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_rpt_excess_num
@@ -1575,7 +1575,7 @@ tables:
   category: 2
   reason: 现役：factors/factor_event.py, factors/factor_event_2.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_tr_umr
@@ -1585,7 +1585,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: barra_cne6
@@ -1598,7 +1598,7 @@ tables:
     等11处
   dest: 不迁 wx2 行；不建 barra_* 表。风格暴露写入 feature.value（旧 alpha_factory_factor_value_d
     后继），feature_id 如 barra_cne6.ernqlt
-  extra: 字典误标 Tushare。不定 visibility YAML，须负责人确认后再配
+  extra: 字典误标 Tushare。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: barra_cne6_factor_return
@@ -1608,7 +1608,7 @@ tables:
   category: 2
   reason: 风格因子收益，横截面回归产物，不是 vendor 源。现役：enhanced_optimizer/risk_models/barra_risk_gemini.py
   dest: 不迁、不建表。粒度是日期×风格，进不了 feature.value；优化器现算
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_md
 - name: barra_cne6_specific_return
@@ -1618,7 +1618,7 @@ tables:
   category: 2
   reason: 特异收益/残差，横截面回归产物，不是 vendor 源。现役：enhanced_optimizer/risk_models/barra_risk_gemini.py
   dest: 不迁、不建表。风险残差，优化器现算，不进 feature.value
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_md
 - name: etf_ratio
@@ -1629,7 +1629,7 @@ tables:
   reason: 现役：alpha_factory/etf/scripts/analyze_etf_factor_tradability.py, core/market_data_service.py,
     scripts/run_asset_allocation_backtest.py 等15处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fina_rpt_forecast
@@ -1639,7 +1639,7 @@ tables:
   category: 2
   reason: wind_to_sql_am 加工/重算，不是 Tushare 源表。 现役：factors/factor_rpt.py
   dest: 不迁 wx2 行；新仓按一致预期链路重算
-  extra: 不进 src_*。不定 visibility YAML，须负责人确认后再配
+  extra: 不进 src_*。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fina_rpt_forecast_roe
@@ -1649,7 +1649,7 @@ tables:
   category: 2
   reason: wind_to_sql_am 加工/重算，不是 Tushare 源表。 现役：data/etf_trend_strategy.py
   dest: 不迁 wx2 行；新仓按一致预期链路重算
-  extra: 不进 src_*。不定 visibility YAML，须负责人确认后再配
+  extra: 不进 src_*。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: market_heat_limit_num
@@ -1659,7 +1659,7 @@ tables:
   category: 2
   reason: 现役：data/情绪择时推送.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: market_heat_up_down_num
@@ -1669,7 +1669,7 @@ tables:
   category: 2
   reason: 现役：data/情绪择时推送.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: performance_factor
@@ -1680,7 +1680,7 @@ tables:
   reason: 现役：alpha_factory/data_gateway.py, alpha_factory/discover_performance_factor_singles.py,
     alpha_factory/performance_factor_score.py 等23处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: performance_factor_etf
@@ -1691,7 +1691,7 @@ tables:
   reason: 现役：alpha_factory/etf/gateway.py, etf_sector_rotation/etf_sector_rotation/scripts/refresh_etf_hq_score.py,
     alpha_factory/etf/contracts.py 等4处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。不定 visibility YAML，须负责人确认后再配
+  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: strategy_etf_index_indicator
@@ -1702,7 +1702,7 @@ tables:
   reason: 应用派生表，现役：data/etf_real_trade_v14.py, etf_sector_rotation/etf_sector_rotation/data/market_data.py,
     etf_sector_rotation/etf_sector_rotation/gateways/rotation_gateway.py 等5处
   dest: 不迁 wx2 行；按新仓对应能力重写
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: strategy_etf_index_indicator_2
@@ -1712,7 +1712,7 @@ tables:
   category: 2
   reason: 应用派生表，现役：data/ETF四象限推送.py
   dest: 不迁 wx2 行；按新仓对应能力重写
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: strategy_etf_margin_trade
@@ -1722,7 +1722,7 @@ tables:
   category: 2
   reason: 应用派生表，现役：data/宽基指数配置策略.py
   dest: 不迁 wx2 行；按新仓对应能力重写
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: strategy_industry_index_indicator
@@ -1732,7 +1732,7 @@ tables:
   category: 2
   reason: 应用派生表，现役：data/etf_trend_strategy.py
   dest: 不迁 wx2 行；按新仓对应能力重写
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: strategy_trade_signal
@@ -1743,7 +1743,7 @@ tables:
   reason: 应用派生表，现役：data/etf_real_trade_v14.py, etf_sector_rotation/configs/etf_rotation_v1.yaml,
     etf_sector_rotation/etf_sector_rotation/data/holdings.py 等4处
   dest: 不迁 wx2 行；按新仓对应能力重写
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: universe_did
@@ -1753,7 +1753,7 @@ tables:
   category: 2
   reason: 旧股票池缓存；现役：alpha_factory/all_a_canonical_scene.py, alpha_factory/layered_universe.py
   dest: 不迁 wx2 行；新仓 UniverseRepository 重算
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: universe_did1
@@ -1763,7 +1763,7 @@ tables:
   category: 2
   reason: 旧股票池缓存；现役：alpha_factory/layered_universe.py
   dest: 不迁 wx2 行；新仓 UniverseRepository 重算
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: universe_growth
@@ -1773,7 +1773,7 @@ tables:
   category: 2
   reason: 旧股票池缓存；现役：alpha_factory/data_gateway.py, alpha_factory/layered_universe.py
   dest: 不迁 wx2 行；新仓 UniverseRepository 重算
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: universe_growth1
@@ -1783,7 +1783,7 @@ tables:
   category: 2
   reason: 旧股票池缓存；现役：alpha_factory/layered_universe.py
   dest: 不迁 wx2 行；新仓 UniverseRepository 重算
-  extra: 不定 visibility YAML，须负责人确认后再配
+  extra: visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: agent_risk_insight
@@ -1793,7 +1793,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: portfolio_info
@@ -1803,7 +1803,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: portfolio_metrics
@@ -1813,7 +1813,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: portfolio_nav
@@ -1823,7 +1823,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: portfolio_position
@@ -1833,7 +1833,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: portfolio_weight
@@ -1843,7 +1843,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: scheduler_job_run_log
@@ -1853,7 +1853,7 @@ tables:
   category: 4
   reason: 控制/审计/调度/组合状态；现役：task_scheduler/sqlserver_schema.sql, task_scheduler/store.py
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: ops_code
 - name: strategy_metrics
@@ -1863,7 +1863,7 @@ tables:
   category: 4
   reason: 控制/审计/调度/组合状态；现役：strategy_engine/storage.py
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: strategy_nav
@@ -1874,7 +1874,7 @@ tables:
   reason: 控制/审计/调度/组合状态；现役：enhanced_optimizer/data/gateway.py, enhanced_optimizer/risk_budget_joint_optimizer.py,
     strategy_engine/storage.py
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: strategy_order
@@ -1884,7 +1884,7 @@ tables:
   category: 4
   reason: 控制/审计/调度/组合状态；现役：strategy_engine/storage.py
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: strategy_position
@@ -1894,7 +1894,7 @@ tables:
   category: 4
   reason: 控制/审计/调度/组合状态；现役：strategy_engine/storage.py
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: strategy_run
@@ -1905,7 +1905,7 @@ tables:
   reason: 控制/审计/调度/组合状态；现役：enhanced_optimizer/data/gateway.py, enhanced_optimizer/risk_budget_joint_optimizer.py,
     strategy_engine/storage.py
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: strategy_trade
@@ -1915,7 +1915,7 @@ tables:
   category: 4
   reason: 控制/审计/调度/组合状态；现役：strategy_engine/storage.py
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: task_error_detail
@@ -1925,7 +1925,7 @@ tables:
   category: 4
   reason: 控制/审计/调度/组合状态；现役：data/task_monitor.py, data/宽基指数配置策略.py, task_scheduler/runner.py
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: ops_code
 - name: task_moniter
@@ -1936,7 +1936,7 @@ tables:
   reason: 控制/审计/调度/组合状态；现役：alpha_factory/stock_hq_score_refresh.py, data/etf_trend_strategy.py,
     data/task_monitor.py 等11处
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: agent_candidate
@@ -1946,7 +1946,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: agent_decision
@@ -1956,7 +1956,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: agent_evidence
@@ -1966,7 +1966,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: agent_portfolio
@@ -1978,7 +1978,7 @@ tables:
     strategy_engine/adapters/enhanced_500_risk_budget.py, strategy_engine/readiness_sql_providers.py
     等4处
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: agent_run
@@ -1988,7 +1988,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: doc_notice_chunk
@@ -1998,7 +1998,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: doc_notice_text
@@ -2008,7 +2008,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: doc_report_chunk
@@ -2018,7 +2018,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: strategy_monitor_account
@@ -2028,7 +2028,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: strategy_monitor_account_his
@@ -2038,7 +2038,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: sys_user
@@ -2048,7 +2048,7 @@ tables:
   category: 4
   reason: 控制状态表，字典或代码有建表
   dest: ops_* 重建模；先看 Dagster 覆盖范围，不照搬旧表
-  extra: 改正表名/补主键；不进研究数据面。不定 visibility YAML，须负责人确认后再配
+  extra: 改正表名/补主键；不进研究数据面。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: index_basic
@@ -2448,7 +2448,7 @@ tables:
   category: 5
   reason: 个股分钟 OHLC，不是因子；现役无引用
   dest: 不迁移；若将来迁入拟 src_* .stock_min_price 以外的分钟表名，禁止沿用 stock_ 前缀当因子
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_ocac_5m
@@ -2828,7 +2828,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/jydb_to_sql.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: C_ED_CustomsData
@@ -2838,7 +2838,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/jydb_to_sql.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: CT_Product
@@ -2848,7 +2848,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/jydb_to_sql.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: IN_MeansofProductionPI
@@ -2858,7 +2858,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/jydb_to_sql.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: QT_IndexQuote
@@ -2868,7 +2868,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/jydb_to_sql.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: der_excess_stock
@@ -2878,7 +2878,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/zyyx_to_sql.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: ashare_stock_notices
@@ -2888,7 +2888,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/tushare_data.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: echart_stock_fundamental
@@ -2958,7 +2958,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_am.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fina_cashflow
@@ -2968,7 +2968,7 @@ tables:
   category: 5
   reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fina_est_eps_fy2
@@ -2978,7 +2978,7 @@ tables:
   category: 5
   reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fina_est_netprofit_fy2
@@ -2988,7 +2988,7 @@ tables:
   category: 5
   reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fina_est_netprofit_gr2
@@ -2998,7 +2998,7 @@ tables:
   category: 5
   reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fina_express
@@ -3008,7 +3008,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_am.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fina_forecast
@@ -3018,7 +3018,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_am.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fina_income
@@ -3028,7 +3028,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_am.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fina_indicator
@@ -3038,7 +3038,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_am.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fina_rating_targetprice
@@ -3048,7 +3048,7 @@ tables:
   category: 5
   reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fina_rpt_forecast_roe_w
@@ -3058,7 +3058,7 @@ tables:
   category: 5
   reason: fina_rpt_forecast_roe 旁表/重算产物，不是 Tushare 源；现役无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fund_daily_indicator
@@ -3068,7 +3068,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_am.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fund_description
@@ -3089,7 +3089,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/tushare_data_pm.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fund_list
@@ -3110,7 +3110,7 @@ tables:
   category: 5
   reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fund_nav
@@ -3120,7 +3120,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_am.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fund_net_value
@@ -3130,7 +3130,7 @@ tables:
   category: 5
   reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: fund_simulate_citics2_ratio
@@ -3170,7 +3170,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/tushare_data.py, data/wind_to_sql_2.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: gx_fund
@@ -3180,7 +3180,7 @@ tables:
   category: 5
   reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: h_ofnav
@@ -3210,7 +3210,7 @@ tables:
   category: 5
   reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: joinquant_backtest
@@ -3293,7 +3293,7 @@ tables:
   category: 5
   reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: performance_factor_etf_backup
@@ -3707,7 +3707,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/tushare_ths_industry.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -3718,7 +3718,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/tushare_ths_industry.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -3729,7 +3729,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/tushare_ths_industry.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -3781,7 +3781,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_2.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: ASHARESECNINDUSTRIES
@@ -3802,7 +3802,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_2.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
@@ -3813,7 +3813,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_am.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: ASWSINDEX
@@ -3823,7 +3823,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_2.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: ASWSINDEXEOD
@@ -3833,7 +3833,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_2.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: CBINDEXDESCRIPTION
@@ -3876,7 +3876,7 @@ tables:
   category: 5
   reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 - name: CHINACLOSEDFUNDEODPRICE
@@ -3886,7 +3886,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_2.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: CHINAMUTUALFUNDNAV
@@ -3896,7 +3896,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_am.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: SHSCCHANNELHOLDINGS
@@ -3906,7 +3906,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_am.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: code
 - name: SHSZRELATEDSECURITIES
@@ -3916,7 +3916,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_2.py, data/wind_to_sql_before_open.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: false
   origin: dictionary_manifest
 review_baseline: 2026-09-18 勘误；映射/代码表 pit_required=false；Barra 暴露并入 feature.value

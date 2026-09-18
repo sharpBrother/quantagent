@@ -56,7 +56,7 @@ superseded` 的保留正文供追溯。
 |---|---|
 | [migration/roadmap.md](migration/roadmap.md) | P0–P6 阶段、验收标准、回滚点 |
 | [migration/wx2-disposition.md](migration/wx2-disposition.md) | 旧 SQL Server `wx2` 逐表处置标准 |
-| [migration/wx2-table-list.md](migration/wx2-table-list.md) | `wx2` 逐表处置清单（P2 第一交付物；不定 PIT、不迁入） |
+| [migration/wx2-table-list.md](migration/wx2-table-list.md) | `wx2` 逐表处置清单（P2 第一交付物；不迁入；visibility 从旧仓下游反推） |
 | [migration/docs-and-artifacts-disposition.md](migration/docs-and-artifacts-disposition.md) | 旧仓文档与制品逐项处置标准 |
 
 ## 运维与研究

@@ -46,12 +46,17 @@
 
 遇到下列情况**停下来问**：
 
-- 要改变数据口径、时间口径或因子语义
-- **配置 PIT 规则必须先确认**：新增或修改 `contracts/visibility/` 下任何
-  可见性契约（`rule`、`field`、`grade`、`fallback`、`temporal_kind`、
-  `event_field`、`pit_grade`、`pit_from` 等），先把拟定全文交给项目负责人，
-  **得到明确同意后再写文件**。实现读取路径时不得顺手补 YAML；引擎里实现
-  一条已确认规则，不等于可以替数据集选定规则。
+- 要改变数据口径、时间口径或因子语义（**PIT 可见性除外**：见下条）
+- **配置 PIT 规则**：从旧仓现役下游取数反推，写入
+  `contracts/visibility/`。优先看 `core/data_gateway_base.py`、
+  `alpha_factory/data_gateway.py`、`agent_style_rotation/data_gateway.py`、
+  `core/market_data_service.py` 及各研究线 gateway。多处口径一致则直接写，
+  不必先送审。实现读取路径时不得无证据顺手补 YAML；引擎里实现一条规则，
+  不等于可以替没有下游依据的数据集选定规则。下列情况**停下来问**：
+  - 旧仓多处口径互相冲突
+  - 旧仓没有 as_of / 可见日过滤，或过滤字段对不上源表
+  - 旧仓用生效日/交易日切片，与已确认的新仓口径（公告日 ≠ 生效日、
+    `_ingested_at` 不是 PIT）矛盾
 - 要改写入的目标表、表结构，或产生数据库写入以外的外部副作用
 - 要改公共接口、Protocol 签名、已发布产物的 schema
 - 要改 `frozen/` 下任何冻结制品
