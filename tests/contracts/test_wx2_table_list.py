@@ -152,7 +152,6 @@ def test_review_baseline_corrections(repo_root: Path) -> None:
         "AINDEXINDUSTRIESCITICS",
         "tushare_ths_industry_mapping_citics",
         "mapping_industry_etf",
-        "strategy_etf_list",
         "universe_style_rotation",
     }
     for name in no_pit:
@@ -162,3 +161,15 @@ def test_review_baseline_corrections(repo_root: Path) -> None:
     assert listed["AINDEXMEMBERS"].get("pit_required") is not False
     assert listed["trade_cal"].get("pit_required") is not False
     assert listed["ASHARESECNINDUSTRIESCLASS"].get("pit_required") is not False
+
+    assert listed["strategy_etf_list"].get("pit_required") is not False
+    assert listed["strategy_etf_list_2"].get("pit_required") is not False
+    assert listed["strategy_etf_black_list"].get("pit_required") is not False
+    assert "universe_id=universe_etf。" in listed["strategy_etf_list"]["dest"]
+    assert "universe_id=universe_etf_2" in listed["strategy_etf_list_2"]["dest"]
+    assert "universe_etf_rebate" in listed["strategy_etf_list_rebate"]["dest"]
+    assert "universe_etf_blacklist" in listed["strategy_etf_black_list"]["dest"]
+    assert "universe_etf_pool" in listed["strategy_etf_pool"]["dest"]
+    assert "universe_etf_*" in md
+    assert "`strategy_etf_list`" in md
+    assert listed["strategy_etf_list"]["dest"] in md

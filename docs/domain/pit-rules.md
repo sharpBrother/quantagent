@@ -41,10 +41,12 @@ YAML**，也**不得作为 PIT 查询的数据集**（fail-closed 仍然成立�
 - 证券/指数/期货主数据（如 `SecuMain`、`ASHAREDESCRIPTION`）
 - 指标目录（如 `C_ED_IndicatorMain`，时间序列在数据表里）
 - 行业/代码对照（如 `tushare_ths_industry_mapping_citics`）
-- 手维护名单与配置映射（如 `strategy_etf_list`）
+- 手维护对照与配置映射（如 `mapping_industry_etf`、`strategy_citics_list`）
 
 有纳入/剔除日的**成分与行业归属**（`AINDEXMEMBERS*`、`ASHARESECNINDUSTRIESCLASS`）
-是时间序列，要配 PIT。行情、财报、一致预期同样要配。
+是时间序列，要配 PIT。行情、财报、一致预期同样要配。ETF 因子研究池
+（旧 `strategy_etf_list*`，新 `universe_id=universe_etf_*`）是样本空间成员，
+走 `mart.universe_member`，要配 PIT；不按名单再建物理表，也不当对照映射免 PIT。
 
 逐表标记见 [../migration/wx2-table-list.md](../migration/wx2-table-list.md)
 的 `pit_required`。

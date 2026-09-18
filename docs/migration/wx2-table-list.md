@@ -34,7 +34,8 @@ PIT 口径见 [../domain/pit-rules.md](../domain/pit-rules.md)。
 | schema 跟供应商不一致 | `macro_eco_cal` / `macro_shibor` / `macro_us_treasury_yield` | 拟 `src_tushare.eco_cal` / `shibor` / `us_treasury_yield` |
 | 字典文件夹跟采集不一致 | `fin_income_gen` / `fin_performance_express` / `fin_performance_forecast` | 拟 `src_suntime.*`（zyyx） |
 | 字典文件夹跟采集不一致 | `FIN_APPO_RELE_DATE` | 拟 `src_suntime`（第一批 DDL 现为 `src_wind`） |
-| 无需 PIT | 代码表、证券主数据、对照与名单 | `pit_required: false`，不写 visibility，不得当 PIT 数据集读 |
+| 无需 PIT | 代码表、证券主数据、对照映射 | `pit_required: false`，不写 visibility，不得当 PIT 数据集读 |
+| 因子池不是对照 | `strategy_etf_list` / `strategy_etf_list_*` / `strategy_etf_black_list` | 写入 `mart.universe_member`，`universe_id=universe_etf_*`，需 PIT，禁止再建名单表 |
 
 `src_macro` 仍留给金十 / FRED / WGC / GPR。Wind `SHIBORPRICES` 与 Tushare `shibor` 不是同一张表。
 
@@ -43,7 +44,8 @@ PIT 口径见 [../domain/pit-rules.md](../domain/pit-rules.md)。
 visibility 只管观测何时可知。下列表只做代码/身份 join，**不配 visibility YAML**，
 也不得作为 PIT 查询的数据集。YAML 字段 `pit_required: false`。
 
-### 类别 1（13 张，拟进源面或参考落点）
+
+### 类别 1（10 张，拟进源面或参考落点）
 
 | 表名 | 去向 |
 |---|---|
@@ -53,9 +55,6 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `SecuMainAll` | src_jydb.SecuMainAll（第一批已收录，本清单不启动迁入） |
 | `mapping_industry_etf` | 待定落点（src_ref / frozen / 配置），现不迁 |
 | `strategy_citics_list` | 待定落点（src_ref / frozen / 配置），现不迁 |
-| `strategy_etf_black_list` | 待定落点（src_ref / frozen / 配置），现不迁 |
-| `strategy_etf_list` | 待定落点（src_ref / frozen / 配置），现不迁 |
-| `strategy_etf_list_2` | 待定落点（src_ref / frozen / 配置），现不迁 |
 | `tushare_ths_industry_mapping_citics` | src_tushare.tushare_ths_industry_mapping_citics（第一批已收录，本清单不启动迁入） |
 | `universe_style_rotation` | 待定落点（src_ref / frozen / 配置），现不迁 |
 | `AINDEXINDUSTRIESCITICS` | src_wind.AINDEXINDUSTRIESCITICS（第一批已收录，本清单不启动迁入） |
@@ -84,6 +83,7 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 - 行业成分（无历史日期也按快照前视处理）：`tushare_ths_industry_member*`
 - 交易日历：`trade_cal`、`HKEXCALENDAR`
 - 行情、财报、一致预期、宏观时间序列
+- ETF 因子池：旧 `strategy_etf_list*`，新 `universe_id=universe_etf_*`，落 `mart.universe_member`
 
 ## 范围与指针
 
@@ -99,13 +99,14 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 
 | 类别 | 张数 |
 |---|---:|
+
 | 1 源镜像 | 87 |
 | 2 可重算 | 73 |
 | 3 遗产冻结 | 0 |
 | 4 运维改造 | 26 |
 | 5 无消费者 | 185 |
 | 合计 | 371 |
-| 其中无需 PIT | 25 |
+| 其中无需 PIT | 22 |
 
 第一批 `db/src_tables.yaml` 的 59 张仍全部落在类别 1；其中 Tushare 宏观三张与 `FIN_APPO_RELE_DATE` 的 **schema/表名以本清单拟去向为准**，代码侧尚未改。
 类别 3 本轮为 0：历史策略结果表（`strategy_result_*` 等）现役无读取，已归入类别 5。
@@ -114,6 +115,7 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 
 | 表名 | 行数 | 判定类别 | 需PIT | 判定依据 | 去向 | 附加约束 |
 |---|---|---|---|---|---|---|
+
 | `stock_etf_min_price` | 未查 | 1 源镜像 | 是 | 现役：data/ETF四象限推送.py, data/etf_real_trade_v14.py, data/宽基指数配置策略.py 等11处 | 拟 src_* etf_min_price（ETF 分钟行情；禁止沿用 stock_ 前缀；现不迁） | 旧 wx2 表名仅作指针。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配 |
 | `Bond_BondIndexQuote` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：core/market_data_service.py, strategy_engine/adapters/bond_timing.py | src_jydb.Bond_BondIndexQuote（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `Bond_CBYieldCurveAll` | 未查 | 1 源镜像 | 是 | src-plane 点名弱引用（data/test_task.py 等），第二批再评估 | src_jydb.Bond_CBYieldCurveAll（第二批评估，现不迁） | 不定 visibility YAML，须负责人确认后再配 |
@@ -154,9 +156,9 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `fund_share` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：core/market_data_service.py, data/etf_real_trade_v14.py, etf_sector_rotation/etf_sector_rotation/data/minute_data.py 等5处 | src_tushare.fund_share（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `mapping_industry_etf` | 未查 | 1 源镜像 | 否 | 手维护/映射参考表，无法从 vendor 行情重算；现役：data/ETF四象限推送.py, data/etf_real_trade_v14.py, data/情绪择时推送.py 等8处 | 待定落点（src_ref / frozen / 配置），现不迁 | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。非 vendor 行情，不进第一批 src_*。 |
 | `strategy_citics_list` | 未查 | 1 源镜像 | 否 | 手维护/映射参考表，无法从 vendor 行情重算；现役：data/宽基指数配置策略2.py | 待定落点（src_ref / frozen / 配置），现不迁 | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。非 vendor 行情，不进第一批 src_*。 |
-| `strategy_etf_black_list` | 未查 | 1 源镜像 | 否 | 手维护/映射参考表，无法从 vendor 行情重算；现役：data/etf_real_trade_v14.py, etf_sector_rotation/etf_sector_rotation/gateways/rotation_gateway.py, etf_sector_rotation/configs/etf_rotation_v1.yaml | 待定落点（src_ref / frozen / 配置），现不迁 | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。非 vendor 行情，不进第一批 src_*。 |
-| `strategy_etf_list` | 未查 | 1 源镜像 | 否 | 手维护/映射参考表，无法从 vendor 行情重算；现役：core/market_data_service.py, data/ETF四象限推送.py, data/etf_real_trade_v14.py 等11处 | 待定落点（src_ref / frozen / 配置），现不迁 | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。非 vendor 行情，不进第一批 src_*。 |
-| `strategy_etf_list_2` | 未查 | 1 源镜像 | 否 | 手维护/映射参考表，无法从 vendor 行情重算；现役：alpha_factory/etf/gateway.py, alpha_factory/etf/scripts/analyze_etf_factor_tradability.py, alpha_factory/etf/timepoint_momentum/engine.py 等16处 | 待定落点（src_ref / frozen / 配置），现不迁 | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。非 vendor 行情，不进第一批 src_*。 |
+| `strategy_etf_black_list` | 未查 | 1 源镜像 | 是 | ETF 因子池剔除集，无法从 vendor 行情重算；现役：data/etf_real_trade_v14.py, etf_sector_rotation/etf_sector_rotation/gateways/rotation_gateway.py, etf_sector_rotation/configs/etf_rotation_v1.yaml | 不迁 wx2 行；写入 mart.universe_member，universe_id=universe_etf_blacklist（ETF 因子池剔除集）。禁止再建 strategy_etf_black_list 表 | 与 strategy_etf_list* 同属 ETF 因子池，不是代码映射表。成员需 PIT（as_of 当日池）。非 vendor 行情，不进第一批 src_*。 |
+| `strategy_etf_list` | 未查 | 1 源镜像 | 是 | ETF 因子研究样本池，无法从 vendor 行情重算；现役：core/market_data_service.py, data/ETF四象限推送.py, data/etf_real_trade_v14.py 等11处 | 不迁 wx2 行；写入 mart.universe_member，universe_id=universe_etf。禁止再建 strategy_etf_list 表 | 旧 strategy_etf_list* 统一改名为 universe_etf_*（universe_id 前缀），物理只落 mart.universe_member。ETF→指数对照是成员属性，不另建表。成员需 PIT。非 vendor 行情，不进第一批 src_*。 |
+| `strategy_etf_list_2` | 未查 | 1 源镜像 | 是 | ETF 因子研究主池（因子实体按 index_code），无法从 vendor 行情重算；现役：alpha_factory/etf/gateway.py, alpha_factory/etf/scripts/analyze_etf_factor_tradability.py, alpha_factory/etf/timepoint_momentum/engine.py 等16处 | 不迁 wx2 行；写入 mart.universe_member，universe_id=universe_etf_2。禁止再建 strategy_etf_list_2 表 | 旧 strategy_etf_list* 统一改名为 universe_etf_*。ETF→指数代码随成员写入，不另建映射表。成员需 PIT。非 vendor 行情，不进第一批 src_*。 |
 | `trade_cal` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/data_gateway.py, alpha_factory/etf/gateway.py 等91处 | src_tushare.trade_cal（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配 |
 | `tushare_ths_industry_mapping_citics` | 未查 | 1 源镜像 | 否 | 第一批 src_tables.yaml；现役：alpha_factory/all_a_canonical_scene.py, scripts/backfill_alpha_factory_pf_quarterly.py | src_tushare.tushare_ths_industry_mapping_citics（第一批已收录，本清单不启动迁入） | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。 |
 | `universe_style_rotation` | 未查 | 1 源镜像 | 否 | 手维护/映射参考表，无法从 vendor 行情重算；现役：agent_style_rotation/score_engine.py, agent_style_rotation/universe.py, core/market_data_service.py 等13处 | 待定落点（src_ref / frozen / 配置），现不迁 | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。非 vendor 行情，不进第一批 src_*。 |
@@ -442,8 +444,8 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `strategy_etf_holding_rank` | 未查 | 5 无消费者 | — | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
 | `strategy_etf_index_indicator_test2` | 未查 | 5 无消费者 | — | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
 | `strategy_etf_index_size` | 未查 | 5 无消费者 | — | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
-| `strategy_etf_list_rebate` | 未查 | 5 无消费者 | — | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
-| `strategy_etf_pool` | 未查 | 5 无消费者 | — | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
+| `strategy_etf_list_rebate` | 未查 | 5 无消费者 | — | ETF 因子池变体，现役无引用 | 不迁移；若启用则写入 mart.universe_member，universe_id=universe_etf_rebate。禁止再建 strategy_etf_list_rebate 表 | 旧仓 7c506d511。命名跟 strategy_etf_list* 统一为 universe_etf_*。 |
+| `strategy_etf_pool` | 未查 | 5 无消费者 | — | ETF 因子池变体，现役无引用 | 不迁移；若启用则写入 mart.universe_member，universe_id=universe_etf_pool。禁止再建 strategy_etf_pool 表 | 旧仓 7c506d511。命名跟 strategy_etf_list* 统一为 universe_etf_*。 |
 | `strategy_etf_raw_rank` | 未查 | 5 无消费者 | — | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
 | `strategy_etf_timing_flag` | 未查 | 5 无消费者 | — | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
 | `strategy_future_eod_amount` | 未查 | 5 无消费者 | — | 派生/应用表，现役无引用 | 不迁移 | 旧仓 7c506d511 |
@@ -485,4 +487,3 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `CHINAMUTUALFUNDNAV` | 未查 | 5 无消费者 | — | 仅采集写入：data/wind_to_sql_am.py | 不迁移 | 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配 |
 | `SHSCCHANNELHOLDINGS` | 未查 | 5 无消费者 | — | 仅采集写入：data/wind_to_sql_am.py | 不迁移 | 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配 |
 | `SHSZRELATEDSECURITIES` | 未查 | 5 无消费者 | — | 仅采集写入：data/wind_to_sql_2.py, data/wind_to_sql_before_open.py | 不迁移 | 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配 |
-

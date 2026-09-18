@@ -2,7 +2,7 @@
 title: 派生数据集清单与归属
 status: active
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-18
 applies_to:
   - src/quantagent/lake/
   - src/quantagent/features/
@@ -68,7 +68,10 @@ superseded_by: null
    任何机制保证它们一致。需要这些字段就 JOIN。
 3. **分层池用多个 `universe_id` 表达。** 旧仓 `layered_universe` 另立一套
    概念；这里不加分层字段，每一层就是一个独立的 `universe_id`，规则配置
-   里声明它从哪个父池派生。
+   里声明它从哪个父池派生。ETF 因子研究池沿用同一张表：旧
+   `strategy_etf_list` / `strategy_etf_list_*` 的 `universe_id` 统一
+   `universe_etf_*`（如 `universe_etf`、`universe_etf_2`、`universe_etf_rebate`），
+   禁止按名单再建物理表。
 
 ### 可见性
 
