@@ -24,7 +24,7 @@ applies_to:
 | 数据集 | 可见日的实际规则 |
 |---|---|
 | 交易所日行情 | 收盘后当日即公开 |
-| 上市公司财报 | 以公告日为准；缺公告日时可按法定最迟披露日推断 |
+| 上市公司财报 | 以公告日为准；缺公告日则该行不可见 |
 | 国家统计局 CPI | 按官方发布日历，每月固定日期 |
 | 卖方一致预期 | 供应商的数据更新有自身节奏，与个股公告无固定关系 |
 
@@ -62,12 +62,36 @@ YAML**，也**不得作为 PIT 查询的数据集**（fail-closed 仍然成立�
 
 | 家族 | 旧仓过滤 | 新规则 |
 |---|---|---|
-| 交易所日频（价 / 衍生指标 / 指数 / 行业指数） | `TRADE_DT = as_of` 或区间两端 | `same_day_close`，`event_field=TRADE_DT`，grade A |
-| 利润表 / 现金流 / 财务指标 | `ANN_DT <= as_of`，同报告期留最后一次公告；`ANN_DT` 空则该行不可见 | `source_field` `field=ANN_DT`，**不**加 `statutory_deadline` fallback |
-| 朝阳一致预期 `con_forecast_stk*` | `con_date` 落在查询区间 | `source_field` `field=con_date` |
+| 交易所日频（价 / 衍生 / 指数 / 行业指数 / 资金流 / 两融汇总） | `TRADE_DT` 点查或闭区间，调用方保证 `end<=as_of` | `same_day_close`，`event_field=TRADE_DT`，grade A |
+| 国债指数 / 黄金现货 | `TradingDay` / `TradeDate` 闭区间 | 同上，`same_day_close` |
+| 朝阳一致预期 `con_forecast_stk*` / `der_diver_stk` | `con_date` 落在查询区间 | `source_field` `field=con_date` |
 | 盈利预测调整 `rpt_earnings_adjust` | `current_create_date` | `source_field` `field=current_create_date` |
+| 业绩预告/快报/朝阳利润 `fin_*` | `declare_date` | `source_field` `field=declare_date` |
+| Wind 预告 `ASHAREPROFITNOTICE` | `S_PROFITNOTICE_DATE` | `source_field` `field=S_PROFITNOTICE_DATE` |
+| 聚源宏观（除货币供应） | `InfoPublDate <= as_of`；空发布日不可见；同指标同期取最晚发布 | `source_field` `field=InfoPublDate` |
+| 货币供应 `ED_MoneySupply` | **不用** `InfoPublDate`，可见日 = `EndDate` 次月 15 日 | `fixed_lag` 或等价推导，grade B |
+| 中长期贷款余额空发布日 | 次月 20 日 | 仅该指标；其余 JY 空发布日仍不可见 |
+| Tushare `shibor` / `us_treasury_yield` | `trade_date <= as_of` | `same_day_close`，`event_field=trade_date` |
+| Tushare `eco_cal` | `event_date <= as_of` | `source_field` `field=event_date` |
+| 金十 ISM | `publish_date < as_of`（不含当日） | `source_field` 或需严格小于；与 CPI/PPI 不同 |
+| 金十中国 CPI/PPI | 公布日对齐交易日，**含当日** | 与 ISM 分数据集，不要合成一条规则 |
+| FRED / GPR | vintage 严格 `< as_of`，禁止用观测日当可见日 | `source_field` 首次 vintage |
+| `FIN_APPO_RELE_DATE` | `DECLARE_DATE < as_of` | `source_field` `field=DECLARE_DATE`，不含当日 |
+| `fund_share` | `trade_date` 区间，MDS **不**前值填充 | `same_day_close`；禁止 ffill |
 
-公共 PIT 原语只保证 `visible_col <= as_of`；具体列由调用方传入。
+公共 PIT 原语只保证 `visible_col <= as_of`；具体列由调用方传入。`latest_visible_by_key` 在旧仓生产路径上**未接线**。
+
+调用方把 `as_of` 设成 T−1（优化器市值、raw 日历）不是数据集规则，YAML 仍按源表可见日写，T−1 留给研究读取的 `as_of`。
+
+### 待裁定（旧仓互相冲突，未写 YAML）
+
+1. **指数/行业成分**：旧仓用 `S_CON_INDATE`/`OUTDATE` 对 `as_of` 切片（生效日）；新仓 `mart.universe_member` 已规定 `knowledge_dt` 取公告日。源表跟哪边？
+2. **ETF 因子池** `strategy_etf_list*`：当前名单、无进出历史。回测按当日快照会前视。
+3. **财报 `ANN_DT` 当日是否可见**：`agent_style_rotation` 用 `<= as_of`；`raw_loader` 用 `< adj`。列和「空公告不可见、同报告期留最后一次」已钉死，只差不等式。
+4. **`der_prob_excess_stock`**：`(declare_date < adj) OR (entrytime < adj)`，比双字段都可见更松。
+5. **成长事件 `confirm_date`**：ETF 路径 `<= T`；成长策略 / universe 用调仓日前第 2 个交易日。
+
+金十 ISM 的 `< T` 与 CPI/PPI 的含当日已按数据集分开，不再问。WGC 旧文档自认非严格 PIT，迁入前单独标 grade。
 
 ## 规则文件
 
