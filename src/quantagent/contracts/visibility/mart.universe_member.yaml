@@ -6,9 +6,10 @@ visibility:
   field: knowledge_dt
   grade: B
   rationale: >
-    成员关系的可见日写在 knowledge_dt 列，不得用 valid_from 代替。指数成分
-    通常提前公告、延后生效，公告日与生效日必须分开；规则过滤池的可见日由
-    过滤所依赖的输入推导。数据集级标 B：规则推导与公告日混用，行级
-    pit_grade 仍按输入最差继承。读取只认 knowledge_dt。
+    指数与行业成分延续旧仓：as_of 落在 [S_CON_INDATE, S_CON_OUTDATE]
+    （OUTDATE 空则仍在池）即视为当时成员。源表无独立公告日，knowledge_dt
+    等于 valid_from（INDATE）。成员查询还要满足区间命中，不能只滤
+    knowledge_dt。规则过滤池的 knowledge_dt 由输入推导。数据集级标 B：
+    生效区间不是公告日，行级 pit_grade 仍按输入最差继承。
 pit_recoverable: true
 recomputable: true

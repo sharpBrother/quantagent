@@ -71,14 +71,17 @@ superseded_by: null
    里声明它从哪个父池派生。ETF 因子研究池沿用同一张表：旧
    `strategy_etf_list` / `strategy_etf_list_*` 的 `universe_id` 统一
    `universe_etf_*`（如 `universe_etf`、`universe_etf_2`、`universe_etf_rebate`），
-   禁止按名单再建物理表。
+   禁止按名单再建物理表。这些名册暂时不设 PIT（与 `ASHAREDESCRIPTION` 同类），
+   不得当作 as_of 历史成分来读。
 
 ### 可见性
 
-指数成分调整通常**提前公告、延后生效**，所以 `knowledge_dt` 取公告日而不
-是生效日，`valid_from` 取生效日。两者必须分开，压成一个字段就无法回答
-「调整生效前市场是否已经知道」。规则驱动的池（如按市值过滤）的
-`knowledge_dt` 由过滤所依赖的输入推导。
+指数 / 行业成分**延续旧仓**：`as_of` 落在
+`S_CON_INDATE <= as_of` 且 `(S_CON_OUTDATE IS NULL OR S_CON_OUTDATE >= as_of)`
+即为当时成员。源表没有独立公告日，写入 `mart.universe_member` 时
+`knowledge_dt = valid_from = S_CON_INDATE`。这与「公告日早于生效日」的通用
+区间模型不矛盾：有公告日的源仍可把 `knowledge_dt` 填得更早；Wind 成分现在
+没有这个字段。规则过滤池的 `knowledge_dt` 仍由输入推导。
 
 ## forward_return：落 mart，但必须防泄漏
 

@@ -31,7 +31,7 @@ columns:
   knowledge_dt:
     dtype: date
     nullable: false
-    description: 该成员关系的可见日；指数成分取公告日，规则池由输入推导
+    description: 该成员关系的可见日；Wind 指数/行业成分 = valid_from = INDATE，规则池由输入推导
   pit_grade:
     dtype: string
     nullable: false

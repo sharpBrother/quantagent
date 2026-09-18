@@ -44,10 +44,14 @@ def test_forward_return_is_evaluation_only() -> None:
 
 @pytest.mark.contracts
 def test_universe_member_is_interval() -> None:
-    schema = load_bundle().schemas["mart.universe_member"]
+    bundle = load_bundle()
+    schema = bundle.schemas["mart.universe_member"]
+    vis = bundle.visibilities["mart.universe_member"]
     assert schema.temporal_kind == "interval"
     assert schema.columns["valid_to"].nullable is True
     assert schema.keys == ["universe_id", "asset_id", "valid_from"]
+    assert vis.visibility.field == "knowledge_dt"
+    assert "S_CON_INDATE" in vis.visibility.rationale
 
 
 @pytest.mark.contracts

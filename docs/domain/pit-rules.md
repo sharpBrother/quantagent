@@ -42,11 +42,13 @@ YAML**，也**不得作为 PIT 查询的数据集**（fail-closed 仍然成立�
 - 指标目录（如 `C_ED_IndicatorMain`，时间序列在数据表里）
 - 行业/代码对照（如 `tushare_ths_industry_mapping_citics`）
 - 手维护对照与配置映射（如 `mapping_industry_etf`、`strategy_citics_list`）
+- 当前名册、暂无进出历史（如旧 `strategy_etf_list*`，类似 `ASHAREDESCRIPTION`）
 
 有纳入/剔除日的**成分与行业归属**（`AINDEXMEMBERS*`、`ASHARESECNINDUSTRIESCLASS`）
-是时间序列，要配 PIT。行情、财报、一致预期同样要配。ETF 因子研究池
-（旧 `strategy_etf_list*`，新 `universe_id=universe_etf_*`）是样本空间成员，
-走 `mart.universe_member`，要配 PIT；不按名单再建物理表，也不当对照映射免 PIT。
+是时间序列，要配 PIT。读取延续旧仓：`S_CON_INDATE <= as_of` 且
+`(S_CON_OUTDATE IS NULL OR S_CON_OUTDATE >= as_of)`。行情、财报、一致预期
+同样要配。`strategy_etf_list*` 暂时不配 PIT、不得当 PIT 数据集读；命名仍
+`universe_etf_*`，不按名单再建物理表。
 
 逐表标记见 [../migration/wx2-table-list.md](../migration/wx2-table-list.md)
 的 `pit_required`。
@@ -78,6 +80,9 @@ YAML**，也**不得作为 PIT 查询的数据集**（fail-closed 仍然成立�
 | FRED / GPR | vintage 严格 `< as_of`，禁止用观测日当可见日 | `source_field` 首次 vintage |
 | `FIN_APPO_RELE_DATE` | `DECLARE_DATE < as_of` | `source_field` `field=DECLARE_DATE`，不含当日 |
 | `fund_share` | `trade_date` 区间，MDS **不**前值填充 | `same_day_close`；禁止 ffill |
+| 指数 / 行业成分 `AINDEXMEMBERS*` | `S_CON_INDATE <= as_of` 且 `(OUTDATE IS NULL OR OUTDATE >= as_of)` | 区间命中，闭区间；源表无公告日，`knowledge_dt = valid_from = INDATE` |
+| 指数 / 行业成分 `AINDEXMEMBERS*` | `S_CON_INDATE <= as_of` 且 `(OUTDATE IS NULL OR OUTDATE >= as_of)` | 区间命中，闭区间；源表无公告日，`knowledge_dt = valid_from = INDATE` |
+| 当前名册 `strategy_etf_list*` | 无历史进出，类似 `ASHAREDESCRIPTION` | **不配 PIT**，不得当 PIT 数据集读 |
 
 公共 PIT 原语只保证 `visible_col <= as_of`；具体列由调用方传入。`latest_visible_by_key` 在旧仓生产路径上**未接线**。
 
@@ -85,11 +90,9 @@ YAML**，也**不得作为 PIT 查询的数据集**（fail-closed 仍然成立�
 
 ### 待裁定（旧仓互相冲突，未写 YAML）
 
-1. **指数/行业成分**：旧仓用 `S_CON_INDATE`/`OUTDATE` 对 `as_of` 切片（生效日）；新仓 `mart.universe_member` 已规定 `knowledge_dt` 取公告日。源表跟哪边？
-2. **ETF 因子池** `strategy_etf_list*`：当前名单、无进出历史。回测按当日快照会前视。
-3. **财报 `ANN_DT` 当日是否可见**：`agent_style_rotation` 用 `<= as_of`；`raw_loader` 用 `< adj`。列和「空公告不可见、同报告期留最后一次」已钉死，只差不等式。
-4. **`der_prob_excess_stock`**：`(declare_date < adj) OR (entrytime < adj)`，比双字段都可见更松。
-5. **成长事件 `confirm_date`**：ETF 路径 `<= T`；成长策略 / universe 用调仓日前第 2 个交易日。
+1. **财报 `ANN_DT` 当日是否可见**：`agent_style_rotation` 用 `<= as_of`；`raw_loader` 用 `< adj`。列和「空公告不可见、同报告期留最后一次」已钉死，只差不等式。
+2. **`der_prob_excess_stock`**：`(declare_date < adj) OR (entrytime < adj)`，比双字段都可见更松。
+3. **成长事件 `confirm_date`**：ETF 路径 `<= T`；成长策略 / universe 用调仓日前第 2 个交易日。
 
 金十 ISM 的 `< T` 与 CPI/PPI 的含当日已按数据集分开，不再问。WGC 旧文档自认非严格 PIT，迁入前单独标 grade。
 

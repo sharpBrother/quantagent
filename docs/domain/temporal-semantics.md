@@ -2,7 +2,7 @@
 title: 时间语义：三条时间轴与四种时间形态
 status: active
 created: 2026-09-16
-updated: 2026-09-17
+updated: 2026-09-18
 applies_to:
   - src/quantagent/contracts/visibility/
   - src/quantagent/domain/pit/
@@ -104,7 +104,9 @@ B 级 PIT 来源。无发布时间的数据集停在 C/D。见
 
 区间数据自身也有可见性问题：指数成分的调整通常提前公告、延后生效，所以
 `published_at`（公告日）与 `valid_from`（生效日）是两个不同的日期，两者都
-要保留。
+要保留。Wind `AINDEXMEMBERS*` 源表没有独立公告日，现役下游用
+`S_CON_INDATE` / `S_CON_OUTDATE` 对 `as_of` 闭区间切片；新仓延续这条，
+不编造公告日。
 
 ### snapshot：时点快照
 

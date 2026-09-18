@@ -485,40 +485,40 @@ tables:
     etf_sector_rotation/configs/etf_rotation_v1.yaml
   dest: 不迁 wx2 行；写入 mart.universe_member，universe_id=universe_etf_blacklist（ETF
     因子池剔除集）。禁止再建 strategy_etf_black_list 表
-  extra: 与 strategy_etf_list* 同属 ETF 因子池，不是代码映射表。成员需 PIT（as_of 当日池）。非
-    vendor 行情，不进第一批 src_*。
+  extra: 与 strategy_etf_list* 同类落点，剔除集。成员若按历史切片需 PIT；本表仅
+    insert_time。非 vendor 行情，不进第一批 src_*。
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
 - name: strategy_etf_list
   folder: tushare
-  nature: universe_cache
+  nature: reference
   row_count: 未查
   category: 1
-  reason: ETF 因子研究样本池，无法从 vendor 行情重算；现役：core/market_data_service.py, data/ETF四象限推送.py,
+  reason: ETF 因子研究样本池（当前名册），无法从 vendor 行情重算；现役：core/market_data_service.py, data/ETF四象限推送.py,
     data/etf_real_trade_v14.py 等11处
   dest: 不迁 wx2 行；写入 mart.universe_member，universe_id=universe_etf。禁止再建 strategy_etf_list
     表
-  extra: 旧 strategy_etf_list* 统一改名为 universe_etf_*（universe_id 前缀），物理只落 mart.universe_member。ETF→指数对照是成员属性，不另建表。成员需
-    PIT。非 vendor 行情，不进第一批 src_*。
+  extra: 无需 PIT 规则（当前名册，类似 ASHAREDESCRIPTION，暂不按历史切片）。universe_id
+    仍用 universe_etf_*。非 vendor 行情，不进第一批 src_*。
   src_batch1: false
   origin: dictionary_manifest
-  pit_required: true
+  pit_required: false
 - name: strategy_etf_list_2
   folder: tushare
-  nature: universe_cache
+  nature: reference
   row_count: 未查
   category: 1
-  reason: ETF 因子研究主池（因子实体按 index_code），无法从 vendor 行情重算；现役：alpha_factory/etf/gateway.py,
+  reason: ETF 因子研究主池当前名册（因子实体按 index_code），无法从 vendor 行情重算；现役：alpha_factory/etf/gateway.py,
     alpha_factory/etf/scripts/analyze_etf_factor_tradability.py, alpha_factory/etf/timepoint_momentum/engine.py
     等16处
   dest: 不迁 wx2 行；写入 mart.universe_member，universe_id=universe_etf_2。禁止再建 strategy_etf_list_2
     表
-  extra: 旧 strategy_etf_list* 统一改名为 universe_etf_*。ETF→指数代码随成员写入，不另建映射表。成员需
-    PIT。非 vendor 行情，不进第一批 src_*。
+  extra: 无需 PIT 规则（当前名册，类似 ASHAREDESCRIPTION，暂不按历史切片）。universe_id
+    仍用 universe_etf_*。非 vendor 行情，不进第一批 src_*。
   src_batch1: false
   origin: dictionary_manifest
-  pit_required: true
+  pit_required: false
 - name: trade_cal
   folder: tushare
   nature: vendor
@@ -597,7 +597,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py, alpha_factory/etf/gateway.py,
     alpha_factory/etf/timepoint_momentum/engine.py 等34处
   dest: src_wind.AINDEXMEMBERS（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -609,7 +609,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py, core/market_data_service.py,
     core/raw_loader.py 等9处
   dest: src_wind.AINDEXMEMBERSCITICS（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -621,7 +621,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, core/market_data_service.py,
     data/宽基指数配置策略2.py 等5处
   dest: src_wind.AINDEXMEMBERSCITICS2（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -633,7 +633,7 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, core/market_data_service.py,
     data/宽基指数配置策略2.py 等4处
   dest: src_wind.AINDEXMEMBERSCITICS3（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -645,7 +645,7 @@ tables:
   reason: 现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/timepoint_momentum/engine.py,
     core/market_data_service.py
   dest: src_wind.AINDEXMEMBERSCITICSZL（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。
   src_batch1: false
   origin: code
   pit_required: true
@@ -1024,7 +1024,7 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：strategy/ah_premium_hk_backtest.py
   dest: src_wind.SWINDEXMEMBERS（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
@@ -3484,9 +3484,11 @@ tables:
   reason: ETF 因子池变体，现役无引用
   dest: 不迁移；若启用则写入 mart.universe_member，universe_id=universe_etf_rebate。禁止再建
     strategy_etf_list_rebate 表
-  extra: 旧仓 7c506d511。命名跟 strategy_etf_list* 统一为 universe_etf_*。
+  extra: 无需 PIT 规则（当前名册，类似 ASHAREDESCRIPTION）。旧仓 7c506d511。命名
+    universe_etf_*。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: strategy_etf_pool
   folder: tushare
   nature: other_app
@@ -3802,7 +3804,7 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_2.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。
   src_batch1: false
   origin: dictionary_manifest
   pit_required: true
