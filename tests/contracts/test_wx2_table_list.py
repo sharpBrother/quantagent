@@ -137,3 +137,22 @@ def test_review_baseline_corrections(repo_root: Path) -> None:
     ):
         assert "src_suntime" in listed[name]["dest"], name
         assert listed[name]["category"] == 1, name
+
+    no_pit = {
+        "CT_SystemConst",
+        "SecuMain",
+        "SecuMainAll",
+        "C_ED_IndicatorMain",
+        "ASHAREDESCRIPTION",
+        "AINDEXINDUSTRIESCITICS",
+        "tushare_ths_industry_mapping_citics",
+        "mapping_industry_etf",
+        "strategy_etf_list",
+        "universe_style_rotation",
+    }
+    for name in no_pit:
+        assert listed[name].get("pit_required") is False, name
+        assert "无需 PIT" in listed[name]["extra"], name
+    assert listed["AINDEXMEMBERS"].get("pit_required") is not False
+    assert listed["trade_cal"].get("pit_required") is not False
+    assert listed["ASHARESECNINDUSTRIESCLASS"].get("pit_required") is not False

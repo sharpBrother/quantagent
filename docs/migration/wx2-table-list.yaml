@@ -23,6 +23,7 @@ tables:
   extra: 旧 wx2 表名仅作指针。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: Bond_BondIndexQuote
   folder: jy
   nature: vendor
@@ -33,6 +34,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_md
+  pit_required: true
 - name: Bond_CBYieldCurveAll
   folder: jy
   nature: vendor
@@ -43,6 +45,7 @@ tables:
   extra: 不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_md
+  pit_required: true
 - name: C_ED_IndicatorMain
   folder: jy
   nature: vendor
@@ -50,9 +53,10 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：macro_regime/config/indicator_registry.yaml, scripts/macro_regime_revalidation/p0_evidence_pit_qualification.py
   dest: src_jydb.C_ED_IndicatorMain（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: false
 - name: C_ED_MacroIndicatorData
   folder: jy
   nature: vendor
@@ -64,6 +68,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: C_IN_IndicatorDataV
   folder: jy
   nature: vendor
@@ -75,6 +80,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: CT_SystemConst
   folder: jy
   nature: vendor
@@ -82,9 +88,10 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：scripts/macro_regime_external_revenue_wiring.py
   dest: src_jydb.CT_SystemConst（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: false
 - name: DZ_MainOperIncome
   folder: jy
   nature: vendor
@@ -96,6 +103,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ED_FixedInvestment
   folder: jy
   nature: vendor
@@ -106,6 +114,7 @@ tables:
   extra: 不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: ED_MoneySupply
   folder: jy
   nature: vendor
@@ -117,6 +126,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ED_SocialFinancing
   folder: jy
   nature: vendor
@@ -128,6 +138,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: IN_ManufacturingPMI
   folder: jy
   nature: vendor
@@ -138,6 +149,7 @@ tables:
   extra: 不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: QT_GoldTradeMarket
   folder: jy
   nature: vendor
@@ -148,6 +160,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_md
+  pit_required: true
 - name: QT_OSIndexQuote
   folder: jy
   nature: vendor
@@ -159,6 +172,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_md
+  pit_required: true
 - name: SecuMain
   folder: jy
   nature: vendor
@@ -166,9 +180,10 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：scripts/macro_regime_external_revenue_wiring.py
   dest: src_jydb.SecuMain（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: false
 - name: SecuMainAll
   folder: jy
   nature: vendor
@@ -177,9 +192,10 @@ tables:
   reason: 第一批 src_tables.yaml；现役：core/market_data_service.py, style_rotation/large_small/phase_e_final_validation.py,
     scripts/run_large_small_style_rotation.py
   dest: src_jydb.SecuMainAll（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。
   src_batch1: true
   origin: dictionary_md
+  pit_required: false
 - name: macro_eco_cal
   folder: macro
   nature: vendor
@@ -191,6 +207,7 @@ tables:
     YAML，须负责人确认后再配
   src_batch1: true
   origin: src_tables_yaml
+  pit_required: true
 - name: macro_fred_observation
   folder: macro
   nature: vendor
@@ -201,6 +218,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: src_tables_yaml
+  pit_required: true
 - name: macro_gpr_daily
   folder: macro
   nature: vendor
@@ -211,6 +229,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: src_tables_yaml
+  pit_required: true
 - name: macro_jin10_china_cpi_yoy
   folder: macro
   nature: vendor
@@ -221,6 +240,7 @@ tables:
   extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: code
+  pit_required: true
 - name: macro_jin10_china_ppi_yoy
   folder: macro
   nature: vendor
@@ -231,6 +251,7 @@ tables:
   extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: code
+  pit_required: true
 - name: macro_jin10_usa_ism_pmi
   folder: macro
   nature: vendor
@@ -242,6 +263,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: src_tables_yaml
+  pit_required: true
 - name: macro_shibor
   folder: macro
   nature: vendor
@@ -255,6 +277,7 @@ tables:
     visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: src_tables_yaml
+  pit_required: true
 - name: macro_us_treasury_yield
   folder: macro
   nature: vendor
@@ -267,6 +290,7 @@ tables:
     YAML，须负责人确认后再配
   src_batch1: true
   origin: src_tables_yaml
+  pit_required: true
 - name: macro_wgc_gold_demand
   folder: macro
   nature: vendor
@@ -277,6 +301,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: src_tables_yaml
+  pit_required: true
 - name: con_forecast_citic
   folder: suntime
   nature: vendor
@@ -287,6 +312,7 @@ tables:
   extra: 不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: con_forecast_roll_stk
   folder: suntime
   nature: vendor
@@ -298,6 +324,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: con_forecast_stk
   folder: suntime
   nature: vendor
@@ -309,6 +336,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: con_forecast_stk_ttm
   folder: suntime
   nature: vendor
@@ -320,6 +348,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: der_diver_stk
   folder: suntime
   nature: vendor
@@ -330,6 +359,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: der_prob_excess_stock
   folder: suntime
   nature: vendor
@@ -341,6 +371,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: FIN_APPO_RELE_DATE
   folder: suntime
   nature: vendor
@@ -353,6 +384,7 @@ tables:
     YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: fin_income_gen
   folder: suntime
   nature: vendor
@@ -363,6 +395,7 @@ tables:
   extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: fin_performance_express
   folder: suntime
   nature: vendor
@@ -373,6 +406,7 @@ tables:
   extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: fin_performance_forecast
   folder: suntime
   nature: vendor
@@ -383,6 +417,7 @@ tables:
   extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: rpt_earnings_adjust
   folder: suntime
   nature: vendor
@@ -394,6 +429,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: rpt_forecast_stk
   folder: suntime
   nature: vendor
@@ -404,6 +440,7 @@ tables:
   extra: 不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: fund_share
   folder: tushare
   nature: vendor
@@ -415,6 +452,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: mapping_industry_etf
   folder: tushare
   nature: reference
@@ -423,9 +461,10 @@ tables:
   reason: 手维护/映射参考表，无法从 vendor 行情重算；现役：data/ETF四象限推送.py, data/etf_real_trade_v14.py,
     data/情绪择时推送.py 等8处
   dest: 待定落点（src_ref / frozen / 配置），现不迁
-  extra: 非 vendor 行情，不进第一批 src_*。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。非 vendor 行情，不进第一批 src_*。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: strategy_citics_list
   folder: tushare
   nature: reference
@@ -433,9 +472,10 @@ tables:
   category: 1
   reason: 手维护/映射参考表，无法从 vendor 行情重算；现役：data/宽基指数配置策略2.py
   dest: 待定落点（src_ref / frozen / 配置），现不迁
-  extra: 非 vendor 行情，不进第一批 src_*。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。非 vendor 行情，不进第一批 src_*。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: strategy_etf_black_list
   folder: tushare
   nature: reference
@@ -444,9 +484,10 @@ tables:
   reason: 手维护/映射参考表，无法从 vendor 行情重算；现役：data/etf_real_trade_v14.py, etf_sector_rotation/etf_sector_rotation/gateways/rotation_gateway.py,
     etf_sector_rotation/configs/etf_rotation_v1.yaml
   dest: 待定落点（src_ref / frozen / 配置），现不迁
-  extra: 非 vendor 行情，不进第一批 src_*。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。非 vendor 行情，不进第一批 src_*。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: strategy_etf_list
   folder: tushare
   nature: reference
@@ -455,9 +496,10 @@ tables:
   reason: 手维护/映射参考表，无法从 vendor 行情重算；现役：core/market_data_service.py, data/ETF四象限推送.py,
     data/etf_real_trade_v14.py 等11处
   dest: 待定落点（src_ref / frozen / 配置），现不迁
-  extra: 非 vendor 行情，不进第一批 src_*。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。非 vendor 行情，不进第一批 src_*。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: strategy_etf_list_2
   folder: tushare
   nature: reference
@@ -466,9 +508,10 @@ tables:
   reason: 手维护/映射参考表，无法从 vendor 行情重算；现役：alpha_factory/etf/gateway.py, alpha_factory/etf/scripts/analyze_etf_factor_tradability.py,
     alpha_factory/etf/timepoint_momentum/engine.py 等16处
   dest: 待定落点（src_ref / frozen / 配置），现不迁
-  extra: 非 vendor 行情，不进第一批 src_*。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。非 vendor 行情，不进第一批 src_*。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: trade_cal
   folder: tushare
   nature: vendor
@@ -480,6 +523,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: tushare_ths_industry_mapping_citics
   folder: tushare
   nature: vendor
@@ -487,9 +531,10 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：alpha_factory/all_a_canonical_scene.py, scripts/backfill_alpha_factory_pf_quarterly.py
   dest: src_tushare.tushare_ths_industry_mapping_citics（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: false
 - name: universe_style_rotation
   folder: tushare
   nature: reference
@@ -498,9 +543,10 @@ tables:
   reason: 手维护/映射参考表，无法从 vendor 行情重算；现役：agent_style_rotation/score_engine.py, agent_style_rotation/universe.py,
     core/market_data_service.py 等13处
   dest: 待定落点（src_ref / frozen / 配置），现不迁
-  extra: 非 vendor 行情，不进第一批 src_*。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。非 vendor 行情，不进第一批 src_*。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: AINDEXEODPRICES
   folder: wind
   nature: vendor
@@ -512,6 +558,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: AINDEXINDUSTRIESCITICS
   folder: wind
   nature: vendor
@@ -519,9 +566,10 @@ tables:
   category: 1
   reason: 第一批 src_tables.yaml；现役：data/etf_trend_strategy.py, data/情绪择时推送.py, scripts/macro_regime_walk_forward_evaluation.py
   dest: src_wind.AINDEXINDUSTRIESCITICS（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: false
 - name: AINDEXINDUSTRIESEODCITICS
   folder: wind
   nature: vendor
@@ -533,6 +581,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: AINDEXMEMBERS
   folder: wind
   nature: vendor
@@ -544,6 +593,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: AINDEXMEMBERSCITICS
   folder: wind
   nature: vendor
@@ -555,6 +605,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: AINDEXMEMBERSCITICS2
   folder: wind
   nature: vendor
@@ -566,6 +617,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: AINDEXMEMBERSCITICS3
   folder: wind
   nature: vendor
@@ -577,6 +629,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: AINDEXMEMBERSCITICSZL
   folder: wind
   nature: vendor
@@ -588,6 +641,7 @@ tables:
   extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: code
+  pit_required: true
 - name: AINDEXVALUATION
   folder: wind
   nature: vendor
@@ -599,6 +653,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHAREBALANCESHEET
   folder: wind
   nature: vendor
@@ -610,6 +665,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHARECASHFLOW
   folder: wind
   nature: vendor
@@ -621,6 +677,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHAREDESCRIPTION
   folder: wind
   nature: vendor
@@ -629,9 +686,10 @@ tables:
   reason: 第一批 src_tables.yaml；现役：agent_style_rotation/consensus_fttm_wide_builder.py,
     alpha_factory/all_a_canonical_scene.py, alpha_factory/data_gateway.py 等24处
   dest: src_wind.ASHAREDESCRIPTION（第一批已收录，本清单不启动迁入）
-  extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: false
 - name: ASHAREDIVIDEND
   folder: wind
   nature: vendor
@@ -643,6 +701,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHAREEODDERIVATIVEINDICATOR
   folder: wind
   nature: vendor
@@ -654,6 +713,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHAREEODPRICES
   folder: wind
   nature: vendor
@@ -665,6 +725,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHAREFINANCIALINDICATOR
   folder: wind
   nature: vendor
@@ -676,6 +737,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHAREINCOME
   folder: wind
   nature: vendor
@@ -687,6 +749,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHAREINSIDEHOLDER
   folder: wind
   nature: vendor
@@ -697,6 +760,7 @@ tables:
   extra: 不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHAREMARGINTRADE
   folder: wind
   nature: vendor
@@ -707,6 +771,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHAREMARGINTRADESUM
   folder: wind
   nature: vendor
@@ -717,6 +782,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHAREMJRHOLDERTRADE
   folder: wind
   nature: vendor
@@ -727,6 +793,7 @@ tables:
   extra: 不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHAREMONEYFLOW
   folder: wind
   nature: vendor
@@ -738,6 +805,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHAREPROFITEXPRESS
   folder: wind
   nature: vendor
@@ -748,6 +816,7 @@ tables:
   extra: 不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHAREPROFITNOTICE
   folder: wind
   nature: vendor
@@ -758,6 +827,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHAREST
   folder: wind
   nature: vendor
@@ -769,6 +839,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHARETRADINGSUSPENSION
   folder: wind
   nature: vendor
@@ -779,6 +850,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: CBONDCONVPRICE
   folder: wind
   nature: vendor
@@ -789,6 +861,7 @@ tables:
   extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: code
+  pit_required: true
 - name: CBONDCURVECNBD
   folder: wind
   nature: vendor
@@ -800,6 +873,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: CBONDCURVECSI
   folder: wind
   nature: vendor
@@ -811,6 +885,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_md
+  pit_required: true
 - name: CBONDEODPRICES
   folder: wind
   nature: vendor
@@ -821,6 +896,7 @@ tables:
   extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: code
+  pit_required: true
 - name: CBONDPRICESREPO
   folder: wind
   nature: vendor
@@ -833,6 +909,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: CBONDPUT
   folder: wind
   nature: vendor
@@ -843,6 +920,7 @@ tables:
   extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: code
+  pit_required: true
 - name: CBONDREPO
   folder: wind
   nature: vendor
@@ -854,6 +932,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: CBONDREPOANDIBLEODPRICES
   folder: wind
   nature: vendor
@@ -864,6 +943,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: CBONDTRADINGSUSPENSION
   folder: wind
   nature: vendor
@@ -874,6 +954,7 @@ tables:
   extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: code
+  pit_required: true
 - name: CCBONDVALUATION
   folder: wind
   nature: vendor
@@ -884,6 +965,7 @@ tables:
   extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: code
+  pit_required: true
 - name: CHINAMUTUALFUNDSTOCKPORTFOLIO
   folder: wind
   nature: vendor
@@ -894,6 +976,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: FXEODPRICES
   folder: wind
   nature: vendor
@@ -904,6 +987,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: HKEXCALENDAR
   folder: wind
   nature: vendor
@@ -914,6 +998,7 @@ tables:
   extra: 补 DDL / src_tables.yaml 前须负责人确认。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: code
+  pit_required: true
 - name: SHIBORPRICES
   folder: wind
   nature: vendor
@@ -924,6 +1009,7 @@ tables:
   extra: 不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_md
+  pit_required: true
 - name: SWINDEXMEMBERS
   folder: wind
   nature: vendor
@@ -934,6 +1020,7 @@ tables:
   extra: 存量 pit_recoverable:false。不定 visibility YAML，须负责人确认后再配
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
 - name: barra_cne6_exposure
   folder: barra
   nature: derived
@@ -2984,9 +3071,10 @@ tables:
   category: 5
   reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: fund_em_value_est
   folder: tushare
   nature: vendor
@@ -3004,9 +3092,10 @@ tables:
   category: 5
   reason: 仅采集写入：data/tushare_data.py, data/wind_to_sql_am.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: fund_monthly_return
   folder: tushare
   nature: vendor
@@ -3134,9 +3223,10 @@ tables:
   category: 5
   reason: 参考/映射表，现役无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: mapping_future_contract
   folder: tushare
   nature: reference
@@ -3144,9 +3234,10 @@ tables:
   category: 5
   reason: 参考/映射表，现役无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: mapping_trade_etf
   folder: tushare
   nature: reference
@@ -3154,9 +3245,10 @@ tables:
   category: 5
   reason: 参考/映射表，现役无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: market_heat_avg_pctchg
   folder: tushare
   nature: derived
@@ -3584,9 +3676,10 @@ tables:
   category: 5
   reason: 仅采集写入：data/tushare_ths_industry.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: tushare_ths_industry_market
   folder: tushare
   nature: vendor
@@ -3594,9 +3687,10 @@ tables:
   category: 5
   reason: 仅采集写入：data/tushare_ths_industry.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: tushare_ths_industry_member
   folder: tushare
   nature: vendor
@@ -3607,6 +3701,7 @@ tables:
   extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: tushare_ths_industry_member_2
   folder: tushare
   nature: vendor
@@ -3617,6 +3712,7 @@ tables:
   extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: tushare_ths_industry_member_3
   folder: tushare
   nature: vendor
@@ -3627,6 +3723,7 @@ tables:
   extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: universe_500_1800_balance
   folder: tushare
   nature: universe_cache
@@ -3664,9 +3761,10 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_2.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。
   src_batch1: false
   origin: code
+  pit_required: false
 - name: AINDEXFINANCIALDERIVATIVE
   folder: wind
   nature: vendor
@@ -3684,9 +3782,10 @@ tables:
   category: 5
   reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: ASHARESECNINDUSTRIESCLASS
   folder: wind
   nature: vendor
@@ -3697,6 +3796,7 @@ tables:
   extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: true
 - name: ASHARESTOCKREPO
   folder: wind
   nature: vendor
@@ -3734,9 +3834,10 @@ tables:
   category: 5
   reason: 字典或代码有记载，现役模块/启用调度/data_registry 均无引用
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: CFUTURESCONTRACTMAPPING
   folder: wind
   nature: vendor
@@ -3744,9 +3845,10 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_2.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: CFUTURESDESCRIPTION
   folder: wind
   nature: vendor
@@ -3754,9 +3856,10 @@ tables:
   category: 5
   reason: 仅采集写入：data/wind_to_sql_2.py
   dest: 不迁移
-  extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。
   src_batch1: false
   origin: dictionary_manifest
+  pit_required: false
 - name: CFUTURESMAIN
   folder: wind
   nature: vendor
@@ -3807,4 +3910,4 @@ tables:
   extra: 旧仓 7c506d511。不定 visibility YAML，须负责人确认后再配
   src_batch1: false
   origin: dictionary_manifest
-review_baseline: 2026-09-18 勘误；Barra 暴露并入 feature.value，不建 barra_* 表
+review_baseline: 2026-09-18 勘误；映射/代码表 pit_required=false；Barra 暴露并入 feature.value

@@ -2,12 +2,13 @@
 title: PIT 规则体系
 status: active
 created: 2026-09-16
-updated: 2026-09-17
+updated: 2026-09-18
 applies_to:
   - src/quantagent/contracts/visibility/
   - src/quantagent/domain/pit/
   - src/quantagent/features/
   - src/quantagent/publish/
+  - docs/migration/wx2-table-list.yaml
 ---
 
 # PIT 规则体系
@@ -29,6 +30,24 @@ applies_to:
 
 四条规则的形式完全不同，不可能用一个通用公式覆盖。因此规则必须是**声明式
 的、可测试的、可被引用的**一等公民。
+
+## 哪些对象不配 visibility
+
+visibility 管的是**观测何时可知**。下列对象不是观测，**不写 visibility
+YAML**，也**不得作为 PIT 查询的数据集**（fail-closed 仍然成立：没有规则
+就不能当研究序列读）。只允许做身份/代码 join：
+
+- 系统代码表（如聚源 `CT_SystemConst`）
+- 证券/指数/期货主数据（如 `SecuMain`、`ASHAREDESCRIPTION`）
+- 指标目录（如 `C_ED_IndicatorMain`，时间序列在数据表里）
+- 行业/代码对照（如 `tushare_ths_industry_mapping_citics`）
+- 手维护名单与配置映射（如 `strategy_etf_list`）
+
+有纳入/剔除日的**成分与行业归属**（`AINDEXMEMBERS*`、`ASHARESECNINDUSTRIESCLASS`）
+是时间序列，要配 PIT。行情、财报、一致预期同样要配。
+
+逐表标记见 [../migration/wx2-table-list.md](../migration/wx2-table-list.md)
+的 `pit_required`。
 
 ## 规则文件
 
