@@ -1443,7 +1443,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: stock_* 运行时建表模式丢弃，统一长表。confirm_date<=as_of。get_events 的 T−2 是策略层（只要已发生且已确认），不是数据集规则。
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_event_delta_roe
@@ -1453,7 +1453,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: stock_* 运行时建表模式丢弃，统一长表。confirm_date<=as_of。get_events 的 T−2 是策略层（只要已发生且已确认），不是数据集规则。
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_event_high250
@@ -1463,7 +1463,7 @@ tables:
   category: 2
   reason: 现役：alpha_factory/etf/gateway.py, factors/factor_event.py, factors/factor_event_2.py
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: stock_* 运行时建表模式丢弃，统一长表。confirm_date<=as_of。get_events 的 T−2 是策略层（只要已发生且已确认），不是数据集规则。
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_event_high_growth
@@ -1474,7 +1474,7 @@ tables:
   reason: 现役：alpha_factory/data_gateway.py, alpha_factory/etf/gateway.py, factors/factor_event.py
     等5处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: stock_* 运行时建表模式丢弃，统一长表。confirm_date<=as_of。get_events 的 T−2 是策略层（只要已发生且已确认），不是数据集规则。
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_event_sue
@@ -1485,7 +1485,7 @@ tables:
   reason: 现役：alpha_factory/etf/gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json,
     factors/factor_event.py 等4处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: stock_* 运行时建表模式丢弃，统一长表。confirm_date<=as_of。get_events 的 T−2 是策略层（只要已发生且已确认），不是数据集规则。
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_event_surprising
@@ -1496,7 +1496,7 @@ tables:
   reason: 现役：alpha_factory/data_gateway.py, alpha_factory/etf/gateway.py, factors/factor_event.py
     等5处
   dest: 不迁 wx2 行；新仓 features/mart 重算
-  extra: stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问
+  extra: stock_* 运行时建表模式丢弃，统一长表。confirm_date<=as_of。get_events 的 T−2 是策略层（只要已发生且已确认），不是数据集规则。
   src_batch1: false
   origin: dictionary_manifest
 - name: stock_mif

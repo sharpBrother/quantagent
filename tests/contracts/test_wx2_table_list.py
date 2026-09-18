@@ -195,3 +195,17 @@ def test_review_baseline_corrections(repo_root: Path) -> None:
     assert "ANN_DT <= as_of" in md
     assert "OR (entrytime < adj)" in listed["der_prob_excess_stock"]["extra"]
     assert "(declare_date < adj) OR (entrytime < adj)" in md
+    for name in (
+        "stock_event_surprising",
+        "stock_event_high_growth",
+        "stock_event_aog",
+        "stock_event_delta_roe",
+        "stock_event_high250",
+        "stock_event_sue",
+    ):
+        assert "confirm_date<=as_of" in listed[name]["extra"], name
+        assert "策略层" in listed[name]["extra"], name
+    assert "confirm_date <= as_of" in md
+    pit = (repo_root / "docs" / "domain" / "pit-rules.md").read_text(encoding="utf-8")
+    assert "目前没有待裁定" in pit
+    assert "get_events" in pit

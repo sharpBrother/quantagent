@@ -39,6 +39,7 @@ PIT 口径见 [../domain/pit-rules.md](../domain/pit-rules.md)。
 | 成分 PIT | `AINDEXMEMBERS*` 等 | 延续旧仓 `S_CON_INDATE`/`OUTDATE` 对 `as_of` 闭区间切片 |
 | 财报 PIT | `ASHAREINCOME` 等 | `ANN_DT <= as_of`，调仓日当天可见；`raw_loader` 的 `< adj` 是因为 `adj_date` 是调仓日 |
 | 超预期 PIT | `der_prob_excess_stock` | `(declare_date < adj) OR (entrytime < adj)`，任一字段早于调仓日即可见 |
+| 事件 PIT | `stock_event_*` | `confirm_date <= as_of`；`get_events` 的 T−2 是策略层，不是数据集规则 |
 
 `src_macro` 仍留给金十 / FRED / WGC / GPR。Wind `SHIBORPRICES` 与 Tushare `shibor` 不是同一张表。
 
@@ -244,12 +245,12 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `stock_corr_vrlaglarge` | 未查 | 2 可重算 | — | 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `stock_cutamp` | 未查 | 2 可重算 | — | 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `stock_did_ratio` | 未查 | 2 可重算 | — | 现役：alpha_factory/policies/pf_historical_factor_source_availability_v3.json, alpha_factory/refresh_performance_factor_fast_ic.py, alpha_factory/registered/registered_factors.json 等6处 | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
-| `stock_event_aog` | 未查 | 2 可重算 | — | 现役：alpha_factory/etf/gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
-| `stock_event_delta_roe` | 未查 | 2 可重算 | — | 现役：alpha_factory/etf/gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
-| `stock_event_high250` | 未查 | 2 可重算 | — | 现役：alpha_factory/etf/gateway.py, factors/factor_event.py, factors/factor_event_2.py | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
-| `stock_event_high_growth` | 未查 | 2 可重算 | — | 现役：alpha_factory/data_gateway.py, alpha_factory/etf/gateway.py, factors/factor_event.py 等5处 | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
-| `stock_event_sue` | 未查 | 2 可重算 | — | 现役：alpha_factory/etf/gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json, factors/factor_event.py 等4处 | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
-| `stock_event_surprising` | 未查 | 2 可重算 | — | 现役：alpha_factory/data_gateway.py, alpha_factory/etf/gateway.py, factors/factor_event.py 等5处 | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
+| `stock_event_aog` | 未查 | 2 可重算 | — | 现役：alpha_factory/etf/gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。confirm_date<=as_of。get_events 的 T−2 是策略层（只要已发生且已确认），不是数据集规则。 |
+| `stock_event_delta_roe` | 未查 | 2 可重算 | — | 现役：alpha_factory/etf/gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。confirm_date<=as_of。get_events 的 T−2 是策略层（只要已发生且已确认），不是数据集规则。 |
+| `stock_event_high250` | 未查 | 2 可重算 | — | 现役：alpha_factory/etf/gateway.py, factors/factor_event.py, factors/factor_event_2.py | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。confirm_date<=as_of。get_events 的 T−2 是策略层（只要已发生且已确认），不是数据集规则。 |
+| `stock_event_high_growth` | 未查 | 2 可重算 | — | 现役：alpha_factory/data_gateway.py, alpha_factory/etf/gateway.py, factors/factor_event.py 等5处 | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。confirm_date<=as_of。get_events 的 T−2 是策略层（只要已发生且已确认），不是数据集规则。 |
+| `stock_event_sue` | 未查 | 2 可重算 | — | 现役：alpha_factory/etf/gateway.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json, factors/factor_event.py 等4处 | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。confirm_date<=as_of。get_events 的 T−2 是策略层（只要已发生且已确认），不是数据集规则。 |
+| `stock_event_surprising` | 未查 | 2 可重算 | — | 现役：alpha_factory/data_gateway.py, alpha_factory/etf/gateway.py, factors/factor_event.py 等5处 | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。confirm_date<=as_of。get_events 的 T−2 是策略层（只要已发生且已确认），不是数据集规则。 |
 | `stock_mif` | 未查 | 2 可重算 | — | 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json, factors/daily_factor.py 等5处 | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `stock_moneyflowh` | 未查 | 2 可重算 | — | 现役：alpha_factory/pf_historical_market_cap_policy.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `stock_nap_adj_ratio` | 未查 | 2 可重算 | — | 现役：alpha_factory/pf_nap/evidence.py, alpha_factory/pf_nap/materialization.py, alpha_factory/policies/pf_historical_factor_source_availability_v3.json | 不迁 wx2 行；新仓 features/mart 重算 | stock_* 运行时建表模式丢弃，统一长表。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
