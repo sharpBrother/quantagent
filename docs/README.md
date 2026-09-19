@@ -51,6 +51,9 @@ applies_to:
 [adr/](adr/) — 日期命名，只增不改。当前生效的决策全部在这里，`status:
 superseded` 的保留正文供追溯。
 
+- [因子多周期检验与三层准入](adr/2026-09-19-factor-horizons-and-admission.md)：
+  股票 1D/5D/10D/20D、真实标签、完整检验范围与独立准入；已裁定，待实现。
+
 ## 迁移
 
 | 文档 | 内容 |

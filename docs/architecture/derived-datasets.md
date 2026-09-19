@@ -2,7 +2,7 @@
 title: 派生数据集清单与归属
 status: active
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-19
 applies_to:
   - src/quantagent/lake/
   - src/quantagent/features/
@@ -91,6 +91,13 @@ superseded_by: null
 
 前瞻收益是行情派生的口径事实，不是因子，所以归 `mart`。但它天然含未来
 信息，是本项目最直接的一条前视泄漏通道。
+
+多周期检验与研究、Website、组合三层准入遵循
+[因子多周期检验决策](../adr/2026-09-19-factor-horizons-and-admission.md)。
+该要求已裁定、待实现：当前长表与读取接口支持 horizon 维度，并不代表
+股票 1D/5D/10D/20D 的真实标签和检验已贯通。下列现有字段不单独表达
+open-to-open 收益腿；`total/excess` 不能代替收益腿身份，实施前须明确协议绑定。
+标签成熟日以具体协议的结束日及行情可见日确定，不能仅由 horizon 数字推断。
 
 | 字段 | 类型 | 含义 |
 |---|---|---|

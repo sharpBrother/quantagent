@@ -2,7 +2,7 @@
 title: 决策记录索引
 status: active
 created: 2026-09-16
-updated: 2026-09-17
+updated: 2026-09-19
 applies_to:
   - docs/adr/
 ---
@@ -48,3 +48,9 @@ applies_to:
 | 2026-09-17 | [因子配套派生数据集的层归属](2026-09-17-derived-dataset-boundaries.md) |
 | 2026-09-17 | [因子长表 Parquet 物理布局](2026-09-17-feature-value-parquet-layout.md) |
 | 2026-09-17 | [源数据不做批次 vintage 归档](2026-09-17-no-source-vintage-archive.md) |
+
+## 研究口径决策
+
+| 日期 | 决策 |
+|---|---|
+| 2026-09-19 | [因子多周期检验与三层准入](2026-09-19-factor-horizons-and-admission.md)（已裁定，待实现） |
