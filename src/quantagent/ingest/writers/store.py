@@ -28,7 +28,22 @@ class SrcWriteStore(Protocol):
         payload_digest: str,
         started_at: datetime,
         finished_at: datetime,
+        source_cursor: str | None = None,
     ) -> int: ...
+
+    def existing_hashes(
+        self,
+        spec: SrcTableWriteSpec,
+        keys: Sequence[tuple[object, ...]],
+    ) -> dict[tuple[object, ...], str]: ...
+
+    def latest_source_cursor(self, spec: SrcTableWriteSpec) -> str | None: ...
+
+    def delete_keys(
+        self,
+        spec: SrcTableWriteSpec,
+        keys: Sequence[tuple[object, ...]],
+    ) -> None: ...
 
     def insert_rows(
         self,

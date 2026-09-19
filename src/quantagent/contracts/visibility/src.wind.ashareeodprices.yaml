@@ -1,0 +1,11 @@
+dataset: src.wind.ashareeodprices
+doc_ref: docs/contracts/src-wind-ashareeodprices.md
+temporal_kind: point_event
+event_field: TRADE_DT
+visibility:
+  rule: same_day_close
+  grade: A
+  rationale: >
+    交易所日行情。旧仓现役下游按 TRADE_DT 点查或闭区间，调用方保证
+    end<=as_of。收盘后当日公开，不得用 OPDATE 或 _ingested_at 当可见日。
+pit_recoverable: true

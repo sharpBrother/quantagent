@@ -64,3 +64,12 @@ def test_allow_db_write_defaults_false() -> None:
 def test_tushare_token_defaults_empty() -> None:
     settings = Settings(_env_file=None)
     assert settings.tushare_token.get_secret_value() == ""
+
+
+@pytest.mark.unit
+def test_wind_mssql_configured_requires_host_and_user() -> None:
+    blank = Settings(_env_file=None)
+    assert blank.wind_mssql_configured is False
+    assert blank.wind_mssql_database == "wind_db"
+    filled = Settings(_env_file=None, wind_mssql_host="10.0.0.1", wind_mssql_user="wind")
+    assert filled.wind_mssql_configured is True

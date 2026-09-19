@@ -199,6 +199,17 @@ def test_ingest_trade_cal_help_lists_write_db() -> None:
 
 
 @pytest.mark.unit
+def test_ingest_wind_ashareeodprices_help() -> None:
+    result = runner.invoke(app, ["ingest", "wind", "ASHAREEODPRICES", "--help"])
+    text = _plain(result)
+    assert result.exit_code == 0
+    assert "--write-db" in text
+    assert "--replace-existing" in text
+    assert "--page-size" in text
+    assert "--from-cursor" in text
+
+
+@pytest.mark.unit
 def test_lake_materialize_trade_calendar_help() -> None:
     result = runner.invoke(app, ["lake", "materialize", "trade-calendar", "--help"])
     text = _plain(result)

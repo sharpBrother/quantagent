@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from quantagent.adapters.postgres.errors import ForbiddenSqlError
-from quantagent.adapters.postgres.src_dml import assert_src_dml_sql
+from quantagent.adapters.postgres.src_dml import assert_src_dml_sql, assert_src_replace_sql
 
 
 @pytest.mark.unit
@@ -31,3 +31,16 @@ def test_insert_and_select_are_allowed() -> None:
 def test_forbidden_verbs_are_rejected(sql: str) -> None:
     with pytest.raises(ForbiddenSqlError):
         assert_src_dml_sql(sql)
+
+
+@pytest.mark.unit
+def test_replace_sql_allows_delete_but_not_update() -> None:
+    assert_src_replace_sql(
+        'DELETE FROM src_wind."ASHAREEODPRICES" WHERE ("OBJECT_ID") IN (VALUES (%s))'
+    )
+    with pytest.raises(ForbiddenSqlError, match="非法|禁止"):
+        assert_src_replace_sql('UPDATE src_wind."ASHAREEODPRICES" SET "OPMODE" = %s')
+    with pytest.raises(ForbiddenSqlError):
+        assert_src_dml_sql(
+            'DELETE FROM src_wind."ASHAREEODPRICES" WHERE ("OBJECT_ID") IN (VALUES (%s))'
+        )

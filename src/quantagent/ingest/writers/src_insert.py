@@ -64,10 +64,10 @@ def write_src_snapshot(
 ) -> SrcWriteResult:
     """``write_db`` 默认由调用方传 False。真写必须同时打开环境写闸。"""
     assert_writable(spec)
-    native_rows = _require_native_rows(spec, rows)
+    native_rows = require_native_rows(spec, rows)
     if not native_rows:
         raise EmptyPayloadError(f"{spec.dataset} 载荷为空")
-    _reject_duplicate_payload_keys(spec, native_rows)
+    reject_duplicate_payload_keys(spec, native_rows)
     hashes = tuple(row_hash(row, spec.native_columns) for row in native_rows)
     digest = payload_digest(native_rows, spec.native_columns)
     if not write_db:
@@ -141,7 +141,7 @@ def _rollback_or_unknown(store: SrcWriteStore) -> None:
     store.rollback()
 
 
-def _require_native_rows(
+def require_native_rows(
     spec: SrcTableWriteSpec,
     rows: Sequence[Mapping[str, object]],
 ) -> list[dict[str, object]]:
@@ -159,7 +159,7 @@ def _require_native_rows(
     return native
 
 
-def _reject_duplicate_payload_keys(
+def reject_duplicate_payload_keys(
     spec: SrcTableWriteSpec,
     rows: Sequence[Mapping[str, object]],
 ) -> None:

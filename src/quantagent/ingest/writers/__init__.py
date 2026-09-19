@@ -6,6 +6,7 @@
 from quantagent.ingest.writers.src_insert import SrcWriteResult, write_src_snapshot
 from quantagent.ingest.writers.tables import (
     ALLOWED_SRC_WRITE_TARGETS,
+    ASHAREEODPRICES,
     FORBIDDEN_SRC_WRITE_TARGETS,
     TRADE_CAL,
     SrcTableWriteSpec,
@@ -14,6 +15,7 @@ from quantagent.ingest.writers.tables import (
 
 __all__ = [
     "ALLOWED_SRC_WRITE_TARGETS",
+    "ASHAREEODPRICES",
     "FORBIDDEN_SRC_WRITE_TARGETS",
     "TRADE_CAL",
     "SrcTableWriteSpec",

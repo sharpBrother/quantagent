@@ -16,7 +16,7 @@ from quantagent.ingest.errors import (
     TargetNotAllowedError,
 )
 from quantagent.ingest.writers.src_insert import write_src_snapshot
-from quantagent.ingest.writers.tables import TRADE_CAL, assert_writable
+from quantagent.ingest.writers.tables import ASHAREEODPRICES, TRADE_CAL, assert_writable
 from quantagent.platform.config import Settings
 from quantagent.platform.errors import WriteGateError
 
@@ -60,6 +60,7 @@ class FakeSrcStore:
         self.commit_calls = 0
         self.rollback_calls = 0
         self.hashes: list[str] = []
+        self.last_source_cursor: str | None = None
 
     def existing_keys(
         self,
@@ -79,9 +80,28 @@ class FakeSrcStore:
         payload_digest: str,
         started_at: datetime,
         finished_at: datetime,
+        source_cursor: str | None = None,
     ) -> int:
         self.insert_batch_calls += 1
+        self.last_source_cursor = source_cursor
         return 7
+
+    def existing_hashes(
+        self,
+        spec: SrcTableWriteSpec,
+        keys: Sequence[tuple[object, ...]],
+    ) -> dict[tuple[object, ...], str]:
+        return {}
+
+    def latest_source_cursor(self, spec: SrcTableWriteSpec) -> str | None:
+        return self.last_source_cursor
+
+    def delete_keys(
+        self,
+        spec: SrcTableWriteSpec,
+        keys: Sequence[tuple[object, ...]],
+    ) -> None:
+        return None
 
     def insert_rows(
         self,
@@ -184,6 +204,11 @@ def test_forbidden_batch_table_is_explicit() -> None:
     )
     with pytest.raises(TargetNotAllowedError, match=r"禁写|不一致"):
         assert_writable(spec)
+
+
+@pytest.mark.unit
+def test_ashareeodprices_is_writable() -> None:
+    assert_writable(ASHAREEODPRICES)
 
 
 @pytest.mark.unit

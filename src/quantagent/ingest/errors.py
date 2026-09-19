@@ -23,5 +23,9 @@ class ReadbackError(IngestError):
     """同一事务内回读的行数或 digest 与写入不一致。"""
 
 
+class ReplaceRequiredError(IngestError):
+    """目标键已存在且内容变了，或源端 OPMODE=2。必须显式 --replace-existing。"""
+
+
 class SourceFetchError(IngestError):
     """源端拉取失败，或返回了无法按原生口径解释的值。"""

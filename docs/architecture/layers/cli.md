@@ -2,7 +2,7 @@
 title: cli 层职责
 status: active
 created: 2026-09-16
-updated: 2026-09-18
+updated: 2026-09-19
 applies_to:
   - src/quantagent/cli/
 ---
@@ -45,6 +45,7 @@ pre-commit 与 CI 都会拦 `scripts/` 目录的出现。
 
 ```
 quantagent ingest tushare trade-cal  交易日历采集
+quantagent ingest wind ASHAREEODPRICES  A股日行情（OPDATE+OBJECT_ID 分页，历史与日更共用）
 quantagent lake benchmark-layout  因子长表布局 benchmark
 quantagent lake materialize trade-calendar  交易日历标准化物化
 quantagent calendar is-open / shift  交易日历研究读取（必须 --as-of）

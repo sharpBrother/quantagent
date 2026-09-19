@@ -2,7 +2,7 @@
 title: 文档导航
 status: active
 created: 2026-09-16
-updated: 2026-09-18
+updated: 2026-09-19
 applies_to:
   - docs/
 ---
@@ -43,6 +43,7 @@ applies_to:
 | [domain/pit-rules.md](domain/pit-rules.md) | 可见性规则、PIT 等级、因子字段强制要求 |
 | [contracts/README.md](contracts/README.md) | 可执行契约与文档的双向绑定、契约变更流程 |
 | [contracts/trade-calendar.md](contracts/trade-calendar.md) | 第一个数据集契约：交易日历 |
+| [contracts/src-wind-ashareeodprices.md](contracts/src-wind-ashareeodprices.md) | Wind A 股日行情源镜像：PIT 与分页游标 |
 | [contracts/src-plane.md](contracts/src-plane.md) | 研究数据面第一批源镜像 |
 
 ## 决策记录

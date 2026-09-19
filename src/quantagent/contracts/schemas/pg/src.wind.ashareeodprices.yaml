@@ -1,0 +1,145 @@
+dataset: src.wind.ashareeodprices
+layer: pg
+doc_ref: docs/contracts/src-wind-ashareeodprices.md
+temporal_kind: point_event
+event_field: TRADE_DT
+keys:
+  - OBJECT_ID
+reads: []
+columns:
+  OBJECT_ID:
+    dtype: string
+    nullable: false
+    description: Wind 行对象主键
+  S_INFO_WINDCODE:
+    dtype: string
+    nullable: true
+    description: Wind 证券代码
+  TRADE_DT:
+    dtype: string
+    nullable: true
+    description: 交易日 YYYYMMDD，源端字符串；PIT 事件日
+  CRNCY_CODE:
+    dtype: string
+    nullable: true
+    description: 货币代码
+  S_DQ_PRECLOSE:
+    dtype: float64
+    nullable: true
+    description: 昨收
+  S_DQ_OPEN:
+    dtype: float64
+    nullable: true
+    description: 开盘
+  S_DQ_HIGH:
+    dtype: float64
+    nullable: true
+    description: 最高
+  S_DQ_LOW:
+    dtype: float64
+    nullable: true
+    description: 最低
+  S_DQ_CLOSE:
+    dtype: float64
+    nullable: true
+    description: 收盘
+  S_DQ_CHANGE:
+    dtype: float64
+    nullable: true
+    description: 涨跌
+  S_DQ_PCTCHANGE:
+    dtype: float64
+    nullable: true
+    description: 涨跌幅
+  S_DQ_VOLUME:
+    dtype: float64
+    nullable: true
+    description: 成交量
+  S_DQ_AMOUNT:
+    dtype: float64
+    nullable: true
+    description: 成交额
+  S_DQ_ADJPRECLOSE:
+    dtype: float64
+    nullable: true
+    description: 复权昨收
+  S_DQ_ADJOPEN:
+    dtype: float64
+    nullable: true
+    description: 复权开盘
+  S_DQ_ADJHIGH:
+    dtype: float64
+    nullable: true
+    description: 复权最高
+  S_DQ_ADJLOW:
+    dtype: float64
+    nullable: true
+    description: 复权最低
+  S_DQ_ADJCLOSE:
+    dtype: float64
+    nullable: true
+    description: 复权收盘
+  S_DQ_ADJFACTOR:
+    dtype: float64
+    nullable: true
+    description: 复权因子
+  S_DQ_AVGPRICE:
+    dtype: float64
+    nullable: true
+    description: 均价
+  S_DQ_TRADESTATUS:
+    dtype: string
+    nullable: true
+    description: 交易状态中文；采集时 latin1→gbk 修复
+  S_DQ_TRADESTATUSCODE:
+    dtype: float64
+    nullable: true
+    description: 交易状态代码
+  S_DQ_LIMIT:
+    dtype: float64
+    nullable: true
+    description: 涨停价
+  S_DQ_STOPPING:
+    dtype: float64
+    nullable: true
+    description: 跌停价
+  OPDATE:
+    dtype: datetime
+    nullable: true
+    description: Wind 运维时间，采集游标用，不是 PIT 可见日
+  OPMODE:
+    dtype: string
+    nullable: true
+    description: 0 新增 1 修改 2 删除
+  S_DQ_ADJCLOSE_BACKWARD:
+    dtype: float64
+    nullable: true
+    description: 后复权收盘
+  GSUPDTIME:
+    dtype: bytes
+    nullable: true
+    description: SQL Server timestamp/rowversion，PG 存 bytea
+  gsUTime:
+    dtype: datetime
+    nullable: true
+    description: Wind 更新时间
+  gsCTime:
+    dtype: datetime
+    nullable: true
+    description: Wind 创建时间
+  mopdate:
+    dtype: datetime
+    nullable: true
+    description: Wind 维护时间
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次，指向 src_wind._batch
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间，不是 PIT 依据
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 源端业务列的内容指纹

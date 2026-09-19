@@ -16,6 +16,8 @@ _PANDERA_DTYPE: dict[str, Any] = {
     "bool": "bool",
     "int64": "int64",
     "float64": "float64",
+    # Wind GSUPDTIME 一类 SQL Server rowversion，PG 存 bytea。
+    "bytes": "object",
 }
 
 

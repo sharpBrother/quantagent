@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import date, datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -48,5 +50,13 @@ def digest_file(path: Path) -> str:
 def _default(obj: Any) -> str:
     if isinstance(obj, Path):
         return obj.as_posix()
+    if isinstance(obj, bytes):
+        return obj.hex()
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if isinstance(obj, date):
+        return obj.isoformat()
+    if isinstance(obj, Decimal):
+        return format(obj, "f")
     msg = f"无法规范化为 JSON 以计算 digest: {type(obj)!r}"
     raise TypeError(msg)

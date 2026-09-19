@@ -1349,6 +1349,21 @@ wheels = [
 ]
 
 [[package]]
+name = "pymssql"
+version = "2.4.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4c/fa/00f1d56d38ce3d070602ba3687079b961b4fcbbf5085f83f92dcf5d924ba/pymssql-2.4.1.tar.gz", hash = "sha256:16720f33d7dcfc7ef906cad8d182f05ba7e5d2c35c6be6a5bc17ce5edfc428b2", size = 208142, upload-time = "2026-09-07T20:52:19.316Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/33/3f/ee6f3d51cefeb60c1d32351c80743ad711068f5ade76e7d04e95927ce6ff/pymssql-2.4.1-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:097df7b0fd55274f2b2fbb15fdee40e3ef5e72a56dc87182aadaf1fa763c7864", size = 3190268, upload-time = "2026-09-07T20:51:00.952Z" },
+    { url = "https://files.pythonhosted.org/packages/11/3e/c80c91e1d617e1a0ff5daebeb81cb696a54a6792c56b4ea6a524513de615/pymssql-2.4.1-cp312-cp312-macosx_15_0_x86_64.whl", hash = "sha256:3b88d66baad723d3f78f646c909ff3c02274b96bb543899a7139f70ec8221b42", size = 2993734, upload-time = "2026-09-07T20:51:02.42Z" },
+    { url = "https://files.pythonhosted.org/packages/a0/76/438f2dc6649900e38d11714d986a10cdbf6a666a67a09fa04cab9258d8dd/pymssql-2.4.1-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:e30b1a1e424f454ddeaf5293eb7758bbafecd4bd336ef15588866d892342cd12", size = 3085313, upload-time = "2026-09-07T20:51:03.882Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/ed/d47c1f94eaf5f10d211b90b26d932fab5ae1838619aa2ff6d2c27c35f672/pymssql-2.4.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9732d9689cfdd60d454c5a2236e6ade41dcb86b9f87ee0549cbacae51ff03e43", size = 3212608, upload-time = "2026-09-07T20:51:05.304Z" },
+    { url = "https://files.pythonhosted.org/packages/de/b5/f0356904307284debfaed363bd06d6d38ee40352645cd6a19dc073db93d7/pymssql-2.4.1-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:489ea50678fc8f6c1f2950e978b6893333a6bb5450b6aeb1783004f7869cab04", size = 3739568, upload-time = "2026-09-07T20:51:06.89Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/5b/b258c5bf6b0e9b241b417a03927b967f740d0b9e06f8c69fedc96e22bea5/pymssql-2.4.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:6811ac269462d001ffabf9162f939c9358ec10a70a645b7fd6b849009b947ebd", size = 3480815, upload-time = "2026-09-07T20:51:08.611Z" },
+    { url = "https://files.pythonhosted.org/packages/ad/c3/3dde3f750a37d071a1ea483c63fdb114036e79278cc974c6b626b5af91b7/pymssql-2.4.1-cp312-cp312-win_amd64.whl", hash = "sha256:2f5a1e28e4be6e50fea670ae35bf63f53858abb2edf1dbc17f6a2fc037e0db94", size = 2336876, upload-time = "2026-09-07T20:51:10.246Z" },
+]
+
+[[package]]
 name = "pyparsing"
 version = "3.3.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1498,6 +1513,7 @@ orchestration = [
     { name = "dagster-webserver" },
 ]
 sources = [
+    { name = "pymssql" },
     { name = "requests" },
     { name = "tushare" },
 ]
@@ -1533,6 +1549,7 @@ requires-dist = [
     { name = "pyarrow", specifier = ">=17,<21" },
     { name = "pydantic", specifier = ">=2.9,<3" },
     { name = "pydantic-settings", specifier = ">=2.5,<3" },
+    { name = "pymssql", marker = "extra == 'sources'", specifier = ">=2.3,<3" },
     { name = "pyyaml", specifier = ">=6,<7" },
     { name = "requests", marker = "extra == 'sources'", specifier = ">=2.32,<3" },
     { name = "rich", specifier = ">=13,<15" },

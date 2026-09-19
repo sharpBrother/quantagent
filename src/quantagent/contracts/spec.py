@@ -23,7 +23,7 @@ VisibilityRuleName = Literal[
     "ingest_time",
 ]
 SchemaLayer = Literal["pg", "ops", "lake"]
-ColumnDtype = Literal["date", "datetime", "string", "bool", "int64", "float64"]
+ColumnDtype = Literal["date", "datetime", "string", "bool", "int64", "float64", "bytes"]
 DatasetUsage = Literal["default", "evaluation_only"]
 
 # 分组净值里多空组合的哨兵编号。不是缺失填充，是一种组合身份。

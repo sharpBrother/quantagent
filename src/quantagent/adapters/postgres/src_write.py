@@ -12,7 +12,7 @@ from quantagent.adapters.postgres.errors import (
     TransactionUnknownError,
 )
 from quantagent.adapters.postgres.sql_types import quote_ident
-from quantagent.adapters.postgres.src_dml import assert_src_dml_sql
+from quantagent.adapters.postgres.src_dml import assert_src_dml_sql, assert_src_replace_sql
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -65,6 +65,7 @@ class PostgresSrcStore:
         payload_digest: str,
         started_at: datetime,
         finished_at: datetime,
+        source_cursor: str | None = None,
     ) -> int:
         table_sql = f"{quote_ident(spec.pg_schema)}.{quote_ident('_batch')}"
         statement = (
@@ -83,7 +84,7 @@ class PostgresSrcStore:
                         spec.dataset,
                         window_start,
                         window_end,
-                        None,
+                        source_cursor,
                         row_count,
                         payload_digest,
                         "success",
@@ -98,6 +99,68 @@ class PostgresSrcStore:
             if fetched is None:
                 raise SrcConflictError(f"{spec.dataset} 批次 INSERT 未返回 _batch_id")
             return int(fetched[0])
+
+    def existing_hashes(
+        self,
+        spec: SrcTableWriteSpec,
+        keys: Sequence[tuple[object, ...]],
+    ) -> dict[tuple[object, ...], str]:
+        found: dict[tuple[object, ...], str] = {}
+        if not keys:
+            return found
+        key_sql = ", ".join(quote_ident(name) for name in spec.keys)
+        table_sql = _table_sql(spec)
+        width = len(spec.keys)
+        row_placeholder = "(" + ", ".join(["%s"] * width) + ")"
+        for offset in range(0, len(keys), _KEY_CHUNK):
+            chunk = keys[offset : offset + _KEY_CHUNK]
+            values_sql = ", ".join([row_placeholder] * len(chunk))
+            statement = (
+                f"SELECT {key_sql}, {quote_ident('_row_hash')} FROM {table_sql} "
+                f"WHERE ({key_sql}) IN (VALUES {values_sql})"
+            )
+            assert_src_dml_sql(statement)
+            params = [item for key in chunk for item in key]
+            with self._conn.cursor() as cur:
+                cur.execute(statement, params)
+                for row in cur.fetchall():
+                    found[tuple(row[:-1])] = str(row[-1])
+        return found
+
+    def latest_source_cursor(self, spec: SrcTableWriteSpec) -> str | None:
+        table_sql = f"{quote_ident(spec.pg_schema)}.{quote_ident('_batch')}"
+        statement = (
+            f"SELECT source_cursor FROM {table_sql} "
+            "WHERE dataset = %s AND status = %s AND source_cursor IS NOT NULL "
+            f"ORDER BY {quote_ident('_batch_id')} DESC LIMIT 1"
+        )
+        assert_src_dml_sql(statement)
+        with self._conn.cursor() as cur:
+            cur.execute(statement, (spec.dataset, "success"))
+            fetched = cur.fetchone()
+        if fetched is None or fetched[0] is None:
+            return None
+        return str(fetched[0])
+
+    def delete_keys(
+        self,
+        spec: SrcTableWriteSpec,
+        keys: Sequence[tuple[object, ...]],
+    ) -> None:
+        if not keys:
+            return
+        key_sql = ", ".join(quote_ident(name) for name in spec.keys)
+        table_sql = _table_sql(spec)
+        width = len(spec.keys)
+        row_placeholder = "(" + ", ".join(["%s"] * width) + ")"
+        for offset in range(0, len(keys), _KEY_CHUNK):
+            chunk = keys[offset : offset + _KEY_CHUNK]
+            values_sql = ", ".join([row_placeholder] * len(chunk))
+            statement = f"DELETE FROM {table_sql} WHERE ({key_sql}) IN (VALUES {values_sql})"
+            assert_src_replace_sql(statement)
+            params = [item for key in chunk for item in key]
+            with self._conn.cursor() as cur:
+                cur.execute(statement, params)
 
     def insert_rows(
         self,

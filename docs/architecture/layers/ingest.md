@@ -2,7 +2,7 @@
 title: ingest 层职责
 status: active
 created: 2026-09-16
-updated: 2026-09-17
+updated: 2026-09-19
 applies_to:
   - src/quantagent/ingest/
   - db/migrations/src/
@@ -56,9 +56,11 @@ applies_to:
 
 这些是写入函数的内建行为，不依赖任何授权流程或身份校验。
 
-当前唯一允许写入的源表是 `src.tushare.trade_cal`。`src_*._batch` 与其余
-源表显式禁写。批次行与数据行在同一事务里一次 INSERT 完成（含
-`finished_at`），禁止事后 UPDATE 批次状态。
+当前允许写入的源表是 `src.tushare.trade_cal` 与
+`src.wind.ashareeodprices`。`src_*._batch` 与其余源表显式禁写。批次行与
+数据行在同一事务里一次完成（含 `finished_at`），禁止事后 UPDATE 批次
+状态。Wind 分页把检查点写在 `_batch.source_cursor`（`OPDATE+OBJECT_ID`），
+提交成功才推进；内容变化或 `OPMODE=2` 必须显式 `--replace-existing`。
 
 ### 采集时间不是 PIT
 
