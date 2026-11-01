@@ -1,0 +1,1 @@
+#KiroweenHackathon26 Just entered Frankenstein with QuantAgent: classic TA (RSI/MACD/Bollinger) sewn to an LLM research agent that explains setups + risks. Live: https://quantagent.dpdns.org/en — favorite Kiro bit so far is specs→steering→hooks so the scar between math and narrative stays testable. Changes how I build: contract first, vibes second.

@@ -1,32 +1,11 @@
-# 本地可变状态：数据湖、运行制品、日志、缓存。整体忽略。
-# 需要入库的数据只有两处：frozen/（冻结输入制品）与 publish/（发布产物）。
-var/
-
-# Python
 __pycache__/
 *.py[cod]
-.venv/
-*.egg-info/
 .pytest_cache/
 .ruff_cache/
-.mypy_cache/
-
-# 环境与凭据：任何形式的 .env 与本地配置都不入库
+.venv/
+venv/
 .env
-.env.*
-!.env.example
-*.local.toml
-
-# Node / 前端
-node_modules/
-.next/
-apps/web/tsconfig.tsbuildinfo
-
-# 编辑器与系统
+.mypy_cache/
+dist/
+*.egg-info/
 .DS_Store
-.idea/
-.vscode/
-
-# Notebook 配对产物：只入库 jupytext 的 .py，不入库 .ipynb
-*.ipynb
-.ipynb_checkpoints/
