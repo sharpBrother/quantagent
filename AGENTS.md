@@ -185,3 +185,13 @@ Agent 观点、回测结果、组合建议都是**研究展厅内容，不是生
   `publish/`（产出），其余一律 `var/`。
 - 单文件体积上限 512KB（`frozen/` 放宽到 4MB）。超限需单独评估。
 - 只有项目负责人要求时才提交；要求推送时直接推，不用再确认。
+
+## 11. MemAxis 个人记忆试点（2026-10-30）
+
+- 本项目的 MemAxis `project_id` 是 `quantagent`。对相关任务，可用项目范围内的已审核记忆
+  作为补充，再核对当前代码、研究契约与文档；没有匹配项是有效结果。
+- 若当前 Harness 未提供 MemAxis 工具，可运行：
+  `uv --project "$HOME/Projects/mem-axis" run memaxis context --project quantagent --vault "$HOME/memaxis-vault" --task "<当前任务>"`。
+- 不把其他项目的事实套用到本项目；研究输出、回测结果和个人记忆均不能替代当前代码与 PIT 契约。
+- 只处理个人域内容；公司或受限数据、密钥和原始会话不得写入个人 Vault。候选在用户审核前不算已验证。
+- 本轮 N1 不读取历史会话；后续归档提炼遵循既有 D13/D14 范围。本试点不安装 Hook 或修改全局配置。

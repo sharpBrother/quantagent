@@ -2,7 +2,7 @@
 title: 文档导航
 status: active
 created: 2026-09-16
-updated: 2026-09-19
+updated: 2026-11-14
 applies_to:
   - docs/
 ---
@@ -66,7 +66,7 @@ superseded` 的保留正文供追溯。
 
 ## 运维与研究
 
-- [runbook/](runbook/) — 部署、迁移操作、故障处理
+- [QuantDB 挂载与 PostgreSQL 启停](runbook/local-quantdb-postgres.md) — macOS 外接盘上的本地实例
 - [research/](research/) — 按研究线的笔记与结论
 
 ## 旧仓在哪
