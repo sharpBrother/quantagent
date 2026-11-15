@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from quantagent.adapters.postgres.src_targets import ASHAREEODPRICES, SrcTableWriteSpec
+from quantagent.adapters.postgres.src_targets import (
+    ASHARECALENDAR,
+    ASHAREEODPRICES,
+    SrcTableWriteSpec,
+)
 from quantagent.ingest.errors import TargetNotAllowedError
 
 
@@ -16,6 +20,11 @@ class WindPagedTable:
 
 
 WIND_PAGED_TABLES: dict[str, WindPagedTable] = {
+    "ASHARECALENDAR": WindPagedTable(
+        source_table="ASHARECALENDAR",
+        spec=ASHARECALENDAR,
+        chi_fields=(),
+    ),
     "ASHAREEODPRICES": WindPagedTable(
         source_table="ASHAREEODPRICES",
         spec=ASHAREEODPRICES,

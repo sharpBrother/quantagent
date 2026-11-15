@@ -72,6 +72,7 @@ def test_list_migration_files_on_repo(repo_root: Path) -> None:
         "0005_jydb.sql",
         "0006_suntime.sql",
         "0007_macro.sql",
+        "0008_wind_asharecalendar.sql",
     ]
     assert [item.filename for item in ops] == ["0001_schema.sql"]
     assert all(item.checksum for item in (*src, *ops))

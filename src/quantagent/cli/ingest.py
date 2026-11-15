@@ -88,8 +88,11 @@ def _compact_ymd(raw: str, *, flag: str) -> str:
     return compact
 
 
+@wind_app.command("ASHARECALENDAR")
 @wind_app.command("ASHAREEODPRICES")
-def ingest_ashareeodprices(
+def ingest_wind_table(
+    ctx: typer.Context,
+    *,
     write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
     replace_existing: Annotated[
         bool,
@@ -109,14 +112,16 @@ def ingest_ashareeodprices(
         typer.Option("--from-cursor", help="覆盖起点游标 JSON：{opdate,object_id}"),
     ] = None,
 ) -> None:
-    """从 wind_db 按 OPDATE+OBJECT_ID 分页写入 src_wind.ASHAREEODPRICES。"""
+    """从 wind_db 按 OPDATE+OBJECT_ID 分页写入同名 Wind 源镜像。"""
+    table = ctx.info_name
+    assert table is not None
     settings = get_settings()
     paths = resolve_var_paths(settings, repo_root=detect_repo_root())
     try:
         result = ingest_wind_paged(
             settings=settings,
             paths=paths,
-            table="ASHAREEODPRICES",
+            table=table,
             write_db=write_db,
             replace_existing=replace_existing,
             page_size=page_size,

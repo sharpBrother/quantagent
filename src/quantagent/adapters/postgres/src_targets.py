@@ -26,6 +26,23 @@ TRADE_CAL = SrcTableWriteSpec(
     keys=("exchange", "cal_date"),
 )
 
+ASHARECALENDAR = SrcTableWriteSpec(
+    dataset="src.wind.asharecalendar",
+    pg_schema="src_wind",
+    pg_table="ASHARECALENDAR",
+    native_columns=(
+        "OBJECT_ID",
+        "TRADE_DAYS",
+        "S_INFO_EXCHMARKET",
+        "OPDATE",
+        "OPMODE",
+        "gsCTime",
+        "gsUTime",
+        "mopdate",
+    ),
+    keys=("OBJECT_ID",),
+)
+
 ASHAREEODPRICES = SrcTableWriteSpec(
     # 契约 dataset 必须小写；PG 表名保持 Wind 大写原名。
     dataset="src.wind.ashareeodprices",

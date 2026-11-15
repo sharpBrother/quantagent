@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from quantagent.adapters.postgres.src_targets import (
+    ASHARECALENDAR,
     ASHAREEODPRICES,
     TRADE_CAL,
     SrcTableWriteSpec,
@@ -15,6 +16,7 @@ from quantagent.ingest.errors import TargetNotAllowedError
 
 ALLOWED_SRC_WRITE_TARGETS: dict[str, SrcTableWriteSpec] = {
     TRADE_CAL.dataset: TRADE_CAL,
+    ASHARECALENDAR.dataset: ASHARECALENDAR,
     ASHAREEODPRICES.dataset: ASHAREEODPRICES,
 }
 
@@ -51,6 +53,7 @@ def assert_writable(spec: SrcTableWriteSpec) -> None:
 
 __all__ = [
     "ALLOWED_SRC_WRITE_TARGETS",
+    "ASHARECALENDAR",
     "ASHAREEODPRICES",
     "FORBIDDEN_SRC_WRITE_TARGETS",
     "TRADE_CAL",

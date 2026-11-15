@@ -210,6 +210,18 @@ def test_ingest_wind_ashareeodprices_help() -> None:
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize("table", ["ASHARECALENDAR", "ASHAREEODPRICES"])
+def test_ingest_wind_dispatches_to_paged_job(monkeypatch: pytest.MonkeyPatch, table: str) -> None:
+    job = Mock()
+    monkeypatch.setattr("quantagent.cli.ingest.ingest_wind_paged", job)
+    result = runner.invoke(app, ["ingest", "wind", table, "--max-pages", "1"])
+    assert result.exit_code == 0, result.output
+    assert job.call_args.kwargs["table"] == table
+    assert job.call_args.kwargs["write_db"] is False
+    assert job.call_args.kwargs["max_pages"] == 1
+
+
+@pytest.mark.unit
 def test_lake_materialize_trade_calendar_help() -> None:
     result = runner.invoke(app, ["lake", "materialize", "trade-calendar", "--help"])
     text = _plain(result)

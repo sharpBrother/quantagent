@@ -9,7 +9,7 @@ import pytest
 
 from quantagent.ingest.jobs.wind_paged import ingest_wind_paged
 from quantagent.ingest.sources.wind.cursor import decode_cursor, initial_cursor
-from quantagent.ingest.writers.tables import ASHAREEODPRICES
+from quantagent.ingest.writers.tables import ASHARECALENDAR, ASHAREEODPRICES
 from quantagent.platform.config import Settings
 from quantagent.platform.storage.paths import resolve_var_paths
 
@@ -17,13 +17,20 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
 
+    from quantagent.adapters.postgres.src_targets import SrcTableWriteSpec
     from quantagent.ingest.sources.wind.cursor import WindCursor
     from quantagent.platform.storage.paths import VarPaths
 
 
 class FakeWindSource:
-    def __init__(self, pages: Sequence[Sequence[dict[str, object]]]) -> None:
+    def __init__(
+        self,
+        pages: Sequence[Sequence[dict[str, object]]],
+        *,
+        spec: SrcTableWriteSpec = ASHAREEODPRICES,
+    ) -> None:
         self.pages = [list(page) for page in pages]
+        self.spec = spec
         self.seen: list[WindCursor] = []
 
     def fetch_page(
@@ -36,8 +43,8 @@ class FakeWindSource:
         chi_fields: tuple[str, ...] = (),
     ) -> list[dict[str, object]]:
         self.seen.append(cursor)
-        assert table == "ASHAREEODPRICES"
-        assert tuple(columns) == ASHAREEODPRICES.native_columns
+        assert table == self.spec.pg_table
+        assert tuple(columns) == self.spec.native_columns
         if not self.pages:
             return []
         return self.pages.pop(0)
@@ -48,6 +55,7 @@ class FakeSrcStore:
         self.cursor = cursor
         self.hashes: dict[tuple[object, ...], str] = {}
         self.batch_cursors: list[str | None] = []
+        self.batch_windows: list[tuple[str | None, str | None]] = []
         self.inserted = 0
 
     def existing_keys(
@@ -78,6 +86,7 @@ class FakeSrcStore:
         source_cursor: str | None = None,
     ) -> int:
         self.batch_cursors.append(source_cursor)
+        self.batch_windows.append((window_start, window_end))
         self.cursor = source_cursor
         return len(self.batch_cursors)
 
@@ -186,3 +195,45 @@ def test_empty_stream_is_success(tmp_path: Path) -> None:
     assert result.row_count == 0
     assert result.written is False
     assert decode_cursor(result.source_cursor) == initial_cursor()
+
+
+@pytest.mark.unit
+def test_calendar_initialization_and_incremental_resume(tmp_path: Path) -> None:
+    settings, paths = _paths(tmp_path)
+    opdate = datetime(2024, 1, 2, 10)
+    first = dict.fromkeys(ASHARECALENDAR.native_columns)
+    first.update(
+        OBJECT_ID="a",
+        TRADE_DAYS="20240103",
+        S_INFO_EXCHMARKET="SSE",
+        OPDATE=opdate,
+        OPMODE="0",
+    )
+    second = {**first, "OBJECT_ID": "b", "TRADE_DAYS": "20240102"}
+    store = FakeSrcStore()
+    initial_source = FakeWindSource([[first]], spec=ASHARECALENDAR)
+    initial = ingest_wind_paged(
+        settings=settings,
+        paths=paths,
+        table=ASHARECALENDAR.pg_table,
+        write_db=True,
+        max_pages=1,
+        source=initial_source,
+        store=store,
+    )
+    assert initial_source.seen == [initial_cursor()]
+    assert initial.inserted == 1
+    incremental_source = FakeWindSource([[second]], spec=ASHARECALENDAR)
+    incremental = ingest_wind_paged(
+        settings=settings,
+        paths=paths,
+        table=ASHARECALENDAR.pg_table,
+        write_db=True,
+        source=incremental_source,
+        store=store,
+    )
+    assert incremental_source.seen[0] == decode_cursor(initial.source_cursor)
+    assert incremental.dataset == ASHARECALENDAR.dataset
+    assert incremental.inserted == 1
+    assert decode_cursor(incremental.source_cursor).object_id == "b"
+    assert store.batch_windows == [("20240103", "20240103"), ("20240102", "20240102")]

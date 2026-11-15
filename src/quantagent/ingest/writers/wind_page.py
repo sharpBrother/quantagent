@@ -103,7 +103,9 @@ def write_wind_page(
     clock = now or (lambda: datetime.now(UTC))
     started_at = clock()
     finished_at = clock()
-    window_start, window_end = _trade_window(native_rows)
+    # 批次登记的是业务日期范围，日历源使用 TRADE_DAYS。
+    date_field = "TRADE_DAYS" if "TRADE_DAYS" in spec.native_columns else "TRADE_DT"
+    window_start, window_end = _trade_window(native_rows, date_field=date_field)
     batch_id = store.insert_batch(
         spec=spec,
         window_start=window_start,
@@ -283,16 +285,13 @@ def _apply_existing(
     )
 
 
-def _trade_window(rows: Sequence[Mapping[str, object]]) -> tuple[str | None, str | None]:
-    dates = [
-        str(row["TRADE_DT"])
-        for row in rows
-        if isinstance(row.get("TRADE_DT"), str) and row["TRADE_DT"]
-    ]
+def _trade_window(
+    rows: Sequence[Mapping[str, object]], *, date_field: str
+) -> tuple[str | None, str | None]:
+    dates = [value for row in rows if isinstance(value := row.get(date_field), str) and value]
     if not dates:
         return None, None
-    text_dates = [str(item) for item in dates]
-    return min(text_dates), max(text_dates)
+    return min(dates), max(dates)
 
 
 def _result(
