@@ -1,4 +1,4 @@
-"""``std.trade_calendar``：源镜像改名与类型规整，不做口径加工。"""
+"""``std.trade_calendar``：将源适配器生成的日历快照写为 Parquet。"""
 
 from __future__ import annotations
 

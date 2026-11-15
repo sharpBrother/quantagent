@@ -17,5 +17,4 @@ applies_to:
 干跑默认一页。写入须同时打开写闸并传 `--write-db`；
 源修订或删除沿用显式 `--replace-existing`。
 
-`TRADE_DAYS` 是业务日期，`OPDATE` 是采集游标。日历物化切换时再接入
-标准化与 visibility 契约。研究读取经 `std.trade_calendar` 执行 PIT 过滤。
+`TRADE_DAYS` 是业务日期，`OPDATE` 是采集游标。日历物化生成闭市日与上一交易日。研究读取经 `std.trade_calendar` 执行 PIT 过滤。

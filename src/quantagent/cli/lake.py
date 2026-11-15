@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Annotated
 
 import typer
 
+from quantagent.adapters.postgres.errors import PostgresAdapterError
 from quantagent.lake.layout_bench import SCALES, run_layout_benchmark
 from quantagent.lake.materialize.trade_calendar import materialize_trade_calendar
 from quantagent.lake.partitions import LakeLayoutError
@@ -89,7 +90,7 @@ def lake_materialize_trade_calendar(
     as_of: Annotated[str, typer.Option("--as-of", help="物化运行日 YYYY-MM-DD，只写入 run log")],
     rebuild: Annotated[bool, typer.Option("--rebuild", help="允许覆盖已有 parquet")] = False,
 ) -> None:
-    """把 src_tushare.trade_cal 改名/转类型写入 std.trade_calendar。不按 cal_dt 截断。"""
+    """将 Wind 日历快照物化为 std.trade_calendar，供按 as_of 读取。"""
     settings = get_settings()
     paths = resolve_var_paths(settings, repo_root=detect_repo_root())
     try:
@@ -100,7 +101,7 @@ def lake_materialize_trade_calendar(
             as_of=as_of_date,
             rebuild=rebuild,
         )
-    except (LakeLayoutError, ConfigError, RunLogError, ValueError) as exc:
+    except (LakeLayoutError, PostgresAdapterError, ConfigError, RunLogError, ValueError) as exc:
         typer.secho(str(exc), fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1) from exc
     typer.echo(

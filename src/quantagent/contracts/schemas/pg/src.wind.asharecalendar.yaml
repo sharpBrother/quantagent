@@ -1,0 +1,53 @@
+dataset: src.wind.asharecalendar
+layer: pg
+doc_ref: docs/contracts/trade-calendar.md
+temporal_kind: point_event
+event_field: TRADE_DAYS
+keys:
+  - OBJECT_ID
+reads: []
+columns:
+  OBJECT_ID:
+    dtype: string
+    nullable: false
+    description: Wind 行对象主键
+  TRADE_DAYS:
+    dtype: string
+    nullable: true
+    description: 开市日 YYYYMMDD
+  S_INFO_EXCHMARKET:
+    dtype: string
+    nullable: true
+    description: 源端交易所或市场代码
+  OPDATE:
+    dtype: datetime
+    nullable: true
+    description: Wind 运维时间，用于采集游标
+  OPMODE:
+    dtype: string
+    nullable: true
+    description: Wind 操作类型
+  gsCTime:
+    dtype: datetime
+    nullable: true
+    description: Wind 创建时间
+  gsUTime:
+    dtype: datetime
+    nullable: true
+    description: Wind 更新时间
+  mopdate:
+    dtype: datetime
+    nullable: true
+    description: Wind 维护时间
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次，指向 src_wind._batch
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 源端业务列的内容指纹

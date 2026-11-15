@@ -1,0 +1,11 @@
+dataset: src.wind.asharecalendar
+doc_ref: docs/contracts/trade-calendar.md
+temporal_kind: point_event
+event_field: TRADE_DAYS
+visibility:
+  rule: same_day_close
+  grade: A
+  rationale: >
+    旧仓从 Wind TRADE_DAYS 构建 trade_cal，研究入口按 cal_date 做历史窗口或
+    调仓日前截断。沿用标准日历的收盘可见下界，源表没有休市安排的原生公告日。
+pit_recoverable: true

@@ -19,7 +19,7 @@ def test_trade_calendar_bundle_is_complete() -> None:
     assert "std.trade_calendar" in bundle.visibilities
     assert "src.tushare.trade_cal" in bundle.schemas
     assert "src.tushare.trade_cal" in bundle.visibilities
-    assert bundle.schemas["std.trade_calendar"].reads == ["src.tushare.trade_cal"]
+    assert bundle.schemas["std.trade_calendar"].reads == ["src.wind.asharecalendar"]
     report = run_check(bundle=bundle, repo_root=detect_repo_root())
     assert report.ok, [issue.render() for issue in report.issues]
 
@@ -38,12 +38,17 @@ def test_src_trade_cal_keeps_native_string_dates() -> None:
 
 @pytest.mark.contracts
 def test_trade_calendar_visibility_grade_and_rule() -> None:
-    vis = load_bundle().visibilities["std.trade_calendar"]
+    bundle = load_bundle()
+    vis = bundle.visibilities["std.trade_calendar"]
     assert vis.visibility.rule == "same_day_close"
     assert vis.visibility.grade == "A"
     assert vis.pit_recoverable is True
     assert vis.pit_from is None
-    assert "published_at" not in load_bundle().schemas["std.trade_calendar"].columns
+    assert "published_at" not in bundle.schemas["std.trade_calendar"].columns
+    wind = bundle.visibilities["src.wind.asharecalendar"]
+    assert wind.event_field == "TRADE_DAYS"
+    assert wind.visibility.rule == vis.visibility.rule
+    assert wind.visibility.grade == vis.visibility.grade
 
 
 @pytest.mark.contracts

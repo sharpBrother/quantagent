@@ -7,7 +7,7 @@ keys:
   - cal_dt
   - exchange
 reads:
-  - src.tushare.trade_cal
+  - src.wind.asharecalendar
 columns:
   cal_dt:
     dtype: date
@@ -16,7 +16,7 @@ columns:
   exchange:
     dtype: string
     nullable: false
-    description: 交易所代码，与源端一致（SSE/SZSE/CFFEX 等），本层不做代码映射
+    description: 交易所代码，与源端一致（SSE/SZSE 等），本层不做代码映射
   is_open:
     dtype: bool
     nullable: false
