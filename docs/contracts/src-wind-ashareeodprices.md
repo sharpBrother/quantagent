@@ -2,7 +2,7 @@
 title: Wind A 股日行情源镜像
 status: active
 created: 2026-09-19
-updated: 2026-09-19
+updated: 2026-11-14
 applies_to:
   - src/quantagent/contracts/schemas/pg/src.wind.ashareeodprices.yaml
   - src/quantagent/contracts/visibility/src.wind.ashareeodprices.yaml
@@ -17,6 +17,13 @@ applies_to:
 `src.wind.ashareeodprices` 是 Wind `ASHAREEODPRICES` 的源原生镜像。PG 表名
 保持大写；契约 dataset 小写。键是 `OBJECT_ID`。字段名、类型、语义与
 `wind_db` 一致，采集层不做复权或交易状态口径加工。
+
+**`GSUPDTIME` 例外**：这是契约里唯一「有列无源」的字段。2026-11-14 公司端
+核对，`wind_db` 全库 0 张表存在 `GSUPDTIME`（SQL Server rowversion），源端
+实际提供的是 `gsUTime` / `gsCTime` / `mopdate` 三个 datetime 元数据列。故
+`GSUPDTIME` 从读取列、写入列和 `_row_hash` 内容指纹中一并移除；物理表列保留
+（nullable，匹配已应用的 `0003_wind.sql`，该文件不得改动），写入时留 NULL。
+三个时间列只作源端元数据，不参与 `knowledge_dt` 推导。
 
 `S_DQ_TRADESTATUS` 仍做 latin1→gbk 字段级修复：这是源端编码事故，不是业务
 加工，与旧仓 `update_stock_daily_paged` 同一条。

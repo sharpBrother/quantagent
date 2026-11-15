@@ -118,7 +118,11 @@ columns:
   GSUPDTIME:
     dtype: bytes
     nullable: true
-    description: SQL Server timestamp/rowversion，PG 存 bytea
+    description: >-
+      SQL Server timestamp/rowversion，PG 存 bytea。当前 wind_db 源不提供该列
+      （2026-11-14 公司端核对，全库 0 张表有 GSUPDTIME），故不进读取、写入与
+      内容指纹；列保留以匹配已应用的 0003_wind.sql，写入时留 NULL。
+      源端仍采集 gsUTime / gsCTime / mopdate 三个 datetime 元数据列。
   gsUTime:
     dtype: datetime
     nullable: true

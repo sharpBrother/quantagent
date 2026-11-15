@@ -129,7 +129,6 @@ def _row(
             "S_DQ_TRADESTATUS": status,
             "OPDATE": opdate or datetime(2024, 1, 2, 16, 0, 0),
             "OPMODE": opmode,
-            "GSUPDTIME": b"\x00\x01",
         }
     )
     return payload

@@ -59,7 +59,8 @@ ASHAREEODPRICES = SrcTableWriteSpec(
         "OPDATE",
         "OPMODE",
         "S_DQ_ADJCLOSE_BACKWARD",
-        "GSUPDTIME",
+        # GSUPDTIME 是 SQL Server rowversion，当前 wind_db 全库不提供（列清单由公司端核对）。
+        # 物理表仍保留该 nullable 列以匹配已应用的 0003_wind.sql，故不进读取、写入与内容指纹。
         "gsUTime",
         "gsCTime",
         "mopdate",
