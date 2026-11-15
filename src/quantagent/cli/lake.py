@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Annotated
 import typer
 
 from quantagent.adapters.postgres.errors import PostgresAdapterError
+from quantagent.cli.cutamp_materialize import materialize_cutamp
+from quantagent.domain.errors import DomainError
 from quantagent.lake.layout_bench import SCALES, run_layout_benchmark
 from quantagent.lake.materialize.trade_calendar import materialize_trade_calendar
 from quantagent.lake.partitions import LakeLayoutError
@@ -108,6 +110,39 @@ def lake_materialize_trade_calendar(
         f"wrote dataset={result.dataset} rows={result.row_count} "
         f"digest={result.output_digest} path={result.path}"
     )
+
+
+@materialize_app.command("cutamp")
+def lake_materialize_cutamp(
+    start: Annotated[str, typer.Option("--start", help="截面起点 YYYY-MM-DD")],
+    end: Annotated[str, typer.Option("--end", help="截面终点 YYYY-MM-DD")],
+    codes: Annotated[str, typer.Option("--codes", help="逗号分隔的 Wind 代码")],
+    as_of: Annotated[str, typer.Option("--as-of", help="行情可见日 YYYY-MM-DD，必填")],
+) -> None:
+    """把切段振幅写入 feature.value。窗口不足的日期不落行。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    wind_codes = tuple(part.strip() for part in codes.split(",") if part.strip())
+    try:
+        row_count, digest = materialize_cutamp(
+            settings=settings,
+            paths=paths,
+            start=datetime.strptime(start.strip(), "%Y-%m-%d").date(),
+            end=datetime.strptime(end.strip(), "%Y-%m-%d").date(),
+            wind_codes=wind_codes,
+            as_of=datetime.strptime(as_of.strip(), "%Y-%m-%d").date(),
+        )
+    except (
+        LakeLayoutError,
+        DomainError,
+        PostgresAdapterError,
+        ConfigError,
+        RunLogError,
+        ValueError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"wrote dataset=feature.value rows={row_count} digest={digest}")
 
 
 def _persist_failure(

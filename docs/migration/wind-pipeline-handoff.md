@@ -19,7 +19,7 @@ applies_to:
 | PostgreSQL | 本地研究库和控制库可连通，迁移分别为 8 和 1，待应用均为 0。五个源 schema 的现有表和序列已授权，`leo` 新建对象会自动授权给 `quantagent_ingest`。项目环境已安装 Dagster。 | 确认 Dagster 执行端能同时访问 Wind、目标 PG 与物化目录。本机当前未配置 Wind，未安装 pymssql。控制库还没有 Dagster 运行表。 |
 | Wind 日历 | `ASHARECALENDAR` 已初始化，31,483 条开市记录、5 个市场代码。提交 `f9abaf3` 已将 `scan_trade_cal()` 和标准日历上游切到 Wind。`quantagent lake materialize trade-calendar --as-of 2026-11-15` 写入正式分区 47,389 行，digest `b6d8463d8b7e29b0a9bcc08cc54f8a11e37ac85da68b397a33259968e64d0e9c`。SSE 上 2026-11-13 开市、14 与 15 日闭市，上一交易日是 13 日；`as_of=2026-11-15` 读不到 11-16。 | 正式分区已可读。后续由 `std_trade_calendar` 资产重跑，不覆盖既有文件，除非显式 rebuild。 |
 | Wind 日行情 | `ASHAREEODPRICES` 18,870,269 行。2026-11-15 公司端在 `8590e16` 上干跑，游标 `2026-11-13T15:09:05` / `7700421104` 之后 `pages=0`。起点游标仍能取到 2002-04-29 的行，读取器有效。`_batch` 未变。 | 按交易日核对本机覆盖和修订。游标追上不等于每个交易日都完整。下一次真写要等该游标之后出现新行。 |
-| 编排与研究 | 三个资产已接入。日行情按 `as_of` 读取。`pf_single_cutamp_1_mean_neg` 在 2024-01-02 至 01-05 的两只样本股票上，重算值四舍五入到 6 位后与 `wx2.stock_cutamp` 一致。`knowledge_dt` 与 `pit_grade` 由输入推导。 | 控制库运行存储，以及带行数和游标的正式运行界面。因子尚未写入长表，也未切换旧仓日更。 |
+| 编排与研究 | 三个资产已接入。日行情按 `as_of` 读取。`pf_single_cutamp_1_mean_neg` 在 2024-01-02 至 01-05 的两只样本股票上，重算值四舍五入到 6 位后与 `wx2.stock_cutamp` 一致。这 8 行已写入 `feature.value`，`knowledge_dt` 等于截面日。 | 控制库运行存储，以及带行数和游标的正式运行界面。旧仓日更尚未切换。 |
 
 ## 下一轮实施与验收
 
@@ -34,13 +34,17 @@ applies_to:
    `CUTAMP`：20 个交易日的振幅，去掉收盘触及涨跌停的日子，按复权收盘价切 25%。
    Current-20 取相反数。2024-01-02 至 01-05 的 `000001.SZ` 与 `600000.SH`，
    本机重算后四舍五入到 6 位小数，与 `wx2.dbo.stock_cutamp.cutamp` 一致。
-   窗口不足 20 日不产行。`knowledge_dt` 是窗口内最晚交易日，`pit_grade` 取输入最差，
-   拒绝把可见日提前。行情读取差异仍在：旧读取没有 `as_of`；新读取按 `as_of` 截断。
+   这 8 行已写入 `feature.value`，窗口不足 20 日不产行。`knowledge_dt` 是窗口内最晚交易日，
+   `pit_grade` 取输入最差，拒绝把可见日提前。行情读取差异仍在：旧读取没有 `as_of`；
+   新读取按 `as_of` 截断。
    连 `wx2` 时 pymssql 要用 TDS 7.0 且关闭加密。
-3. **按真实消费者扩表和切换。** 以该消费者的实际依赖和逐表清单决定迁哪些源表，
-   结合旧下游证据逐表补 visibility，再进行新旧并跑与差异核对。通过后逐条切换消费
-   入口并记录旧任务与新资产的对应。旧仓继续承担现役日更，远端 Windows 调度由
-   项目负责人维护。后续回测和发布按 P4/P5 的契约推进。
+3. **这个消费者不需要新的源表。** 旧入口是
+   `alpha_factory.factor_loader.FactorLoader` 的 `performance_factor_single`：
+   读 `wx2.dbo.stock_cutamp.cutamp`，窗口 1 日取均值，再乘 `direction=-1`。
+   `stock_cutamp` 是派生表，不迁入。重算输入只有已经在库的 `ASHAREEODPRICES`。
+   长表里的 8 行按 6 位小数等于这个消费者看到的值。新资产是
+   `feature_pf_single_cutamp`，依赖日行情采集，不在 `wind_source_refresh` 里。
+   旧仓日更继续跑，远端 Windows 调度仍由项目负责人维护。同一截面再写会碰到已有分区。
 
 ## 依据文档与旧仓证据
 
