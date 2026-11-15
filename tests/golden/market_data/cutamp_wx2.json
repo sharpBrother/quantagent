@@ -1,0 +1,21 @@
+{
+  "provenance": {
+    "source_table": "wx2.dbo.stock_cutamp",
+    "column": "cutamp",
+    "captured_on": "2026-11-15",
+    "old_class": "factors.factors.CUTAMP",
+    "current20_factor_id": "pf_single_cutamp_1_mean_neg",
+    "sign": "-1",
+    "storage_scale": 6
+  },
+  "rows": [
+    {"trade_dt": "2024-01-02", "wind_code": "000001.SZ", "cutamp": "0.855289"},
+    {"trade_dt": "2024-01-02", "wind_code": "600000.SH", "cutamp": "0.438215"},
+    {"trade_dt": "2024-01-03", "wind_code": "000001.SZ", "cutamp": "0.816574"},
+    {"trade_dt": "2024-01-03", "wind_code": "600000.SH", "cutamp": "0.353527"},
+    {"trade_dt": "2024-01-04", "wind_code": "000001.SZ", "cutamp": "1.090260"},
+    {"trade_dt": "2024-01-04", "wind_code": "600000.SH", "cutamp": "0.353527"},
+    {"trade_dt": "2024-01-05", "wind_code": "000001.SZ", "cutamp": "1.178299"},
+    {"trade_dt": "2024-01-05", "wind_code": "600000.SH", "cutamp": "0.565508"}
+  ]
+}

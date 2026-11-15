@@ -1,0 +1,233 @@
+{
+  "provenance": {
+    "role": "wind_db mirror slice",
+    "dataset": "src.wind.ashareeodprices",
+    "captured_on": "2026-11-15",
+    "source_cursor": {
+      "opdate": "2026-11-13T15:09:05",
+      "object_id": "7700421104"
+    },
+    "old_repo_commit": "78765aac",
+    "old_function": "MarketDataService.get_daily_prices",
+    "old_source_table": "wx2.dbo.ASHAREEODPRICES"
+  },
+  "old_behavior": {
+    "interval": "closed",
+    "has_as_of": false,
+    "empty_codes": "columned empty frame",
+    "missing_code": "no row and no fill",
+    "order": [
+      "TRADE_DT",
+      "S_INFO_WINDCODE"
+    ],
+    "default_fields": [
+      "S_DQ_OPEN",
+      "S_DQ_CLOSE",
+      "S_DQ_HIGH",
+      "S_DQ_LOW",
+      "S_DQ_VOLUME",
+      "S_DQ_AMOUNT",
+      "S_DQ_PCTCHANGE"
+    ]
+  },
+  "inputs": {
+    "start": "20240102",
+    "end": "20240105",
+    "codes": [
+      "000001.SZ",
+      "600000.SH",
+      "999999.SZ"
+    ]
+  },
+  "rows": [
+    {
+      "trade_dt": "2024-01-02",
+      "wind_code": "000001.SZ",
+      "open": "9.3900",
+      "high": "9.4200",
+      "low": "9.2100",
+      "close": "9.2100",
+      "volume": "1158366.4500",
+      "amount": "1075742.2520",
+      "pct_change": "-1.9169"
+    },
+    {
+      "trade_dt": "2024-01-02",
+      "wind_code": "600000.SH",
+      "open": "6.6300",
+      "high": "6.6500",
+      "low": "6.6000",
+      "close": "6.6000",
+      "volume": "220667.0000",
+      "amount": "146066.3040",
+      "pct_change": "-0.3021"
+    },
+    {
+      "trade_dt": "2024-01-03",
+      "wind_code": "000001.SZ",
+      "open": "9.1900",
+      "high": "9.2200",
+      "low": "9.1500",
+      "close": "9.2000",
+      "volume": "733610.3100",
+      "amount": "673673.6140",
+      "pct_change": "-0.1086"
+    },
+    {
+      "trade_dt": "2024-01-03",
+      "wind_code": "600000.SH",
+      "open": "6.5900",
+      "high": "6.6500",
+      "low": "6.5900",
+      "close": "6.6400",
+      "volume": "182036.5400",
+      "amount": "120639.7060",
+      "pct_change": "0.6061"
+    },
+    {
+      "trade_dt": "2024-01-04",
+      "wind_code": "000001.SZ",
+      "open": "9.1900",
+      "high": "9.1900",
+      "low": "9.0800",
+      "close": "9.1100",
+      "volume": "864193.9900",
+      "amount": "787470.0820",
+      "pct_change": "-0.9783"
+    },
+    {
+      "trade_dt": "2024-01-04",
+      "wind_code": "600000.SH",
+      "open": "6.6400",
+      "high": "6.6700",
+      "low": "6.5500",
+      "close": "6.6200",
+      "volume": "288859.7800",
+      "amount": "190580.6100",
+      "pct_change": "-0.3012"
+    },
+    {
+      "trade_dt": "2024-01-05",
+      "wind_code": "000001.SZ",
+      "open": "9.1000",
+      "high": "9.4400",
+      "low": "9.0700",
+      "close": "9.2700",
+      "volume": "1991622.1600",
+      "amount": "1852659.6920",
+      "pct_change": "1.7563"
+    },
+    {
+      "trade_dt": "2024-01-05",
+      "wind_code": "600000.SH",
+      "open": "6.6000",
+      "high": "6.7600",
+      "low": "6.5900",
+      "close": "6.6800",
+      "volume": "444213.8700",
+      "amount": "296976.8860",
+      "pct_change": "0.9063"
+    }
+  ],
+  "comparison": {
+    "captured_on": "2026-11-15",
+    "wx2_query": "dbo.ASHAREEODPRICES TRADE_DT closed interval, same codes and default fields",
+    "tds_version": "7.0",
+    "encryption": "off",
+    "wx2_row_count": 8,
+    "wind_row_count": 8,
+    "only_wx2": [],
+    "only_wind": [],
+    "value_diffs": []
+  },
+  "wx2_rows": [
+    {
+      "trade_dt": "2024-01-02",
+      "wind_code": "000001.SZ",
+      "open": "9.3900",
+      "high": "9.4200",
+      "low": "9.2100",
+      "close": "9.2100",
+      "volume": "1158366.4500",
+      "amount": "1075742.2520",
+      "pct_change": "-1.9169"
+    },
+    {
+      "trade_dt": "2024-01-02",
+      "wind_code": "600000.SH",
+      "open": "6.6300",
+      "high": "6.6500",
+      "low": "6.6000",
+      "close": "6.6000",
+      "volume": "220667.0000",
+      "amount": "146066.3040",
+      "pct_change": "-0.3021"
+    },
+    {
+      "trade_dt": "2024-01-03",
+      "wind_code": "000001.SZ",
+      "open": "9.1900",
+      "high": "9.2200",
+      "low": "9.1500",
+      "close": "9.2000",
+      "volume": "733610.3100",
+      "amount": "673673.6140",
+      "pct_change": "-0.1086"
+    },
+    {
+      "trade_dt": "2024-01-03",
+      "wind_code": "600000.SH",
+      "open": "6.5900",
+      "high": "6.6500",
+      "low": "6.5900",
+      "close": "6.6400",
+      "volume": "182036.5400",
+      "amount": "120639.7060",
+      "pct_change": "0.6061"
+    },
+    {
+      "trade_dt": "2024-01-04",
+      "wind_code": "000001.SZ",
+      "open": "9.1900",
+      "high": "9.1900",
+      "low": "9.0800",
+      "close": "9.1100",
+      "volume": "864193.9900",
+      "amount": "787470.0820",
+      "pct_change": "-0.9783"
+    },
+    {
+      "trade_dt": "2024-01-04",
+      "wind_code": "600000.SH",
+      "open": "6.6400",
+      "high": "6.6700",
+      "low": "6.5500",
+      "close": "6.6200",
+      "volume": "288859.7800",
+      "amount": "190580.6100",
+      "pct_change": "-0.3012"
+    },
+    {
+      "trade_dt": "2024-01-05",
+      "wind_code": "000001.SZ",
+      "open": "9.1000",
+      "high": "9.4400",
+      "low": "9.0700",
+      "close": "9.2700",
+      "volume": "1991622.1600",
+      "amount": "1852659.6920",
+      "pct_change": "1.7563"
+    },
+    {
+      "trade_dt": "2024-01-05",
+      "wind_code": "600000.SH",
+      "open": "6.6000",
+      "high": "6.7600",
+      "low": "6.5900",
+      "close": "6.6800",
+      "volume": "444213.8700",
+      "amount": "296976.8860",
+      "pct_change": "0.9063"
+    }
+  ]
+}

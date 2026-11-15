@@ -73,3 +73,12 @@ def test_wind_mssql_configured_requires_host_and_user() -> None:
     assert blank.wind_mssql_database == "wind_db"
     filled = Settings(_env_file=None, wind_mssql_host="10.0.0.1", wind_mssql_user="wind")
     assert filled.wind_mssql_configured is True
+
+
+@pytest.mark.unit
+def test_legacy_mssql_configured_requires_host_and_user() -> None:
+    blank = Settings(_env_file=None)
+    assert blank.legacy_mssql_configured is False
+    assert blank.legacy_mssql_database == "wx2"
+    filled = Settings(_env_file=None, legacy_mssql_host="10.0.0.1", legacy_mssql_user="reader")
+    assert filled.legacy_mssql_configured is True

@@ -96,6 +96,7 @@ def test_root_help_lists_check_db_ingest_and_lake() -> None:
     assert "forward-return" in text
     assert "group-nav" in text
     assert "universe" in text
+    assert "prices" in text
     assert "ingest" in text
     assert "lake" in text
 
@@ -149,6 +150,17 @@ def test_group_nav_window_help_requires_as_of() -> None:
     assert "--as-of" in text
     assert "--run-id" in text
     assert "--universe-id" in text
+
+
+@pytest.mark.unit
+def test_prices_window_help_requires_as_of() -> None:
+    result = runner.invoke(app, ["prices", "window", "--help"])
+    text = _plain(result)
+    assert result.exit_code == 0
+    assert "--as-of" in text
+    assert "--start" in text
+    assert "--end" in text
+    assert "--codes" in text
 
 
 @pytest.mark.unit

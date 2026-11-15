@@ -29,3 +29,7 @@ class FeatureLookupError(DomainError):
 
 class InvalidQueryError(DomainError):
     """读取参数非法，例如 start 晚于 end 或身份字段为空。"""
+
+
+class PriceLookupError(DomainError):
+    """行情行缺失键、日期非法，或同一交易日同一代码出现多行。"""

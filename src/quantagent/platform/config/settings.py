@@ -48,6 +48,13 @@ class Settings(BaseSettings):
     wind_mssql_user: str = ""
     wind_mssql_password: SecretStr = SecretStr("")
 
+    # 迁移期只读 wx2。读旧仓 get_daily_prices 的同一张表，不写入。
+    legacy_mssql_host: str = ""
+    legacy_mssql_port: int = Field(default=1433, ge=1, le=65535)
+    legacy_mssql_database: str = "wx2"
+    legacy_mssql_user: str = ""
+    legacy_mssql_password: SecretStr = SecretStr("")
+
     @model_validator(mode="after")
     def _relative_var_root_only_when_intended(self) -> Self:
         # 绝对路径允许（office 档位可能挂到共享盘）；相对路径必须相对仓库根
@@ -68,6 +75,10 @@ class Settings(BaseSettings):
     @property
     def wind_mssql_configured(self) -> bool:
         return bool(self.wind_mssql_host and self.wind_mssql_user)
+
+    @property
+    def legacy_mssql_configured(self) -> bool:
+        return bool(self.legacy_mssql_host and self.legacy_mssql_user)
 
 
 @lru_cache(maxsize=1)
