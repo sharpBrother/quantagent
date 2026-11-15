@@ -86,6 +86,8 @@ def _raw_cutamp(rows: Sequence[DailyPrice]) -> Decimal | None:
         kept.append((row.adj_close, amplitude, row.trade_dt))
     if len(kept) < MIN_KEPT:
         return None
+    # 复权收盘价并列时按交易日稳定排序。旧仓 pandas sort_values 默认 quicksort，
+    # 并列顺序不稳定；2024-01-05 全市场对拍里，无并列的股票全部一致，差异只出现在并列上。
     kept.sort(key=lambda item: (item[0], item[2]))
     cut = int(CUT_RATIO * len(kept))
     if cut == 0:

@@ -41,10 +41,12 @@ applies_to:
 3. **这个消费者不需要新的源表。** 旧入口是
    `alpha_factory.factor_loader.FactorLoader` 的 `performance_factor_single`：
    读 `wx2.dbo.stock_cutamp.cutamp`，窗口 1 日取均值，再乘 `direction=-1`。
-   `stock_cutamp` 是派生表，不迁入。重算输入只有已经在库的 `ASHAREEODPRICES`。
-   长表里的 8 行按 6 位小数等于这个消费者看到的值。新资产是
-   `feature_pf_single_cutamp`，依赖日行情采集，不在 `wind_source_refresh` 里。
-   旧仓日更继续跑，远端 Windows 调度仍由项目负责人维护。同一截面再写会碰到已有分区。
+   `stock_cutamp` 是派生表，不迁入。股票池 `all_a` 来自 `ASHAREDESCRIPTION`
+   上市满 365 日且未摘牌、排除北交所和 `A` 开头代码。2024-01-05 该池 4860 只，
+   其中 4851 只有 `cutamp`。无复权收盘价并列的 1336 只与本机重算在 6 位小数上全部一致；
+   603 只不一致，且全部有并列收盘价。2912 只虽有并列但仍一致。旧仓按 pandas
+   `sort_values` 默认 quicksort 排并列，新实现按交易日稳定排序。因此不切换旧仓消费入口。
+   新资产是 `feature_pf_single_cutamp`，不在 `wind_source_refresh` 里。旧仓日更继续跑。
 
 ## 依据文档与旧仓证据
 

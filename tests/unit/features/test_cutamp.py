@@ -67,6 +67,25 @@ def test_lineage_uses_latest_input_and_worst_grade() -> None:
 
 
 @pytest.mark.unit
+def test_equal_adj_close_keeps_trade_date_order() -> None:
+    start = date(2024, 1, 1)
+    rows = []
+    for index in range(WINDOW):
+        # 前两日复权收盘价相同，振幅不同；输入顺序故意颠倒。
+        if index == 0:
+            high, adj, day = "20", "1", start + timedelta(days=1)
+        elif index == 1:
+            high, adj, day = "11", "1", start
+        else:
+            high, adj, day = "10", str(index + 1), start + timedelta(days=index)
+        rows.append(_price(day, high=high, low="10", adj=adj))
+    forward = cutamp_value(tuple(rows), contract=_contract())
+    backward = cutamp_value(tuple(reversed(rows)), contract=_contract())
+    assert forward is not None and backward is not None
+    assert forward.raw == backward.raw
+
+
+@pytest.mark.unit
 def test_value_is_negative_raw_and_grade_follows_input() -> None:
     start = date(2024, 1, 1)
     rows = tuple(
