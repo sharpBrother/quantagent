@@ -34,6 +34,22 @@ ACTION = "ingest.wind.paged"
 DEFAULT_PAGE_SIZE = 1000
 
 
+@dataclass
+class _CommittedPages:
+    """``write_wind_page`` 已返回的页。返回即该页已提交，页尾游标可记入日志。"""
+
+    pages: int = 0
+    row_count: int = 0
+    inserted: int = 0
+    replaced: int = 0
+    deleted: int = 0
+    skipped: int = 0
+    dml_count: int = 0
+    last_digest: str = ""
+    last_output: str = ""
+    cursor: WindCursor | None = None
+
+
 @dataclass(frozen=True)
 class WindPagedIngestResult:
     dataset: str
@@ -73,6 +89,7 @@ def ingest_wind_paged(
     owned_pg = None
     resolved_source = source
     resolved_store = store
+    committed: _CommittedPages | None = None
     try:
         if resolved_source is None:
             owned_wind = open_wind_connection(settings)
@@ -83,6 +100,7 @@ def ingest_wind_paged(
             owned_pg = connect(settings, "src")
             resolved_store = PostgresSrcStore(owned_pg)
         cursor = _start_cursor(resolved_store, catalog.spec, from_cursor)
+        committed = _CommittedPages(cursor=cursor)
         result = _run_pages(
             settings=settings,
             catalog=catalog,
@@ -94,8 +112,22 @@ def ingest_wind_paged(
             page_size=page_size,
             max_pages=page_limit,
             now=now,
+            committed=committed,
         )
     except Exception as exc:
+        # 已返回的页已经提交。正在写入的页，尤其是提交结果未知的页，不计入日志，也不重试。
+        partial = _partial_result(
+            catalog=catalog,
+            write_db=write_db,
+            replace_existing=replace_existing,
+            committed=committed,
+        )
+        error = str(exc)
+        if partial is not None:
+            error = (
+                f"{exc}；已提交页 pages={partial.pages} row_count={partial.row_count} "
+                f"dml_count={partial.dml_count} source_cursor={partial.source_cursor}"
+            )
         with suppress(RunLogError):
             _persist_run_log(
                 paths=paths,
@@ -108,7 +140,8 @@ def ingest_wind_paged(
                 max_pages=page_limit,
                 from_cursor=from_cursor,
                 status="failure",
-                error=str(exc),
+                result=partial,
+                error=error,
             )
         raise
     finally:
@@ -144,6 +177,7 @@ def _run_pages(
     page_size: int,
     max_pages: int | None,
     now: Callable[[], datetime] | None,
+    committed: _CommittedPages,
 ) -> WindPagedIngestResult:
     pages = 0
     row_count = 0
@@ -184,6 +218,17 @@ def _run_pages(
         last_digest = page.payload_digest
         last_output = page.output_digest
         current = decode_cursor(page.source_cursor)
+        # 只在本页函数返回后计入。提交结果未知时函数不会返回，该页不能记成已提交。
+        committed.pages = pages
+        committed.row_count = row_count
+        committed.inserted = inserted
+        committed.replaced = replaced
+        committed.deleted = deleted
+        committed.skipped = skipped
+        committed.dml_count = dml_count
+        committed.last_digest = last_digest
+        committed.last_output = last_output
+        committed.cursor = current
     output = digest_json(
         {
             "dataset": catalog.spec.dataset,
@@ -211,6 +256,46 @@ def _run_pages(
         payload_digest=last_digest,
         output_digest=output,
         source_cursor=current.encode(),
+        replace_existing=replace_existing,
+    )
+
+
+def _partial_result(
+    *,
+    catalog: WindPagedTable,
+    write_db: bool,
+    replace_existing: bool,
+    committed: _CommittedPages | None,
+) -> WindPagedIngestResult | None:
+    if committed is None or committed.pages == 0 or committed.cursor is None:
+        return None
+    output = digest_json(
+        {
+            "dataset": catalog.spec.dataset,
+            "pages": committed.pages,
+            "row_count": committed.row_count,
+            "inserted": committed.inserted,
+            "replaced": committed.replaced,
+            "deleted": committed.deleted,
+            "skipped": committed.skipped,
+            "source_cursor": committed.cursor.encode(),
+            "last_page": committed.last_output,
+        }
+    )
+    return WindPagedIngestResult(
+        dataset=catalog.spec.dataset,
+        table=catalog.source_table,
+        written=write_db and committed.dml_count > 0,
+        pages=committed.pages,
+        row_count=committed.row_count,
+        inserted=committed.inserted,
+        replaced=committed.replaced,
+        deleted=committed.deleted,
+        skipped=committed.skipped,
+        dml_count=committed.dml_count,
+        payload_digest=committed.last_digest,
+        output_digest=output,
+        source_cursor=committed.cursor.encode(),
         replace_existing=replace_existing,
     )
 

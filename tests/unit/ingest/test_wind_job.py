@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 import pytest
 
+from quantagent.adapters.postgres.errors import TransactionUnknownError
+from quantagent.ingest.errors import SourceFetchError
 from quantagent.ingest.jobs.wind_paged import ingest_wind_paged
 from quantagent.ingest.sources.wind.cursor import decode_cursor, initial_cursor
 from quantagent.ingest.writers.tables import ASHARECALENDAR, ASHAREEODPRICES
@@ -237,3 +240,93 @@ def test_calendar_initialization_and_incremental_resume(tmp_path: Path) -> None:
     assert incremental.inserted == 1
     assert decode_cursor(incremental.source_cursor).object_id == "b"
     assert store.batch_windows == [("20240103", "20240103"), ("20240102", "20240102")]
+
+
+class _SecondFetchFails(FakeWindSource):
+    def fetch_page(
+        self,
+        *,
+        table: str,
+        columns: Sequence[str],
+        cursor: WindCursor,
+        limit: int,
+        chi_fields: tuple[str, ...] = (),
+    ) -> list[dict[str, object]]:
+        if self.seen:
+            self.seen.append(cursor)
+            raise SourceFetchError("第二页读取失败")
+        return super().fetch_page(
+            table=table,
+            columns=columns,
+            cursor=cursor,
+            limit=limit,
+            chi_fields=chi_fields,
+        )
+
+
+class _UnknownOnSecondCommit(FakeSrcStore):
+    def __init__(self) -> None:
+        super().__init__()
+        self.commits = 0
+
+    def commit(self) -> None:
+        self.commits += 1
+        if self.commits == 2:
+            raise TransactionUnknownError("提交结果未知")
+
+
+def _failure_log(paths: VarPaths) -> dict[str, object]:
+    logs = sorted(paths.runs.glob("*.json"))
+    assert len(logs) == 1
+    payload = json.loads(logs[0].read_text(encoding="utf-8"))
+    assert isinstance(payload, dict)
+    return payload
+
+
+@pytest.mark.unit
+def test_failure_log_keeps_committed_page(tmp_path: Path) -> None:
+    settings, paths = _paths(tmp_path)
+    first = _row("a", datetime(2024, 1, 2, 10, 0, 0))
+    second = _row("b", datetime(2024, 1, 2, 11, 0, 0))
+    source = _SecondFetchFails([[first], [second]])
+    with pytest.raises(SourceFetchError, match="第二页读取失败"):
+        ingest_wind_paged(
+            settings=settings,
+            paths=paths,
+            table="ASHAREEODPRICES",
+            write_db=True,
+            source=source,
+            store=FakeSrcStore(),
+        )
+    assert len(source.seen) == 2
+    log = _failure_log(paths)
+    assert log["status"] == "failure"
+    assert log["dml_count"] == 2
+    assert log["row_count"] == 1
+    error = str(log["error"])
+    assert "已提交页 pages=1" in error
+    assert decode_cursor(error.split("source_cursor=", 1)[1]).object_id == "a"
+
+
+@pytest.mark.unit
+def test_unknown_commit_stops_without_counting_or_retrying(tmp_path: Path) -> None:
+    settings, paths = _paths(tmp_path)
+    first = _row("a", datetime(2024, 1, 2, 10, 0, 0))
+    second = _row("b", datetime(2024, 1, 2, 11, 0, 0))
+    source = FakeWindSource([[first], [second]])
+    store = _UnknownOnSecondCommit()
+    with pytest.raises(TransactionUnknownError, match="提交结果未知"):
+        ingest_wind_paged(
+            settings=settings,
+            paths=paths,
+            table="ASHAREEODPRICES",
+            write_db=True,
+            source=source,
+            store=store,
+        )
+    assert len(source.seen) == 2
+    assert store.commits == 2
+    log = _failure_log(paths)
+    assert log["dml_count"] == 2
+    assert log["row_count"] == 1
+    assert decode_cursor(str(log["error"]).split("source_cursor=", 1)[1]).object_id == "a"

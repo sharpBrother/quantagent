@@ -2,7 +2,7 @@
 title: 文档导航
 status: active
 created: 2026-09-16
-updated: 2026-11-14
+updated: 2026-11-15
 applies_to:
   - docs/
 ---
@@ -60,6 +60,7 @@ superseded` 的保留正文供追溯。
 |---|---|
 | [migration/roadmap.md](migration/roadmap.md) | P0–P6 阶段、验收标准、回滚点 |
 | [migration/wind-asharecalendar-ingest.md](migration/wind-asharecalendar-ingest.md) | Wind 日历源镜像与同步入口 |
+| [migration/wind-pipeline-handoff.md](migration/wind-pipeline-handoff.md) | Wind 数据链路进度、Dagster 接入与研究切换交接 |
 | [migration/wx2-disposition.md](migration/wx2-disposition.md) | 旧 SQL Server `wx2` 逐表处置标准 |
 | [migration/wx2-table-list.md](migration/wx2-table-list.md) | `wx2` 逐表处置清单（P2 第一交付物；不迁入；visibility 从旧仓下游反推） |
 | [migration/docs-and-artifacts-disposition.md](migration/docs-and-artifacts-disposition.md) | 旧仓文档与制品逐项处置标准 |

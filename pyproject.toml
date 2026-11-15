@@ -164,7 +164,7 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 addopts = "-ra --strict-markers --strict-config"
 markers = [
   "unit: 零外部依赖，domain 规则必须落在这里",
