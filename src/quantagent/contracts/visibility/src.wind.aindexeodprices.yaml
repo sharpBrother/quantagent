@@ -1,0 +1,12 @@
+dataset: src.wind.aindexeodprices
+doc_ref: docs/contracts/src-wind-aindexeodprices.md
+temporal_kind: point_event
+event_field: TRADE_DT
+visibility:
+  rule: same_day_close
+  grade: A
+  rationale: >
+    交易所指数日行情。旧仓 get_index_eod_returns 与 fetch_benchmark_ret
+    都按 TRADE_DT 闭区间读取，调用方保证 end<=as_of。收盘后当日公开，
+    不得用 OPDATE 或 _ingested_at 当可见日。
+pit_recoverable: true

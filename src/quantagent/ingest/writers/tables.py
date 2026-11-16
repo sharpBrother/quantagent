@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from quantagent.adapters.postgres.src_targets import (
+    AINDEXEODPRICES,
     ASHARECALENDAR,
     ASHAREEODPRICES,
     TRADE_CAL,
@@ -18,6 +19,7 @@ ALLOWED_SRC_WRITE_TARGETS: dict[str, SrcTableWriteSpec] = {
     TRADE_CAL.dataset: TRADE_CAL,
     ASHARECALENDAR.dataset: ASHARECALENDAR,
     ASHAREEODPRICES.dataset: ASHAREEODPRICES,
+    AINDEXEODPRICES.dataset: AINDEXEODPRICES,
 }
 
 # 旁表只允许写入器按批次协议 INSERT，不能当业务目标表；其余 tushare 表本
@@ -52,6 +54,7 @@ def assert_writable(spec: SrcTableWriteSpec) -> None:
 
 
 __all__ = [
+    "AINDEXEODPRICES",
     "ALLOWED_SRC_WRITE_TARGETS",
     "ASHARECALENDAR",
     "ASHAREEODPRICES",

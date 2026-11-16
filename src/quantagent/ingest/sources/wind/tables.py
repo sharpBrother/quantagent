@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from quantagent.adapters.postgres.src_targets import (
+    AINDEXEODPRICES,
     ASHARECALENDAR,
     ASHAREEODPRICES,
     SrcTableWriteSpec,
@@ -30,6 +31,11 @@ WIND_PAGED_TABLES: dict[str, WindPagedTable] = {
         spec=ASHAREEODPRICES,
         # 旧仓 update_stock_daily_paged(chi_field=['S_DQ_TRADESTATUS'])
         chi_fields=("S_DQ_TRADESTATUS",),
+    ),
+    "AINDEXEODPRICES": WindPagedTable(
+        source_table="AINDEXEODPRICES",
+        spec=AINDEXEODPRICES,
+        chi_fields=(),
     ),
 }
 

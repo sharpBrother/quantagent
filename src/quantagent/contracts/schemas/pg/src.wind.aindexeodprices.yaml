@@ -1,0 +1,173 @@
+dataset: src.wind.aindexeodprices
+layer: pg
+doc_ref: docs/contracts/src-wind-aindexeodprices.md
+temporal_kind: point_event
+event_field: TRADE_DT
+keys:
+  - OBJECT_ID
+reads: []
+columns:
+  OBJECT_ID:
+    dtype: string
+    nullable: false
+    description: Wind 行对象主键
+  S_INFO_WINDCODE:
+    dtype: string
+    nullable: true
+    description: Wind 指数代码
+  TRADE_DT:
+    dtype: string
+    nullable: true
+    description: 交易日 YYYYMMDD，源端字符串；PIT 事件日
+  CRNCY_CODE:
+    dtype: string
+    nullable: true
+    description: 货币代码
+  S_DQ_PRECLOSE:
+    dtype: float64
+    nullable: true
+    description: 昨收
+  S_DQ_OPEN:
+    dtype: float64
+    nullable: true
+    description: 开盘
+  S_DQ_HIGH:
+    dtype: float64
+    nullable: true
+    description: 最高
+  S_DQ_LOW:
+    dtype: float64
+    nullable: true
+    description: 最低
+  S_DQ_CLOSE:
+    dtype: float64
+    nullable: true
+    description: 收盘
+  S_DQ_CHANGE:
+    dtype: float64
+    nullable: true
+    description: 涨跌
+  S_DQ_PCTCHANGE:
+    dtype: float64
+    nullable: true
+    description: 涨跌幅，单位 %
+  S_DQ_VOLUME:
+    dtype: float64
+    nullable: true
+    description: 成交量
+  S_DQ_AMOUNT:
+    dtype: float64
+    nullable: true
+    description: 成交额
+  SEC_ID:
+    dtype: string
+    nullable: true
+    description: 证券 ID
+  OPDATE:
+    dtype: datetime
+    nullable: true
+    description: Wind 运维时间，采集游标用，不是 PIT 可见日
+  OPMODE:
+    dtype: string
+    nullable: true
+    description: 0 新增 1 修改 2 删除
+  S_INFO_CODE:
+    dtype: string
+    nullable: true
+    description: 交易代码
+  S_INFO_NAME:
+    dtype: string
+    nullable: true
+    description: 指数简称
+  S_INFO_COMPNAME:
+    dtype: string
+    nullable: true
+    description: 指数全称
+  S_INFO_EXCHMARKET:
+    dtype: string
+    nullable: true
+    description: 交易所
+  S_INFO_INDEX_BASEPER:
+    dtype: string
+    nullable: true
+    description: 基期
+  S_INFO_INDEX_BASEPT:
+    dtype: float64
+    nullable: true
+    description: 基点
+  S_INFO_LISTDATE:
+    dtype: string
+    nullable: true
+    description: 发布日期
+  S_INFO_INDEX_WEIGHTSRULE:
+    dtype: string
+    nullable: true
+    description: 加权方式代码
+  S_INFO_PUBLISHER:
+    dtype: string
+    nullable: true
+    description: 发布机构
+  S_INFO_INDEXCODE:
+    dtype: int64
+    nullable: true
+    description: 指数类别代码
+  S_INFO_INDEXSTYLE:
+    dtype: string
+    nullable: true
+    description: 指数风格
+  INDEX_INTRO:
+    dtype: string
+    nullable: true
+    description: 指数简介
+  WEIGHT_TYPE:
+    dtype: int64
+    nullable: true
+    description: 权重类型
+  EXPIRE_DATE:
+    dtype: string
+    nullable: true
+    description: 终止发布日期
+  INCOME_PROCESSING_METHOD:
+    dtype: string
+    nullable: true
+    description: 收益处理方式
+  CHANGE_HISTORY:
+    dtype: string
+    nullable: true
+    description: 变更历史
+  S_INFO_PINYIN:
+    dtype: string
+    nullable: true
+    description: 简称拼音
+  WEIGHT_TYPE_NAME:
+    dtype: string
+    nullable: true
+    description: 权重类型名称
+  S_INFO_INDEXTYPE:
+    dtype: string
+    nullable: true
+    description: 指数类别
+  gsUTime:
+    dtype: datetime
+    nullable: true
+    description: Wind 更新时间
+  gsCTime:
+    dtype: datetime
+    nullable: true
+    description: Wind 创建时间
+  mopdate:
+    dtype: datetime
+    nullable: true
+    description: Wind 维护时间
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次，指向 src_wind._batch
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间，不是 PIT 依据
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 源端业务列的内容指纹

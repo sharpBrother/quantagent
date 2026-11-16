@@ -90,6 +90,7 @@ def _compact_ymd(raw: str, *, flag: str) -> str:
 
 @wind_app.command("ASHARECALENDAR")
 @wind_app.command("ASHAREEODPRICES")
+@wind_app.command("AINDEXEODPRICES")
 def ingest_wind_table(
     ctx: typer.Context,
     *,

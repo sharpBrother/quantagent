@@ -44,6 +44,7 @@ applies_to:
 | [contracts/README.md](contracts/README.md) | 可执行契约与文档的双向绑定、契约变更流程 |
 | [contracts/trade-calendar.md](contracts/trade-calendar.md) | 第一个数据集契约：交易日历 |
 | [contracts/src-wind-ashareeodprices.md](contracts/src-wind-ashareeodprices.md) | Wind A 股日行情源镜像：PIT 与分页游标 |
+| [contracts/src-wind-aindexeodprices.md](contracts/src-wind-aindexeodprices.md) | Wind 指数日行情源镜像：PIT 与分页游标 |
 | [contracts/src-plane.md](contracts/src-plane.md) | 研究数据面第一批源镜像 |
 
 ## 决策记录

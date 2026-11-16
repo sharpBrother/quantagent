@@ -32,12 +32,20 @@ applies_to:
    表形写在 `db/migrations/ops/0002_dagster_storage.sql`，只含 `CREATE`。
    实例模板关闭自建表，并已复制到 `QUANTAGENT_VAR_ROOT/dagster`。用它物化 2024-03-01 至 03-08 两只样本股票，12 行与 `wx2` 在 6 位小数上一致。`ops.runs` 记下一次 `SUCCESS`。
    写库沿用双闸。失败日志保留已提交页；提交结果未知的页不计入、不自动重试。
+5. **指数日行情表还是空的。** `src_wind.AINDEXEODPRICES` 已有表结构，2026-11-16 为 0 行。
+   采集命令是 `quantagent ingest wind AINDEXEODPRICES`，游标与 A 股日行情相同。
+   本机没有 Wind。初始化要在能连源库的机器上做：先干跑一页，再开写闸。
+   真写默认不限页。可见性是 `TRADE_DT` 的 `same_day_close` / A。
+   `pf_single_tr_umr_1_mean_pos` 等这张表有数后再算。
 2. **首个量价因子已对上一个小样本。** `pf_single_cutamp_1_mean_neg` 来自旧仓
    `CUTAMP`：20 个交易日的振幅，去掉收盘触及涨跌停的日子，按复权收盘价切 25%。
    Current-20 取相反数。2024-01-02 至 01-05 的 `000001.SZ` 与 `600000.SH`，
    本机重算后四舍五入到 6 位小数，与 `wx2.dbo.stock_cutamp.cutamp` 一致。
    2024-01 的 8 行和 2024-02-01 至 02-08 的 12 行已写入 `feature.value` 的不同月份分区。
-   同一身份键再写会被拒绝，已有文件不改；同一月份的新身份键追加为新文件。窗口不足 20 日不产行。`knowledge_dt` 是窗口内最晚交易日，
+   同一身份键再写会被拒绝，已有文件不改；同一月份的新身份键追加为新文件。
+   2024-03-11 的两只样本股票已追加为 `ym=202403/part-00001.parquet`，digest `a1cd899e6e42a85b00edda28fbf9533a2be13babc4112bd5cee8feeca12b560c`，
+   03-01 至 03-08 的 part 文件未改。这两行与 `wx2` 在 6 位小数上一致，同日再写被拒绝。
+   窗口不足 20 日不产行。`knowledge_dt` 是窗口内最晚交易日，
    `pit_grade` 取输入最差，拒绝把可见日提前。行情读取差异仍在：旧读取没有 `as_of`；
    新读取按 `as_of` 截断。
    连 `wx2` 时 pymssql 要用 TDS 7.0 且关闭加密。

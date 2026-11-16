@@ -222,7 +222,7 @@ def test_ingest_wind_ashareeodprices_help() -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize("table", ["ASHARECALENDAR", "ASHAREEODPRICES"])
+@pytest.mark.parametrize("table", ["ASHARECALENDAR", "ASHAREEODPRICES", "AINDEXEODPRICES"])
 def test_ingest_wind_dispatches_to_paged_job(monkeypatch: pytest.MonkeyPatch, table: str) -> None:
     job = Mock()
     monkeypatch.setattr("quantagent.cli.ingest.ingest_wind_paged", job)

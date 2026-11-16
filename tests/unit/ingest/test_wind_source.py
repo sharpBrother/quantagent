@@ -81,9 +81,12 @@ def test_chi_decode_latin1_gbk_and_idempotent_unicode() -> None:
 
 
 @pytest.mark.unit
-def test_only_ashareeodprices_is_whitelisted() -> None:
+def test_paged_whitelist_is_explicit() -> None:
     table = resolve_wind_paged_table("ASHAREEODPRICES")
     assert table.spec == ASHAREEODPRICES
     assert table.chi_fields == ("S_DQ_TRADESTATUS",)
+    index = resolve_wind_paged_table("AINDEXEODPRICES")
+    assert index.spec.pg_table == "AINDEXEODPRICES"
+    assert index.chi_fields == ()
     with pytest.raises(TargetNotAllowedError, match="白名单"):
-        resolve_wind_paged_table("AINDEXEODPRICES")
+        resolve_wind_paged_table("ASHAREMONEYFLOW")
