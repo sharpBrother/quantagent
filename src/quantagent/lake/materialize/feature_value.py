@@ -1,4 +1,4 @@
-"""把因子长表行写成冻结布局的 Parquet。默认不覆盖既有分区。"""
+"""把因子长表行写成冻结布局的 Parquet。默认不覆盖既有身份键。"""
 
 from __future__ import annotations
 

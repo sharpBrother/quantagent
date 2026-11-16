@@ -73,10 +73,13 @@ def test_write_refuses_overwrite(tmp_path: Path) -> None:
     write_feature_value_parquet(_one_row(date(2024, 2, 15)), dest, layout)
     assert january.read_bytes() == before
     assert list(dest.glob("ym=202402/*.parquet"))
-    with pytest.raises(LakeLayoutError, match="拒绝覆盖"):
-        write_feature_value_parquet(_one_row(date(2024, 1, 16)), dest, layout)
+    write_feature_value_parquet(_one_row(date(2024, 1, 16)), dest, layout)
     assert january.read_bytes() == before
-    mixed = pa.concat_tables([_one_row(date(2024, 1, 16)), _one_row(date(2024, 3, 15))])
+    assert len(list(dest.glob("ym=202401/*.parquet"))) == 2
+    with pytest.raises(LakeLayoutError, match="拒绝覆盖"):
+        write_feature_value_parquet(_one_row(date(2024, 1, 15)), dest, layout)
+    assert january.read_bytes() == before
+    mixed = pa.concat_tables([_one_row(date(2024, 1, 15)), _one_row(date(2024, 3, 15))])
     with pytest.raises(LakeLayoutError, match="拒绝覆盖"):
         write_feature_value_parquet(mixed, dest, layout)
     assert january.read_bytes() == before

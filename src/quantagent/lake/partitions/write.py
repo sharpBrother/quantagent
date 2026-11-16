@@ -1,8 +1,8 @@
 """按布局把 ``feature.value`` Arrow 表写成 Hive 分区 parquet。
 
 分区列从文件内去掉、留给目录名，这样 DuckDB ``hive_partitioning`` 才能用
-查询里的同名谓词做裁剪。默认只拒绝覆盖已有分区里的文件，新月份可以写到
-同一张长表旁边。显式 ``overwrite`` 仍清空整个目标目录。
+查询里的同名谓词做裁剪。默认不改已有文件。同一月份里的新身份键追加为新的
+part 文件；身份键已存在则整批拒绝。显式 ``overwrite`` 仍清空整个目标目录。
 """
 
 from __future__ import annotations
@@ -42,13 +42,13 @@ def write_feature_value_parquet(
     table = _decode_dictionaries(table)
     work = _with_partition_columns(table, layout.partition_keys)
     if not layout.partition_keys:
-        _refuse_occupied_partition(dest, mode)
+        _refuse_identity_overlap(work, dest, layout.sort_keys, mode)
         return _write_sorted_files(
             work,
             dest,
             layout,
             file_sort=layout.sort_keys,
-            mode=mode,
+            mode=_write_mode(dest, mode),
         )
     groups = work.group_by(list(layout.partition_keys)).aggregate([("value", "count")])
     planned: list[tuple[pa.Table, Path]] = []
@@ -59,28 +59,87 @@ def write_feature_value_parquet(
         for key, value in key_vals.items():
             part_dir = part_dir / f"{key}={_hive_value(value)}"
         planned.append((chunk, part_dir))
+    file_sort = tuple(key for key in layout.sort_keys if key not in layout.partition_keys)
     if mode == "error":
-        conflicts = [part_dir for _, part_dir in planned if _partition_occupied(part_dir)]
-        if conflicts:
-            shown = ", ".join(str(path) for path in conflicts)
-            raise LakeLayoutError(f"拒绝覆盖既有分区: {shown}")
+        for chunk, part_dir in planned:
+            _refuse_identity_overlap(chunk, part_dir, file_sort, mode)
     n_files = 0
     nbytes = 0
-    file_sort = tuple(key for key in layout.sort_keys if key not in layout.partition_keys)
     for chunk, part_dir in planned:
-        written = _write_sorted_files(chunk, part_dir, layout, file_sort=file_sort, mode=mode)
+        written = _write_sorted_files(
+            chunk,
+            part_dir,
+            layout,
+            file_sort=file_sort,
+            mode=_write_mode(part_dir, mode),
+        )
         n_files += written["n_files"]
         nbytes += written["nbytes"]
     return {"n_files": n_files, "nbytes": nbytes}
+
+
+def _write_mode(part_dir: Path, mode: WriteMode) -> WriteMode:
+    if mode == "error" and _partition_occupied(part_dir):
+        return "append"
+    return mode
+
+
+def _refuse_identity_overlap(
+    table: pa.Table,
+    part_dir: Path,
+    file_sort: tuple[str, ...],
+    mode: WriteMode,
+) -> None:
+    """同一月份可以追加新行，但不能改已有文件，也不能重写已有身份键。"""
+    if mode != "error":
+        return
+    occupied = _partition_occupied(part_dir)
+    keys = _identity_columns(table.column_names, file_sort)
+    if occupied and not keys:
+        raise LakeLayoutError(f"没有身份列，拒绝向既有分区追加: {part_dir}")
+    if not keys:
+        return
+    incoming = _identity_values(table, keys)
+    if not occupied:
+        return
+    if incoming & _existing_identities(part_dir, keys):
+        raise LakeLayoutError(f"拒绝覆盖既有行: {part_dir}")
 
 
 def _partition_occupied(part_dir: Path) -> bool:
     return part_dir.is_dir() and any(path.is_file() for path in part_dir.glob("*.parquet"))
 
 
-def _refuse_occupied_partition(part_dir: Path, mode: WriteMode) -> None:
-    if mode == "error" and _partition_occupied(part_dir):
-        raise LakeLayoutError(f"拒绝覆盖既有分区: {part_dir}")
+def _identity_columns(column_names: list[str], file_sort: tuple[str, ...]) -> tuple[str, ...]:
+    missing = [key for key in file_sort if key not in column_names]
+    if missing:
+        raise LakeLayoutError(f"表缺少身份列: {missing}")
+    return file_sort
+
+
+def _identity_values(table: pa.Table, keys: tuple[str, ...]) -> set[tuple[object, ...]]:
+    columns = [table[key].to_pylist() for key in keys]
+    found: set[tuple[object, ...]] = set()
+    for values in zip(*columns, strict=True):
+        if values in found:
+            raise LakeLayoutError("写入批次含重复身份键")
+        found.add(values)
+    return found
+
+
+def _existing_identities(part_dir: Path, keys: tuple[str, ...]) -> set[tuple[object, ...]]:
+    found: set[tuple[object, ...]] = set()
+    for path in sorted(item for item in part_dir.glob("*.parquet") if item.is_file()):
+        table = pq.read_table(path, columns=list(keys))
+        missing = [key for key in keys if key not in table.column_names]
+        if missing:
+            raise LakeLayoutError(f"既有文件缺少身份列: {path}")
+        columns = [table[key].to_pylist() for key in keys]
+        for values in zip(*columns, strict=True):
+            if values in found:
+                raise LakeLayoutError(f"既有分区含重复身份键: {part_dir}")
+            found.add(values)
+    return found
 
 
 def _with_partition_columns(table: pa.Table, keys: tuple[str, ...]) -> pa.Table:
