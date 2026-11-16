@@ -2,7 +2,7 @@
 title: 因子存储：逻辑格式与物理设计
 status: active
 created: 2026-09-16
-updated: 2026-09-18
+updated: 2026-11-15
 applies_to:
   - src/quantagent/features/
   - src/quantagent/models/matrix/
@@ -153,6 +153,8 @@ var/lake/feature/value/asset_class=<stock|etf>/ym=YYYYMM/part-00000.parquet
 | 排序键 | `(event_dt, asset_id, feature_id, definition_version, param_hash)` |
 | 压缩 | zstd |
 | 目标文件大小 | 128MB 上限，超限切分；偏小的分区不垫 |
+
+默认写入拒绝覆盖已经存在的 `asset_class` + `ym` 分区。新月份写到新目录，不改既有文件。整目录清空只在显式 rebuild 时发生。
 
 **`feature_id` 不进分区键。** 全A × 因子数会碎成 KB 级小文件。写入函数硬
 拒绝。

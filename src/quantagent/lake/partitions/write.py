@@ -1,7 +1,8 @@
 """按布局把 ``feature.value`` Arrow 表写成 Hive 分区 parquet。
 
 分区列从文件内去掉、留给目录名，这样 DuckDB ``hive_partitioning`` 才能用
-查询里的同名谓词做裁剪。默认拒绝覆盖既有文件。
+查询里的同名谓词做裁剪。默认只拒绝覆盖已有分区里的文件，新月份可以写到
+同一张长表旁边。显式 ``overwrite`` 仍清空整个目标目录。
 """
 
 from __future__ import annotations
@@ -35,15 +36,13 @@ def write_feature_value_parquet(
     if table.num_rows == 0:
         raise LakeLayoutError("空表拒绝写入")
     dest.mkdir(parents=True, exist_ok=True)
-    existing = [path for path in dest.rglob("*.parquet") if path.is_file()]
-    if existing and mode == "error":
-        raise LakeLayoutError(f"拒绝覆盖既有分区: {dest}")
-    if existing and mode == "overwrite":
-        for path in existing:
+    if mode == "overwrite":
+        for path in [item for item in dest.rglob("*.parquet") if item.is_file()]:
             path.unlink()
     table = _decode_dictionaries(table)
     work = _with_partition_columns(table, layout.partition_keys)
     if not layout.partition_keys:
+        _refuse_occupied_partition(dest, mode)
         return _write_sorted_files(
             work,
             dest,
@@ -51,20 +50,37 @@ def write_feature_value_parquet(
             file_sort=layout.sort_keys,
             mode=mode,
         )
-    n_files = 0
-    nbytes = 0
     groups = work.group_by(list(layout.partition_keys)).aggregate([("value", "count")])
+    planned: list[tuple[pa.Table, Path]] = []
     for i in range(groups.num_rows):
         key_vals = {key: groups[key][i].as_py() for key in layout.partition_keys}
         chunk = work.filter(_partition_mask(work, key_vals)).drop(list(layout.partition_keys))
         part_dir = dest
         for key, value in key_vals.items():
             part_dir = part_dir / f"{key}={_hive_value(value)}"
-        file_sort = tuple(key for key in layout.sort_keys if key not in layout.partition_keys)
+        planned.append((chunk, part_dir))
+    if mode == "error":
+        conflicts = [part_dir for _, part_dir in planned if _partition_occupied(part_dir)]
+        if conflicts:
+            shown = ", ".join(str(path) for path in conflicts)
+            raise LakeLayoutError(f"拒绝覆盖既有分区: {shown}")
+    n_files = 0
+    nbytes = 0
+    file_sort = tuple(key for key in layout.sort_keys if key not in layout.partition_keys)
+    for chunk, part_dir in planned:
         written = _write_sorted_files(chunk, part_dir, layout, file_sort=file_sort, mode=mode)
         n_files += written["n_files"]
         nbytes += written["nbytes"]
     return {"n_files": n_files, "nbytes": nbytes}
+
+
+def _partition_occupied(part_dir: Path) -> bool:
+    return part_dir.is_dir() and any(path.is_file() for path in part_dir.glob("*.parquet"))
+
+
+def _refuse_occupied_partition(part_dir: Path, mode: WriteMode) -> None:
+    if mode == "error" and _partition_occupied(part_dir):
+        raise LakeLayoutError(f"拒绝覆盖既有分区: {part_dir}")
 
 
 def _with_partition_columns(table: pa.Table, keys: tuple[str, ...]) -> pa.Table:

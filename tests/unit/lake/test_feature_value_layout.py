@@ -20,17 +20,17 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def _one_row() -> pa.Table:
+def _one_row(event_dt: date = date(2024, 1, 15)) -> pa.Table:
     return pa.table(
         {
-            "event_dt": pa.array([date(2024, 1, 15)], type=pa.date32()),
+            "event_dt": pa.array([event_dt], type=pa.date32()),
             "asset_id": ["A0000"],
             "asset_class": ["stock"],
             "feature_id": ["f000"],
             "definition_version": ["v1"],
             "param_hash": ["p0"],
             "value": pa.array([1.0], type=pa.float64()),
-            "knowledge_dt": pa.array([date(2024, 1, 16)], type=pa.date32()),
+            "knowledge_dt": pa.array([event_dt], type=pa.date32()),
             "pit_grade": ["A"],
             "computed_at": pa.array([datetime(2024, 6, 1)], type=pa.timestamp("us")),
             "run_id": ["t"],
@@ -68,6 +68,16 @@ def test_write_refuses_overwrite(tmp_path: Path) -> None:
         compression="zstd",
     )
     write_feature_value_parquet(_one_row(), dest, layout)
-    assert list(dest.rglob("*.parquet"))
+    january = next(dest.glob("ym=202401/*.parquet"))
+    before = january.read_bytes()
+    write_feature_value_parquet(_one_row(date(2024, 2, 15)), dest, layout)
+    assert january.read_bytes() == before
+    assert list(dest.glob("ym=202402/*.parquet"))
     with pytest.raises(LakeLayoutError, match="拒绝覆盖"):
-        write_feature_value_parquet(_one_row(), dest, layout)
+        write_feature_value_parquet(_one_row(date(2024, 1, 16)), dest, layout)
+    assert january.read_bytes() == before
+    mixed = pa.concat_tables([_one_row(date(2024, 1, 16)), _one_row(date(2024, 3, 15))])
+    with pytest.raises(LakeLayoutError, match="拒绝覆盖"):
+        write_feature_value_parquet(mixed, dest, layout)
+    assert january.read_bytes() == before
+    assert list(dest.glob("ym=202403/*.parquet")) == []
