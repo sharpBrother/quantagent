@@ -34,6 +34,7 @@ applies_to:
    写库沿用双闸。失败日志保留已提交页；提交结果未知的页不计入、不自动重试。
 5. **指数日行情表还是空的。** `src_wind.AINDEXEODPRICES` 已有表结构，2026-11-16 为 0 行。
    采集命令是 `quantagent ingest wind AINDEXEODPRICES`，游标与 A 股日行情相同。
+   采集列只跟 `wind_db.dbo.AINDEXEODPRICES`。物理表多出的 19 个简介列不读不写。
    本机没有 Wind。初始化要在能连源库的机器上做：先干跑一页，再开写闸。
    真写默认不限页。可见性是 `TRADE_DT` 的 `same_day_close` / A。
    `pf_single_tr_umr_1_mean_pos` 等这张表有数后再算。
