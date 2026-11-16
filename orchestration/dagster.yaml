@@ -1,0 +1,24 @@
+# Dagster 实例配置。复制到 DAGSTER_HOME，不要把 DAGSTER_HOME 指到本目录。
+# 本目录若被当成 DAGSTER_HOME，运行历史会写进仓库。
+# 表由 db/migrations/ops/0002_dagster_storage.sql 创建。这里关闭自建，
+# 避免 alembic 在 ops 里执行 ALTER。search_path 让运行表落在 ops 而不是 public。
+
+storage:
+  postgres:
+    postgres_db:
+      username:
+        env: QUANTAGENT_PG_OPS_USER
+      password:
+        env: QUANTAGENT_PG_OPS_PASSWORD
+      hostname:
+        env: QUANTAGENT_PG_OPS_HOST
+      db_name:
+        env: QUANTAGENT_PG_OPS_DATABASE
+      port:
+        env: QUANTAGENT_PG_OPS_PORT
+      params:
+        options: "-csearch_path=ops"
+    should_autocreate_tables: false
+
+telemetry:
+  enabled: false

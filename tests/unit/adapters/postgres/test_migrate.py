@@ -74,7 +74,10 @@ def test_list_migration_files_on_repo(repo_root: Path) -> None:
         "0007_macro.sql",
         "0008_wind_asharecalendar.sql",
     ]
-    assert [item.filename for item in ops] == ["0001_schema.sql"]
+    assert [item.filename for item in ops] == [
+        "0001_schema.sql",
+        "0002_dagster_storage.sql",
+    ]
     assert all(item.checksum for item in (*src, *ops))
 
 
@@ -105,6 +108,20 @@ def test_apply_migrations_requires_write_gate(repo_root: Path) -> None:
             planes=("src",),
             write_db=True,
         )
+
+
+@pytest.mark.unit
+def test_on_delete_cascade_is_not_dml() -> None:
+    assert_migration_sql(
+        "CREATE TABLE ops.run_tags (run_id varchar REFERENCES ops.runs (run_id) ON DELETE CASCADE)",
+        filename="fk.sql",
+    )
+
+
+@pytest.mark.unit
+def test_delete_statement_is_still_rejected() -> None:
+    with pytest.raises(MigrationError, match="语句动词非法"):
+        assert_migration_sql("DELETE FROM ops.runs", filename="delete.sql")
 
 
 @pytest.mark.unit

@@ -2,7 +2,7 @@
 title: orchestration 层职责
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-11-15
 applies_to:
   - orchestration/
   - db/migrations/ops/
@@ -21,7 +21,10 @@ applies_to:
 | `resources/` | composition root：适配器注入、连接配置 |
 | `definitions.py` | 汇总入口 |
 
-运行状态落 PG `ops_*` 控制状态面。
+运行状态落 PG `ops` 控制状态面。表由
+`db/migrations/ops/0002_dagster_storage.sql` 创建，对应已安装的 Dagster
+1.13.22。`orchestration/dagster.yaml` 关闭自建表，并用 `search_path=ops`
+避开 `public`。自建会跑 alembic，里面有 `ALTER`，迁移序列不允许。
 
 ## 不负责
 

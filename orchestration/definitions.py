@@ -1,6 +1,7 @@
 """Dagster 入口。本地查看图：``dagster dev -m orchestration.definitions``。
 
-运行存储由 ``DAGSTER_HOME`` 决定，不在导入时连接控制库。
+运行存储由 ``DAGSTER_HOME`` 里的 ``dagster.yaml`` 决定，不在导入时连接控制库。
+模板是 ``orchestration/dagster.yaml``：``search_path=ops``，关闭自建表。
 """
 
 from __future__ import annotations

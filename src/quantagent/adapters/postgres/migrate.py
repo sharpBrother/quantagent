@@ -38,6 +38,8 @@ _FORBIDDEN = re.compile(
     r"\b(?:DROP|ALTER|TRUNCATE|UPDATE|MERGE|DELETE|INSERT|GRANT|REVOKE)\b",
     re.IGNORECASE,
 )
+# 外键动作不是 DML。Dagster 的 run_tags 使用 ON DELETE CASCADE。
+_FK_ACTION = re.compile(r"\bON\s+(?:DELETE|UPDATE)\b", re.IGNORECASE)
 _FILENAME = re.compile(r"^(\d{4})_[a-z0-9_]+\.sql$")
 
 CATALOG_SCHEMA_SQL = "CREATE SCHEMA IF NOT EXISTS qa_migrate"
@@ -143,7 +145,7 @@ def assert_migration_sql(sql: str, *, filename: str) -> tuple[str, ...]:
         leading = _leading_keyword(statement)
         if leading not in ALLOWED_LEADING:
             raise MigrationError(f"{filename} 语句动词非法: {leading}")
-        if _FORBIDDEN.search(statement):
+        if _FORBIDDEN.search(_FK_ACTION.sub(" ", statement)):
             raise MigrationError(f"{filename} 含禁止动词: {statement[:80]}")
     return statements
 
