@@ -40,6 +40,14 @@ _FORBIDDEN = re.compile(
 )
 # 外键动作不是 DML。Dagster 的 run_tags 使用 ON DELETE CASCADE。
 _FK_ACTION = re.compile(r"\bON\s+(?:DELETE|UPDATE)\b", re.IGNORECASE)
+_DROP_TABLE = re.compile(
+    r'^DROP TABLE\s+((?:[A-Za-z_][\w]*\.)?"[^"]+")\s*$',
+    re.IGNORECASE,
+)
+_CREATE_TABLE = re.compile(
+    r'^CREATE TABLE\s+((?:[A-Za-z_][\w]*\.)?"[^"]+")',
+    re.IGNORECASE,
+)
 _FILENAME = re.compile(r"^(\d{4})_[a-z0-9_]+\.sql$")
 
 CATALOG_SCHEMA_SQL = "CREATE SCHEMA IF NOT EXISTS qa_migrate"
@@ -141,7 +149,19 @@ def assert_migration_sql(sql: str, *, filename: str) -> tuple[str, ...]:
     statements = split_sql_statements(sql)
     if not statements:
         raise MigrationError(f"{filename} 没有可执行语句")
+    created = {
+        match.group(1)
+        for statement in statements
+        if (match := _CREATE_TABLE.match(statement)) is not None
+    }
     for statement in statements:
+        dropped = _DROP_TABLE.match(statement)
+        if dropped is not None:
+            # 已应用的迁移文件不能改。空表列与源端不一致时，只允许删掉这张表并在同一文件里建回。
+            name = dropped.group(1)
+            if name not in created:
+                raise MigrationError(f"{filename} 删除的表没有在同一文件重建: {name}")
+            continue
         leading = _leading_keyword(statement)
         if leading not in ALLOWED_LEADING:
             raise MigrationError(f"{filename} 语句动词非法: {leading}")
@@ -248,6 +268,7 @@ def _apply_plane(
             )
             with conn.transaction():
                 for statement in statements:
+                    _refuse_nonempty_drop(conn, statement)
                     conn.execute(statement)
                 conn.execute(
                     "INSERT INTO qa_migrate.applied (plane, filename, checksum) "
@@ -268,6 +289,27 @@ def _apply_plane(
         applied_now=tuple(applied_now),
         statement_count=statement_count,
     )
+
+
+def _refuse_nonempty_drop(conn: psycopg.Connection[Any], statement: str) -> None:
+    dropped = _DROP_TABLE.match(statement)
+    if dropped is None:
+        return
+    qualified = dropped.group(1)
+    schema, table = qualified.split(".", 1)
+    table_name = table.strip('"')
+    exists = conn.execute(
+        """
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = %s AND table_name = %s
+        """,
+        (schema, table_name),
+    ).fetchone()
+    if exists is None:
+        return
+    count = conn.execute(f"SELECT count(*) FROM {qualified}").fetchone()
+    if count is not None and int(count[0]) > 0:
+        raise MigrationError(f"拒绝删除非空表: {qualified} rows={count[0]}")
 
 
 def _ensure_catalog(conn: psycopg.Connection[Any]) -> None:

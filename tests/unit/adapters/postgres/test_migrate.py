@@ -41,6 +41,21 @@ CREATE TABLE ops.x (
 
 
 @pytest.mark.unit
+def test_empty_table_rebuild_must_create_the_same_table() -> None:
+    assert_migration_sql(
+        """
+        DROP TABLE src_wind."AINDEXEODPRICES";
+        CREATE TABLE src_wind."AINDEXEODPRICES" (id integer PRIMARY KEY);
+        """,
+        filename="rebuild.sql",
+    )
+    with pytest.raises(MigrationError, match="没有在同一文件重建"):
+        assert_migration_sql(
+            'DROP TABLE src_wind."AINDEXEODPRICES";',
+            filename="rebuild.sql",
+        )
+
+
 def test_assert_migration_sql_rejects_drop() -> None:
     with pytest.raises(MigrationError, match="动词非法"):
         assert_migration_sql("DROP TABLE src_wind.x;", filename="x.sql")
@@ -73,6 +88,7 @@ def test_list_migration_files_on_repo(repo_root: Path) -> None:
         "0006_suntime.sql",
         "0007_macro.sql",
         "0008_wind_asharecalendar.sql",
+        "0009_aindexeodprices_source_columns.sql",
     ]
     assert [item.filename for item in ops] == [
         "0001_schema.sql",

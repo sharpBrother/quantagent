@@ -16,10 +16,11 @@ applies_to:
 `0003_wind.sql` 里。2026-11-16 本机该表为 0 行，采集口与 A 股日行情共用
 `OPDATE + OBJECT_ID` 游标。
 
-采集列只跟 `wind_db.dbo.AINDEXEODPRICES`：行情字段、`SEC_ID`、`OPDATE`、
-`OPMODE`、`gsCTime`、`gsUTime`、`mopdate`。物理表另有 19 个简介列
-（`S_INFO_NAME` 到 `S_INFO_INDEXTYPE`），源表没有。这些列不读、不写、不进
-内容指纹，写入留 NULL。不因此去采 `AINDEXDESCRIPTION`。
+采集列和物理表都跟 `wind_db.dbo.AINDEXEODPRICES`：行情字段、`SEC_ID`、`OPDATE`、
+`OPMODE`、`gsCTime`、`gsUTime`、`mopdate`。另外只保留 `_batch_id`、`_ingested_at`、
+`_row_hash`。`0003_wind.sql` 已应用，多建的 19 个简介列由
+`0009_aindexeodprices_source_columns.sql` 在表为空时删掉重建。不采
+`AINDEXDESCRIPTION`。
 
 ## 可见性
 
