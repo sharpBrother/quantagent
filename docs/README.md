@@ -45,6 +45,7 @@ applies_to:
 | [contracts/trade-calendar.md](contracts/trade-calendar.md) | 第一个数据集契约：交易日历 |
 | [contracts/src-wind-ashareeodprices.md](contracts/src-wind-ashareeodprices.md) | Wind A 股日行情源镜像：PIT 与分页游标 |
 | [contracts/src-wind-aindexeodprices.md](contracts/src-wind-aindexeodprices.md) | Wind 指数日行情源镜像：PIT 与分页游标 |
+| [contracts/src-wind-first-batch.md](contracts/src-wind-first-batch.md) | Wind 第一批 10 张源镜像的可见性规则 |
 | [contracts/src-plane.md](contracts/src-plane.md) | 研究数据面第一批源镜像 |
 
 ## 决策记录

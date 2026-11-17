@@ -1,0 +1,459 @@
+dataset: src.wind.ashareincome
+layer: pg
+doc_ref: docs/contracts/src-wind-first-batch.md
+temporal_kind: period_with_revision
+keys:
+  - OBJECT_ID
+reads: []
+period_fields:
+  - REPORT_PERIOD
+  - STATEMENT_TYPE
+columns:
+  OBJECT_ID:
+    dtype: string
+    nullable: false
+    description: "Wind 行对象主键"
+  S_INFO_WINDCODE:
+    dtype: string
+    nullable: true
+    description: ""
+  WIND_CODE:
+    dtype: string
+    nullable: true
+    description: ""
+  ANN_DT:
+    dtype: string
+    nullable: true
+    description: "PIT 可见日依据"
+  REPORT_PERIOD:
+    dtype: string
+    nullable: true
+    description: ""
+  STATEMENT_TYPE:
+    dtype: string
+    nullable: true
+    description: ""
+  CRNCY_CODE:
+    dtype: string
+    nullable: true
+    description: ""
+  TOT_OPER_REV:
+    dtype: float64
+    nullable: true
+    description: ""
+  OPER_REV:
+    dtype: float64
+    nullable: true
+    description: ""
+  INT_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INT_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  INSUR_PREM_UNEARNED:
+    dtype: float64
+    nullable: true
+    description: ""
+  HANDLING_CHRG_COMM_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_HANDLING_CHRG_COMM_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INC_OTHER_OPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  PLUS_NET_INC_OTHER_BUS:
+    dtype: float64
+    nullable: true
+    description: ""
+  PREM_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_CEDED_OUT_PREM:
+    dtype: float64
+    nullable: true
+    description: ""
+  CHG_UNEARNED_PREM_RES:
+    dtype: float64
+    nullable: true
+    description: ""
+  INCL_REINSURANCE_PREM_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INC_SEC_TRADING_BROK_BUS:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INC_SEC_UW_BUS:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INC_EC_ASSET_MGMT_BUS:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_BUS_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  PLUS_NET_GAIN_CHG_FV:
+    dtype: float64
+    nullable: true
+    description: ""
+  PLUS_NET_INVEST_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  INCL_INC_INVEST_ASSOC_JV_ENTP:
+    dtype: float64
+    nullable: true
+    description: ""
+  PLUS_NET_GAIN_FX_TRANS:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_OPER_COST:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_OPER_COST:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_INT_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_HANDLING_CHRG_COMM_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_TAXES_SURCHARGES_OPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_SELLING_DIST_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_GERL_ADMIN_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_FIN_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_IMPAIR_LOSS_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  PREPAY_SURR:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_CLAIM_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  CHG_INSUR_CONT_RSRV:
+    dtype: float64
+    nullable: true
+    description: ""
+  DVD_EXP_INSURED:
+    dtype: float64
+    nullable: true
+    description: ""
+  REINSURANCE_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  OPER_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_CLAIM_RECB_REINSURER:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_INS_RSRV_RECB_REINSURER:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_EXP_RECB_REINSURER:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_BUS_COST:
+    dtype: float64
+    nullable: true
+    description: ""
+  OPER_PROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  PLUS_NON_OPER_REV:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_NON_OPER_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  IL_NET_LOSS_DISP_NONCUR_ASSET:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_PROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  INC_TAX:
+    dtype: float64
+    nullable: true
+    description: ""
+  UNCONFIRMED_INVEST_LOSS:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_PROFIT_INCL_MIN_INT_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_PROFIT_EXCL_MIN_INT_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  MINORITY_INT_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_COMPREH_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_COMPREH_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_COMPREH_INC_PARENT_COMP:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_COMPREH_INC_MIN_SHRHLDR:
+    dtype: float64
+    nullable: true
+    description: ""
+  EBIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  EBITDA:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_PROFIT_AFTER_DED_NR_LP:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_PROFIT_UNDER_INTL_ACC_STA:
+    dtype: float64
+    nullable: true
+    description: ""
+  COMP_TYPE_CODE:
+    dtype: string
+    nullable: true
+    description: ""
+  S_FA_EPS_BASIC:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EPS_DILUTED:
+    dtype: float64
+    nullable: true
+    description: ""
+  ACTUAL_ANN_DT:
+    dtype: string
+    nullable: true
+    description: ""
+  INSURANCE_EXPENSE:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_OPER_PROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_OPER_PROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_TOT_PROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_TOT_PROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_NET_PROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_NET_PROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  UNDISTRIBUTED_PROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  ADJLOSSGAIN_PREVYEAR:
+    dtype: float64
+    nullable: true
+    description: ""
+  TRANSFER_FROM_SURPLUSRESERVE:
+    dtype: float64
+    nullable: true
+    description: ""
+  TRANSFER_FROM_HOUSINGIMPREST:
+    dtype: float64
+    nullable: true
+    description: ""
+  TRANSFER_FROM_OTHERS:
+    dtype: float64
+    nullable: true
+    description: ""
+  DISTRIBUTABLE_PROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  WITHDR_LEGALSURPLUS:
+    dtype: float64
+    nullable: true
+    description: ""
+  WITHDR_LEGALPUBWELFUNDS:
+    dtype: float64
+    nullable: true
+    description: ""
+  WORKERS_WELFARE:
+    dtype: float64
+    nullable: true
+    description: ""
+  WITHDR_BUZEXPWELFARE:
+    dtype: float64
+    nullable: true
+    description: ""
+  WITHDR_RESERVEFUND:
+    dtype: float64
+    nullable: true
+    description: ""
+  DISTRIBUTABLE_PROFIT_SHRHDER:
+    dtype: float64
+    nullable: true
+    description: ""
+  PRFSHARE_DVD_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  WITHDR_OTHERSURPRESERVE:
+    dtype: float64
+    nullable: true
+    description: ""
+  COMSHARE_DVD_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  CAPITALIZED_COMSTOCK_DIV:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_INFO_COMPCODE:
+    dtype: string
+    nullable: true
+    description: ""
+  NET_AFTER_DED_NR_LP_CORRECT:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_INCOME:
+    dtype: float64
+    nullable: true
+    description: ""
+  MEMO:
+    dtype: string
+    nullable: true
+    description: ""
+  ASSET_DISPOSAL_INCOME:
+    dtype: float64
+    nullable: true
+    description: ""
+  CONTINUED_NET_PROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  END_NET_PROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  CREDIT_IMPAIRMENT_LOSS:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_EXPOSURE_HEDGING_BENEFITS:
+    dtype: float64
+    nullable: true
+    description: ""
+  RD_EXPENSE:
+    dtype: float64
+    nullable: true
+    description: ""
+  STMNOTE_FINEXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  FIN_EXP_INT_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  IS_CALCULATION:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_IMPAIR_LOSS_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_OPER_COST2:
+    dtype: float64
+    nullable: true
+    description: ""
+  OPDATE:
+    dtype: datetime
+    nullable: true
+    description: "Wind 运维时间，采集游标用，不是 PIT 可见日"
+  OPMODE:
+    dtype: string
+    nullable: true
+    description: "0 新增 1 修改 2 删除"
+  gsCTime:
+    dtype: datetime
+    nullable: true
+    description: ""
+  gsUTime:
+    dtype: datetime
+    nullable: true
+    description: ""
+  mopdate:
+    dtype: datetime
+    nullable: true
+    description: ""

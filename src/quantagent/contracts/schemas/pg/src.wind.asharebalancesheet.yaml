@@ -1,0 +1,751 @@
+dataset: src.wind.asharebalancesheet
+layer: pg
+doc_ref: docs/contracts/src-wind-first-batch.md
+temporal_kind: period_with_revision
+keys:
+  - OBJECT_ID
+reads: []
+period_fields:
+  - REPORT_PERIOD
+  - STATEMENT_TYPE
+columns:
+  OBJECT_ID:
+    dtype: string
+    nullable: false
+    description: "Wind 行对象主键"
+  S_INFO_WINDCODE:
+    dtype: string
+    nullable: true
+    description: ""
+  WIND_CODE:
+    dtype: string
+    nullable: true
+    description: ""
+  ANN_DT:
+    dtype: string
+    nullable: true
+    description: "PIT 可见日依据"
+  REPORT_PERIOD:
+    dtype: string
+    nullable: true
+    description: ""
+  STATEMENT_TYPE:
+    dtype: string
+    nullable: true
+    description: ""
+  CRNCY_CODE:
+    dtype: string
+    nullable: true
+    description: ""
+  MONETARY_CAP:
+    dtype: float64
+    nullable: true
+    description: ""
+  TRADABLE_FIN_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  NOTES_RCV:
+    dtype: float64
+    nullable: true
+    description: ""
+  ACCT_RCV:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTH_RCV:
+    dtype: float64
+    nullable: true
+    description: ""
+  PREPAY:
+    dtype: float64
+    nullable: true
+    description: ""
+  DVD_RCV:
+    dtype: float64
+    nullable: true
+    description: ""
+  INT_RCV:
+    dtype: float64
+    nullable: true
+    description: ""
+  INVENTORIES:
+    dtype: float64
+    nullable: true
+    description: ""
+  CONSUMPTIVE_BIO_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  DEFERRED_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  NON_CUR_ASSETS_DUE_WITHIN_1Y:
+    dtype: float64
+    nullable: true
+    description: ""
+  SETTLE_RSRV:
+    dtype: float64
+    nullable: true
+    description: ""
+  LOANS_TO_OTH_BANKS:
+    dtype: float64
+    nullable: true
+    description: ""
+  PREM_RCV:
+    dtype: float64
+    nullable: true
+    description: ""
+  RCV_FROM_REINSURER:
+    dtype: float64
+    nullable: true
+    description: ""
+  RCV_FROM_CEDED_INSUR_CONT_RSRV:
+    dtype: float64
+    nullable: true
+    description: ""
+  RED_MONETARY_CAP_FOR_SALE:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTH_CUR_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_CUR_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  FIN_ASSETS_AVAIL_FOR_SALE:
+    dtype: float64
+    nullable: true
+    description: ""
+  HELD_TO_MTY_INVEST:
+    dtype: float64
+    nullable: true
+    description: ""
+  LONG_TERM_EQY_INVEST:
+    dtype: float64
+    nullable: true
+    description: ""
+  INVEST_REAL_ESTATE:
+    dtype: float64
+    nullable: true
+    description: ""
+  TIME_DEPOSITS:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTH_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  LONG_TERM_REC:
+    dtype: float64
+    nullable: true
+    description: ""
+  FIX_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  CONST_IN_PROG:
+    dtype: float64
+    nullable: true
+    description: ""
+  PROJ_MATL:
+    dtype: float64
+    nullable: true
+    description: ""
+  FIX_ASSETS_DISP:
+    dtype: float64
+    nullable: true
+    description: ""
+  PRODUCTIVE_BIO_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  OIL_AND_NATURAL_GAS_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  INTANG_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  R_AND_D_COSTS:
+    dtype: float64
+    nullable: true
+    description: ""
+  GOODWILL:
+    dtype: float64
+    nullable: true
+    description: ""
+  LONG_TERM_DEFERRED_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  DEFERRED_TAX_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  LOANS_AND_ADV_GRANTED:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTH_NON_CUR_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_NON_CUR_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_DEPOSITS_CENTRAL_BANK:
+    dtype: float64
+    nullable: true
+    description: ""
+  ASSET_DEP_OTH_BANKS_FIN_INST:
+    dtype: float64
+    nullable: true
+    description: ""
+  PRECIOUS_METALS:
+    dtype: float64
+    nullable: true
+    description: ""
+  DERIVATIVE_FIN_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  AGENCY_BUS_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  SUBR_REC:
+    dtype: float64
+    nullable: true
+    description: ""
+  RCV_CEDED_UNEARNED_PREM_RSRV:
+    dtype: float64
+    nullable: true
+    description: ""
+  RCV_CEDED_CLAIM_RSRV:
+    dtype: float64
+    nullable: true
+    description: ""
+  RCV_CEDED_LIFE_INSUR_RSRV:
+    dtype: float64
+    nullable: true
+    description: ""
+  RCV_CEDED_LT_HEALTH_INSUR_RSRV:
+    dtype: float64
+    nullable: true
+    description: ""
+  MRGN_PAID:
+    dtype: float64
+    nullable: true
+    description: ""
+  INSURED_PLEDGE_LOAN:
+    dtype: float64
+    nullable: true
+    description: ""
+  CAP_MRGN_PAID:
+    dtype: float64
+    nullable: true
+    description: ""
+  INDEPENDENT_ACCT_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  CLIENTS_CAP_DEPOSIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  CLIENTS_RSRV_SETTLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  INCL_SEAT_FEES_EXCHANGE:
+    dtype: float64
+    nullable: true
+    description: ""
+  RCV_INVEST:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  ST_BORROW:
+    dtype: float64
+    nullable: true
+    description: ""
+  BORROW_CENTRAL_BANK:
+    dtype: float64
+    nullable: true
+    description: ""
+  DEPOSIT_RECEIVED_IB_DEPOSITS:
+    dtype: float64
+    nullable: true
+    description: ""
+  LOANS_OTH_BANKS:
+    dtype: float64
+    nullable: true
+    description: ""
+  TRADABLE_FIN_LIAB:
+    dtype: float64
+    nullable: true
+    description: ""
+  NOTES_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  ACCT_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  ADV_FROM_CUST:
+    dtype: float64
+    nullable: true
+    description: ""
+  FUND_SALES_FIN_ASSETS_RP:
+    dtype: float64
+    nullable: true
+    description: ""
+  HANDLING_CHARGES_COMM_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  EMPL_BEN_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  TAXES_SURCHARGES_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  INT_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  DVD_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTH_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  ACC_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  DEFERRED_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  ST_BONDS_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  PAYABLE_TO_REINSURER:
+    dtype: float64
+    nullable: true
+    description: ""
+  RSRV_INSUR_CONT:
+    dtype: float64
+    nullable: true
+    description: ""
+  ACTING_TRADING_SEC:
+    dtype: float64
+    nullable: true
+    description: ""
+  ACTING_UW_SEC:
+    dtype: float64
+    nullable: true
+    description: ""
+  NON_CUR_LIAB_DUE_WITHIN_1Y:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTH_CUR_LIAB:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_CUR_LIAB:
+    dtype: float64
+    nullable: true
+    description: ""
+  LT_BORROW:
+    dtype: float64
+    nullable: true
+    description: ""
+  BONDS_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  LT_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPECIFIC_ITEM_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  PROVISIONS:
+    dtype: float64
+    nullable: true
+    description: ""
+  DEFERRED_TAX_LIAB:
+    dtype: float64
+    nullable: true
+    description: ""
+  DEFERRED_INC_NON_CUR_LIAB:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTH_NON_CUR_LIAB:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_NON_CUR_LIAB:
+    dtype: float64
+    nullable: true
+    description: ""
+  LIAB_DEP_OTH_BANKS_FIN_INST:
+    dtype: float64
+    nullable: true
+    description: ""
+  DERIVATIVE_FIN_LIAB:
+    dtype: float64
+    nullable: true
+    description: ""
+  CUST_BANK_DEP:
+    dtype: float64
+    nullable: true
+    description: ""
+  AGENCY_BUS_LIAB:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTH_LIAB:
+    dtype: float64
+    nullable: true
+    description: ""
+  PREM_RECEIVED_ADV:
+    dtype: float64
+    nullable: true
+    description: ""
+  DEPOSIT_RECEIVED:
+    dtype: float64
+    nullable: true
+    description: ""
+  INSURED_DEPOSIT_INVEST:
+    dtype: float64
+    nullable: true
+    description: ""
+  UNEARNED_PREM_RSRV:
+    dtype: float64
+    nullable: true
+    description: ""
+  OUT_LOSS_RSRV:
+    dtype: float64
+    nullable: true
+    description: ""
+  LIFE_INSUR_RSRV:
+    dtype: float64
+    nullable: true
+    description: ""
+  LT_HEALTH_INSUR_V:
+    dtype: float64
+    nullable: true
+    description: ""
+  INDEPENDENT_ACCT_LIAB:
+    dtype: float64
+    nullable: true
+    description: ""
+  INCL_PLEDGE_LOAN:
+    dtype: float64
+    nullable: true
+    description: ""
+  CLAIMS_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  DVD_PAYABLE_INSURED:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_LIAB:
+    dtype: float64
+    nullable: true
+    description: ""
+  CAP_STK:
+    dtype: float64
+    nullable: true
+    description: ""
+  CAP_RSRV:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPECIAL_RSRV:
+    dtype: float64
+    nullable: true
+    description: ""
+  SURPLUS_RSRV:
+    dtype: float64
+    nullable: true
+    description: ""
+  UNDISTRIBUTED_PROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_TSY_STK:
+    dtype: float64
+    nullable: true
+    description: ""
+  PROV_NOM_RISKS:
+    dtype: float64
+    nullable: true
+    description: ""
+  CNVD_DIFF_FOREIGN_CURR_STAT:
+    dtype: float64
+    nullable: true
+    description: ""
+  UNCONFIRMED_INVEST_LOSS:
+    dtype: float64
+    nullable: true
+    description: ""
+  MINORITY_INT:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_SHRHLDR_EQY_EXCL_MIN_INT:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_SHRHLDR_EQY_INCL_MIN_INT:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_LIAB_SHRHLDR_EQY:
+    dtype: float64
+    nullable: true
+    description: ""
+  COMP_TYPE_CODE:
+    dtype: string
+    nullable: true
+    description: ""
+  ACTUAL_ANN_DT:
+    dtype: string
+    nullable: true
+    description: ""
+  SPE_CUR_ASSETS_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_CUR_ASSETS_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_NON_CUR_ASSETS_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_NON_CUR_ASSETS_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_ASSETS_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_ASSETS_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_CUR_LIAB_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_CUR_LIAB_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_NON_CUR_LIAB_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_NON_CUR_LIAB_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_LIAB_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_LIAB_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_SHRHLDR_EQY_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_SHRHLDR_EQY_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_LIAB_EQY_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_LIAB_EQY_DIFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  LT_PAYROLL_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_COMP_INCOME:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_EQUITY_TOOLS:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_EQUITY_TOOLS_P_SHR:
+    dtype: float64
+    nullable: true
+    description: ""
+  LENDING_FUNDS:
+    dtype: float64
+    nullable: true
+    description: ""
+  ACCOUNTS_RECEIVABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  ST_FINANCING_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  PAYABLES:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_INFO_COMPCODE:
+    dtype: string
+    nullable: true
+    description: ""
+  TOT_SHR:
+    dtype: float64
+    nullable: true
+    description: ""
+  HFS_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  HFS_SALES:
+    dtype: float64
+    nullable: true
+    description: ""
+  FIN_ASSETS_COST_SHARING:
+    dtype: float64
+    nullable: true
+    description: ""
+  FIN_ASSETS_FAIR_VALUE:
+    dtype: float64
+    nullable: true
+    description: ""
+  CONTRACTUAL_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  CONTRACT_LIABILITIES:
+    dtype: float64
+    nullable: true
+    description: ""
+  ACCOUNTS_RECEIVABLE_BILL:
+    dtype: float64
+    nullable: true
+    description: ""
+  ACCOUNTS_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTH_RCV_TOT:
+    dtype: float64
+    nullable: true
+    description: ""
+  STM_BS_TOT:
+    dtype: float64
+    nullable: true
+    description: ""
+  CONST_IN_PROG_TOT:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTH_PAYABLE_TOT:
+    dtype: float64
+    nullable: true
+    description: ""
+  LT_PAYABLE_TOT:
+    dtype: float64
+    nullable: true
+    description: ""
+  DEBT_INVESTMENT:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_DEBT_INVESTMENT:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_EQUITY_INVESTMENT:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_ILLIQUIDFINANCIAL_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_SUSTAINABLE_BOND:
+    dtype: float64
+    nullable: true
+    description: ""
+  RECEIVABLES_FINANCING:
+    dtype: float64
+    nullable: true
+    description: ""
+  RIGHT_USE_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  LEASE_LIAB:
+    dtype: float64
+    nullable: true
+    description: ""
+  OPDATE:
+    dtype: datetime
+    nullable: true
+    description: "Wind 运维时间，采集游标用，不是 PIT 可见日"
+  OPMODE:
+    dtype: string
+    nullable: true
+    description: "0 新增 1 修改 2 删除"
+  gsUTime:
+    dtype: datetime
+    nullable: true
+    description: ""
+  mopdate:
+    dtype: datetime
+    nullable: true
+    description: ""
+  gsCTime:
+    dtype: datetime
+    nullable: true
+    description: ""

@@ -1,0 +1,703 @@
+dataset: src.wind.asharefinancialindicator
+layer: pg
+doc_ref: docs/contracts/src-wind-first-batch.md
+temporal_kind: period_with_revision
+keys:
+  - OBJECT_ID
+reads: []
+period_fields:
+  - REPORT_PERIOD
+  - STATEMENT_TYPE
+columns:
+  OBJECT_ID:
+    dtype: string
+    nullable: false
+    description: "Wind 行对象主键"
+  S_INFO_WINDCODE:
+    dtype: string
+    nullable: true
+    description: ""
+  WIND_CODE:
+    dtype: string
+    nullable: true
+    description: ""
+  S_INFO_COMPCODE:
+    dtype: string
+    nullable: true
+    description: ""
+  ANN_DT:
+    dtype: string
+    nullable: true
+    description: "PIT 可见日依据"
+  REPORT_PERIOD:
+    dtype: string
+    nullable: true
+    description: ""
+  CRNCY_CODE:
+    dtype: string
+    nullable: true
+    description: ""
+  S_FA_EXTRAORDINARY:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_DEDUCTEDPROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_GROSSMARGIN:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_OPERATEINCOME:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_INVESTINCOME:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_STMNOTE_FINEXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_STM_IS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EBIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EBITDA:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_FCFF:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_FCFE:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EXINTERESTDEBT_CURRENT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EXINTERESTDEBT_NONCURRENT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_INTERESTDEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_NETDEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_TANGIBLEASSET:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_WORKINGCAPITAL:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_NETWORKINGCAPITAL:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_INVESTCAPITAL:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_RETAINEDEARNINGS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EPS_BASIC:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EPS_DILUTED:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EPS_DILUTED2:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_BPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_OCFPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_GRPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ORPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_SURPLUSCAPITALPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_SURPLUSRESERVEPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_UNDISTRIBUTEDPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_RETAINEDPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_CFPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EBITPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_FCFFPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_FCFEPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_NETPROFITMARGIN:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_GROSSPROFITMARGIN:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_COGSTOSALES:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EXPENSETOSALES:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_PROFITTOGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_SALEEXPENSETOGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ADMINEXPENSETOGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_FINAEXPENSETOGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_IMPAIRTOGR_TTM:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_GCTOGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_OPTOGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EBITTOGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ROE:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ROE_DEDUCTED:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ROA2:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ROA:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ROIC:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ROE_YEARLY:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ROA2_YEARLY:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ROE_AVG:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_OPERATEINCOMETOEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_INVESTINCOMETOEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_NONOPERATEPROFITTOEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_TAXTOEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_DEDUCTEDPROFITTOPROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_SALESCASHINTOOR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_OCFTOOR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_OCFTOOPERATEINCOME:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_CAPITALIZEDTODA:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_DEBTTOASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ASSETSTOEQUITY:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_DUPONT_ASSETSTOEQUITY:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_CATOASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_NCATOASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_TANGIBLEASSETSTOASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_INTDEBTTOTOTALCAP:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EQUITYTOTOTALCAPITAL:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_CURRENTDEBTTODEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_LONGDEBTODEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_CURRENT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_QUICK:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_CASHRATIO:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_OCFTOSHORTDEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_DEBTTOEQUITY:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EQUITYTODEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EQUITYTOINTERESTDEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_TANGIBLEASSETTODEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_TANGASSETTOINTDEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_TANGIBLEASSETTONETDEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_OCFTODEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_OCFTOINTERESTDEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_OCFTONETDEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EBITTOINTEREST:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_LONGDEBTTOWORKINGCAPITAL:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_EBITDATODEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_TURNDAYS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_INVTURNDAYS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ARTURNDAYS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_INVTURN:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ARTURN:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_CATURN:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_FATURN:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ASSETSTURN:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ROA_YEARLY:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_DUPONT_ROA:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_STM_BS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_PREFINEXPENSE_OPPROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_NONOPPROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_OPTOEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_NOPTOEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_OCFTOPROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_CASHTOLIQDEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_CASHTOLIQDEBTWITHINTEREST:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_OPTOLIQDEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_OPTODEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_ROIC_YEARLY:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_TOT_FATURN:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_PROFITTOOP:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_OPERATEINCOME:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_INVESTINCOME:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_DEDUCTEDPROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_EPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_NETPROFITMARGIN:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_GROSSPROFITMARGIN:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_EXPENSETOSALES:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_PROFITTOGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_SALEEXPENSETOGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_ADMINEXPENSETOGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_FINAEXPENSETOGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_IMPAIRTOGR_TTM:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_GCTOGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_OPTOGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_ROE:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_ROE_DEDUCTED:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_ROA:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_OPERATEINCOMETOEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_INVESTINCOMETOEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_DEDUCTEDPROFITTOPROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_SALESCASHINTOOR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_OCFTOSALES:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_OCFTOOR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOYEPS_BASIC:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOYEPS_DILUTED:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOYOCFPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOYOP:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOYEBT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOYNETPROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOYNETPROFIT_DEDUCTED:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOYOCF:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOYROE:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOYBPS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOYASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOYEQUITY:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOY_TR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOY_OR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_YOYGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_CGRGR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_YOYSALES:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_CGRSALES:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_YOYOP:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_CGROP:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_YOYPROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_CGRPROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_YOYNETPROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_QFA_CGRNETPROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_FA_YOY_EQUITY:
+    dtype: float64
+    nullable: true
+    description: ""
+  RD_EXPENSE:
+    dtype: float64
+    nullable: true
+    description: ""
+  WAA_ROE:
+    dtype: float64
+    nullable: true
+    description: ""
+  OPDATE:
+    dtype: datetime
+    nullable: true
+    description: "Wind 运维时间，采集游标用，不是 PIT 可见日"
+  OPMODE:
+    dtype: string
+    nullable: true
+    description: "0 新增 1 修改 2 删除"
+  STATEMENT_TYPE:
+    dtype: string
+    nullable: true
+    description: ""

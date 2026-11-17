@@ -1,0 +1,12 @@
+dataset: src.wind.ashareprofitnotice
+doc_ref: docs/contracts/src-wind-first-batch.md
+temporal_kind: period_with_revision
+period_fields:
+  - S_PROFITNOTICE_PERIOD
+visibility:
+  rule: source_field
+  field: S_PROFITNOTICE_DATE
+  grade: A
+  rationale: >
+    Wind 业绩预告。旧仓下游按 S_PROFITNOTICE_DATE 过滤，公告日 <= as_of 可见。
+pit_recoverable: true
