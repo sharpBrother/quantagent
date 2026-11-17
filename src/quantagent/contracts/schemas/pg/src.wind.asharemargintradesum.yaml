@@ -1,0 +1,93 @@
+dataset: src.wind.asharemargintradesum
+layer: pg
+doc_ref: docs/contracts/src-wind-first-batch.md
+temporal_kind: point_event
+keys:
+  - OBJECT_ID
+reads: []
+event_field: TRADE_DT
+columns:
+  OBJECT_ID:
+    dtype: string
+    nullable: false
+    description: "Wind 行对象主键"
+  TRADE_DT:
+    dtype: string
+    nullable: true
+    description: "PIT 可见日依据"
+  S_MARSUM_EXCHMARKET:
+    dtype: string
+    nullable: true
+    description: ""
+  S_MARSUM_TRADINGBALANCE:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_MARSUM_PURCHWITHBORROWMONEY:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_MARSUM_REPAYMENTTOBROKER:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_MARSUM_SECLENDINGBALANCE:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_MARSUM_SALESOFBORROWEDSEC:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_MARSUM_MARGINTRADEBALANCE:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_MARSUM_MARGIN_MARGIN:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_MARSUM_FINANCING_MARGIN:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_MARSUM_SECURITIES_SALES:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_MARSUM_SECURITIES_REPAY:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_MARSUM_FLOW_EQUITY:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_MARSUM_CIRCULATION_VALUE:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_MARSUM_TURNOVER_AMOUNT:
+    dtype: float64
+    nullable: true
+    description: ""
+  OPDATE:
+    dtype: datetime
+    nullable: true
+    description: "Wind 运维时间，采集游标用，不是 PIT 可见日"
+  OPMODE:
+    dtype: string
+    nullable: true
+    description: "0 新增 1 修改 2 删除"
+  gsUTime:
+    dtype: datetime
+    nullable: true
+    description: ""
+  gsCTime:
+    dtype: datetime
+    nullable: true
+    description: ""
+  mopdate:
+    dtype: datetime
+    nullable: true
+    description: ""

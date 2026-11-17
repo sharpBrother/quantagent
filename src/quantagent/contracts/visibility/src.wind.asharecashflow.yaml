@@ -1,0 +1,13 @@
+dataset: src.wind.asharecashflow
+doc_ref: docs/contracts/src-wind-first-batch.md
+temporal_kind: period_with_revision
+period_fields:
+  - REPORT_PERIOD
+  - STATEMENT_TYPE
+visibility:
+  rule: source_field
+  field: ANN_DT
+  grade: A
+  rationale: >
+    Wind 财报与财务指标。旧仓下游 ANN_DT <= as_of，空公告日不可见，同报告期留最后一次。调仓日当天公告可见。不加法定披露日 fallback。
+pit_recoverable: true

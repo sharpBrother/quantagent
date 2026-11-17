@@ -1,0 +1,515 @@
+dataset: src.wind.asharecashflow
+layer: pg
+doc_ref: docs/contracts/src-wind-first-batch.md
+temporal_kind: period_with_revision
+keys:
+  - OBJECT_ID
+reads: []
+period_fields:
+  - REPORT_PERIOD
+  - STATEMENT_TYPE
+columns:
+  OBJECT_ID:
+    dtype: string
+    nullable: false
+    description: "Wind 行对象主键"
+  S_INFO_WINDCODE:
+    dtype: string
+    nullable: true
+    description: ""
+  WIND_CODE:
+    dtype: string
+    nullable: true
+    description: ""
+  ANN_DT:
+    dtype: string
+    nullable: true
+    description: "PIT 可见日依据"
+  REPORT_PERIOD:
+    dtype: string
+    nullable: true
+    description: ""
+  STATEMENT_TYPE:
+    dtype: string
+    nullable: true
+    description: ""
+  CRNCY_CODE:
+    dtype: string
+    nullable: true
+    description: ""
+  CASH_RECP_SG_AND_RS:
+    dtype: float64
+    nullable: true
+    description: ""
+  RECP_TAX_RENDS:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INCR_DEP_COB:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INCR_LOANS_CENTRAL_BANK:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INCR_FUND_BORR_OFI:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_RECP_PREM_ORIG_INCO:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INCR_INSURED_DEP:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_CASH_RECEIVED_REINSU_BUS:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INCR_DISP_TFA:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INCR_INT_HANDLING_CHRG:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INCR_DISP_FAAS:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INCR_LOANS_OTHER_BANK:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INCR_REPURCH_BUS_FUND:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_CASH_RECP_RAL_OPER_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  STOT_CASH_INFLOWS_OPER_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_PAY_GOODS_PURCH_SERV_REC:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_PAY_BEH_EMPL:
+    dtype: float64
+    nullable: true
+    description: ""
+  PAY_ALL_TYP_TAX:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INCR_CLIENTS_LOAN_ADV:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INCR_DEP_CBOB:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_PAY_CLAIMS_ORIG_INCO:
+    dtype: float64
+    nullable: true
+    description: ""
+  HANDLING_CHRG_PAID:
+    dtype: float64
+    nullable: true
+    description: ""
+  COMM_INSUR_PLCY_PAID:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_CASH_PAY_RAL_OPER_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  STOT_CASH_OUTFLOWS_OPER_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_CASH_FLOWS_OPER_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_RECP_DISP_WITHDRWL_INVEST:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_RECP_RETURN_INVEST:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_CASH_RECP_DISP_FIOLTA:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_CASH_RECP_DISP_SOBU:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_CASH_RECP_RAL_INV_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  STOT_CASH_INFLOWS_INV_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_PAY_ACQ_CONST_FIOLTA:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_PAID_INVEST:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_CASH_PAY_AQUIS_SOBU:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_CASH_PAY_RAL_INV_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INCR_PLEDGE_LOAN:
+    dtype: float64
+    nullable: true
+    description: ""
+  STOT_CASH_OUTFLOWS_INV_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_CASH_FLOWS_INV_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_RECP_CAP_CONTRIB:
+    dtype: float64
+    nullable: true
+    description: ""
+  INCL_CASH_REC_SAIMS:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_RECP_BORROW:
+    dtype: float64
+    nullable: true
+    description: ""
+  PROC_ISSUE_BONDS:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_CASH_RECP_RAL_FNC_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  STOT_CASH_INFLOWS_FNC_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_PREPAY_AMT_BORR:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_PAY_DIST_DPCP_INT_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  INCL_DVD_PROFIT_PAID_SC_MS:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_CASH_PAY_RAL_FNC_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  STOT_CASH_OUTFLOWS_FNC_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_CASH_FLOWS_FNC_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  EFF_FX_FLU_CASH:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_INCR_CASH_CASH_EQU:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_CASH_EQU_BEG_PERIOD:
+    dtype: float64
+    nullable: true
+    description: ""
+  CASH_CASH_EQU_END_PERIOD:
+    dtype: float64
+    nullable: true
+    description: ""
+  NET_PROFIT:
+    dtype: float64
+    nullable: true
+    description: ""
+  UNCONFIRMED_INVEST_LOSS:
+    dtype: float64
+    nullable: true
+    description: ""
+  PLUS_PROV_DEPR_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  DEPR_FA_COGA_DPBA:
+    dtype: float64
+    nullable: true
+    description: ""
+  AMORT_INTANG_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  AMORT_LT_DEFERRED_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  DECR_DEFERRED_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  INCR_ACC_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  LOSS_DISP_FIOLTA:
+    dtype: float64
+    nullable: true
+    description: ""
+  LOSS_SCR_FA:
+    dtype: float64
+    nullable: true
+    description: ""
+  LOSS_FV_CHG:
+    dtype: float64
+    nullable: true
+    description: ""
+  FIN_EXP:
+    dtype: float64
+    nullable: true
+    description: ""
+  INVEST_LOSS:
+    dtype: float64
+    nullable: true
+    description: ""
+  DECR_DEFERRED_INC_TAX_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  INCR_DEFERRED_INC_TAX_LIAB:
+    dtype: float64
+    nullable: true
+    description: ""
+  DECR_INVENTORIES:
+    dtype: float64
+    nullable: true
+    description: ""
+  DECR_OPER_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  INCR_OPER_PAYABLE:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHERS:
+    dtype: float64
+    nullable: true
+    description: ""
+  IM_NET_CASH_FLOWS_OPER_ACT:
+    dtype: float64
+    nullable: true
+    description: ""
+  CONV_DEBT_INTO_CAP:
+    dtype: float64
+    nullable: true
+    description: ""
+  CONV_CORP_BONDS_DUE_WITHIN_1Y:
+    dtype: float64
+    nullable: true
+    description: ""
+  FA_FNC_LEASES:
+    dtype: float64
+    nullable: true
+    description: ""
+  END_BAL_CASH:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_BEG_BAL_CASH:
+    dtype: float64
+    nullable: true
+    description: ""
+  PLUS_END_BAL_CASH_EQU:
+    dtype: float64
+    nullable: true
+    description: ""
+  LESS_BEG_BAL_CASH_EQU:
+    dtype: float64
+    nullable: true
+    description: ""
+  IM_NET_INCR_CASH_CASH_EQU:
+    dtype: float64
+    nullable: true
+    description: ""
+  FREE_CASH_FLOW:
+    dtype: float64
+    nullable: true
+    description: ""
+  COMP_TYPE_CODE:
+    dtype: string
+    nullable: true
+    description: ""
+  ACTUAL_ANN_DT:
+    dtype: string
+    nullable: true
+    description: ""
+  SPE_BAL_CASH_INFLOWS_OPER:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_CASH_INFLOWS_OPER:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_CASH_OUTFLOWS_OPER:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_CASH_OUTFLOWS_OPER:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_NETCASH_OUTFLOWS_OPER:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_CASH_INFLOWS_INV:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_CASH_INFLOWS_INV:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_CASH_OUTFLOWS_INV:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_CASH_OUTFLOWS_INV:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_NETCASH_OUTFLOWS_INV:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_CASH_INFLOWS_FNC:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_CASH_INFLOWS_FNC:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_CASH_OUTFLOWS_FNC:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_CASH_OUTFLOWS_FNC:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_NETCASH_OUTFLOWS_FNC:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_NETCASH_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_NETCASH_INC:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_NETCASH_EQU_UNDIR:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_NETCASH_EQU_UNDIR:
+    dtype: float64
+    nullable: true
+    description: ""
+  SPE_BAL_NETCASH_INC_UNDIR:
+    dtype: float64
+    nullable: true
+    description: ""
+  TOT_BAL_NETCASH_INC_UNDIR:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_INFO_COMPCODE:
+    dtype: string
+    nullable: true
+    description: ""
+  S_DISMANTLE_CAPITAL_ADD_NET:
+    dtype: float64
+    nullable: true
+    description: ""
+  IS_CALCULATION:
+    dtype: float64
+    nullable: true
+    description: ""
+  SECURITIE_NETCASH_RECEIVED:
+    dtype: float64
+    nullable: true
+    description: ""
+  OTHER_IMPAIR_LOSS_ASSETS:
+    dtype: float64
+    nullable: true
+    description: ""
+  CREDIT_IMPAIRMENT_LOSS:
+    dtype: float64
+    nullable: true
+    description: ""
+  RIGHT_USE_ASSETS_DEP:
+    dtype: float64
+    nullable: true
+    description: ""
+  OPDATE:
+    dtype: datetime
+    nullable: true
+    description: "Wind 运维时间，采集游标用，不是 PIT 可见日"
+  OPMODE:
+    dtype: string
+    nullable: true
+    description: "0 新增 1 修改 2 删除"
+  mopdate:
+    dtype: datetime
+    nullable: true
+    description: ""
+  gsCTime:
+    dtype: datetime
+    nullable: true
+    description: ""
+  gsUTime:
+    dtype: datetime
+    nullable: true
+    description: ""
