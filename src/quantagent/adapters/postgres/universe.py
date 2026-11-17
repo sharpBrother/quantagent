@@ -1,7 +1,9 @@
-"""PostgreSQL all_a 股票池读取。规则判断全部在 ``domain.universe.all_a``。
+"""PostgreSQL 股票池读取。规则判断在 ``domain.universe``。
 
-这里只做三件事：取 PIT 截止（来自衍生指标的契约）、读两张源表、把字符串日期
-转成 ``date``。不在 SQL 里写上市/退市/BSE 等规则，也不物化成员表。
+all_a：规则在 ``domain.universe.all_a``，取 PIT 截止（衍生指标契约）、读两张源表。
+成分股票池（``<family>:<index_code>``）：区间判断在 ``domain.universe.constituents``，
+取 PIT 截止（``mart.universe_member`` 契约）、读一张成分表，表名只来自常量映射。
+这里不在 SQL 里写上市/退市/BSE 等规则，也不物化成员表。
 """
 
 from __future__ import annotations
@@ -22,9 +24,12 @@ from quantagent.domain.errors import (
 from quantagent.domain.pit import is_cutoff_visible, pit_cutoff
 from quantagent.domain.universe import (
     ALL_A_UNIVERSE_ID,
+    ConstituentRow,
     ListingRow,
     UniverseMember,
     all_a_members,
+    constituent_members,
+    parse_constituent_universe_id,
 )
 
 if TYPE_CHECKING:
@@ -35,6 +40,7 @@ if TYPE_CHECKING:
     from quantagent.contracts.spec import VisibilityContract
 
 DERIVATIVE_DATASET = "src.wind.ashareeodderivativeindicator"
+UNIVERSE_MEMBER_DATASET = "mart.universe_member"
 _YMD_LEN = 8
 
 
@@ -59,7 +65,7 @@ class PostgresUniverseRepository:
         universe_id: str,
     ) -> tuple[UniverseMember, ...]:
         if universe_id != ALL_A_UNIVERSE_ID:
-            raise InvalidQueryError(f"不支持的 universe_id: {universe_id!r}")
+            return self._constituent_members(as_of=as_of, dt=dt, universe_id=universe_id)
         contract = self._contract if self._contract is not None else load_derivative_visibility()
         cutoff = pit_cutoff(contract, as_of=as_of)
         # 不可见的日期不查库：空域直接报错，避免读到 as_of 之后才有的衍生指标。
@@ -73,6 +79,35 @@ class PostgresUniverseRepository:
         if not members:
             raise EmptyDomainError(f"all_a 在 {dt.isoformat()} 为空域")
         return members
+
+    def _constituent_members(
+        self,
+        *,
+        as_of: date,
+        dt: date,
+        universe_id: str,
+    ) -> tuple[UniverseMember, ...]:
+        # 非法 universe_id 在这里报错，不查库。
+        family, index_code = parse_constituent_universe_id(universe_id)
+        if dt > as_of:
+            raise EmptyDomainError(f"dt {dt.isoformat()} 晚于 as_of {as_of.isoformat()}")
+        cutoff = pit_cutoff(load_universe_member_visibility(), as_of=as_of)
+        rows = self._fetch_constituents(family, index_code)
+        members = constituent_members(rows, universe_id=universe_id, dt=dt)
+        visible = tuple(
+            member
+            for member in members
+            if is_cutoff_visible(value=member.knowledge_dt, cutoff=cutoff)
+        )
+        if not visible:
+            raise EmptyDomainError(f"{universe_id} 在 {dt.isoformat()} 为空域")
+        return visible
+
+    def _fetch_constituents(self, family: str, index_code: str) -> tuple[ConstituentRow, ...]:
+        with self._conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(_CONSTITUENT_SQL[family], (index_code,))
+            fetched = cur.fetchall()
+        return tuple(_constituent_from_mapping(index_code, item) for item in fetched)
 
     def _load_listings(self) -> tuple[ListingRow, ...]:
         if self._listings is None:
@@ -113,6 +148,13 @@ def load_derivative_visibility() -> VisibilityContract:
     return vis
 
 
+def load_universe_member_visibility() -> VisibilityContract:
+    vis = load_bundle().visibilities.get(UNIVERSE_MEMBER_DATASET)
+    if vis is None:
+        raise MissingVisibilityError(UNIVERSE_MEMBER_DATASET)
+    return vis
+
+
 def parse_ymd_optional(value: object, field: str) -> date | None:
     """``None`` 表示空值。其他值必须是合法 YYYYMMDD，空串也算非法，不静默当空值。"""
     if value is None:
@@ -137,6 +179,18 @@ def _listing_from_mapping(row: dict[str, object]) -> ListingRow:
         list_date=parse_ymd_optional(row.get("S_INFO_LISTDATE"), "S_INFO_LISTDATE"),
         delist_date=parse_ymd_optional(row.get("S_INFO_DELISTDATE"), "S_INFO_DELISTDATE"),
         exchange_market=exchange,
+    )
+
+
+def _constituent_from_mapping(index_code: str, row: dict[str, object]) -> ConstituentRow:
+    code = row.get("S_CON_WINDCODE")
+    if not isinstance(code, str) or not code.strip():
+        raise InvalidQueryError(f"S_CON_WINDCODE 为空: {index_code}")
+    return ConstituentRow(
+        index_code=index_code,
+        asset_id=code,
+        in_date=parse_ymd_optional(row.get("S_CON_INDATE"), "S_CON_INDATE"),
+        out_date=parse_ymd_optional(row.get("S_CON_OUTDATE"), "S_CON_OUTDATE"),
     )
 
 
@@ -166,3 +220,27 @@ _OBSERVED_SQL = assert_src_dml_sql(
     f" AND {quote_ident('S_VAL_MV')} IS NOT NULL"
     f" AND {quote_ident('S_DQ_MV')} IS NOT NULL"
 )
+
+# 成分表只取 family 对应的一张表。表名来自这里的常量，不接受外部输入。
+_CONSTITUENT_TABLES: dict[str, str] = {
+    "index": "AINDEXMEMBERS",
+    "citics1": "AINDEXMEMBERSCITICS",
+    "citics2": "AINDEXMEMBERSCITICS2",
+    "citics3": "AINDEXMEMBERSCITICS3",
+    "sw": "SWINDEXMEMBERS",
+}
+
+
+def _constituent_sql(table: str) -> str:
+    columns = ("S_CON_WINDCODE", "S_CON_INDATE", "S_CON_OUTDATE")
+    return assert_src_dml_sql(
+        "SELECT "
+        + ", ".join(quote_ident(name) for name in columns)
+        + f" FROM {quote_ident('src_wind')}.{quote_ident(table)}"
+        + f" WHERE {quote_ident('S_INFO_WINDCODE')} = %s"
+    )
+
+
+_CONSTITUENT_SQL: dict[str, str] = {
+    family: _constituent_sql(table) for family, table in _CONSTITUENT_TABLES.items()
+}

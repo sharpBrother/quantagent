@@ -218,3 +218,157 @@ def test_description_is_cached_per_instance() -> None:
     statements = [call.args[0] for call in cur.execute.call_args_list]
     description_reads = [s for s in statements if "ASHAREDESCRIPTION" in s]
     assert len(description_reads) == 1
+
+
+def _conn_rows(rows: list[dict[str, object]]) -> MagicMock:
+    conn = MagicMock()
+    cur = conn.cursor.return_value.__enter__.return_value
+    cur.fetchall.return_value = rows
+    return conn
+
+
+def _crow(code: str, indate: str | None, outdate: str | None) -> dict[str, object]:
+    return {"S_CON_WINDCODE": code, "S_CON_INDATE": indate, "S_CON_OUTDATE": outdate}
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("family", "table"),
+    [
+        ("index", "AINDEXMEMBERS"),
+        ("citics1", "AINDEXMEMBERSCITICS"),
+        ("citics2", "AINDEXMEMBERSCITICS2"),
+        ("citics3", "AINDEXMEMBERSCITICS3"),
+        ("sw", "SWINDEXMEMBERS"),
+    ],
+)
+def test_constituent_family_reads_its_own_table_with_readonly_sql(family: str, table: str) -> None:
+    conn = _conn_rows([_crow("000001.SZ", "20200101", None)])
+    members = PostgresUniverseRepository(conn, contract=_contract()).members_at(
+        as_of=AS_OF,
+        dt=AS_OF,
+        universe_id=f"{family}:000300.SH",
+    )
+    cur = conn.cursor.return_value.__enter__.return_value
+    assert cur.execute.call_count == 1
+    statement, params = cur.execute.call_args.args
+    assert statement.lstrip().upper().startswith("SELECT")
+    assert "UPDATE" not in statement.upper()
+    assert "INSERT" not in statement.upper()
+    assert f'"src_wind"."{table}"' in statement
+    assert '"S_INFO_WINDCODE" = %s' in statement
+    assert params == ("000300.SH",)
+    assert [m.asset_id for m in members] == ["000001.SZ"]
+    (member,) = members
+    assert member.universe_id == f"{family}:000300.SH"
+    assert member.valid_from == date(2020, 1, 1)
+    assert member.valid_to is None
+    assert member.knowledge_dt == date(2020, 1, 1)
+    assert member.pit_grade == "B"
+
+
+@pytest.mark.unit
+def test_constituent_dt_after_as_of_fails_without_touching_db() -> None:
+    conn = MagicMock()
+    with pytest.raises(EmptyDomainError):
+        PostgresUniverseRepository(conn, contract=_contract()).members_at(
+            as_of=date(2024, 1, 4),
+            dt=date(2024, 1, 5),
+            universe_id="index:000300.SH",
+        )
+    conn.cursor.assert_not_called()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "universe_id",
+    ["index", "index:", "unknown:000300.SH", "INDEX:000300.SH", "ashare", "ALL_A", ""],
+)
+def test_invalid_constituent_universe_id_fails_without_touching_db(universe_id: str) -> None:
+    conn = MagicMock()
+    with pytest.raises(InvalidQueryError):
+        PostgresUniverseRepository(conn, contract=_contract()).members_at(
+            as_of=AS_OF,
+            dt=AS_OF,
+            universe_id=universe_id,
+        )
+    conn.cursor.assert_not_called()
+
+
+@pytest.mark.unit
+def test_constituent_missing_mart_visibility_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        universe_module,
+        "load_bundle",
+        lambda: SimpleNamespace(visibilities={}),
+    )
+    conn = MagicMock()
+    with pytest.raises(MissingVisibilityError):
+        PostgresUniverseRepository(conn).members_at(
+            as_of=AS_OF,
+            dt=AS_OF,
+            universe_id="index:000300.SH",
+        )
+    conn.cursor.assert_not_called()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("indate", "outdate", "field"),
+    [
+        (None, None, "S_CON_INDATE"),
+        ("", None, "S_CON_INDATE"),
+        ("2024-01-01", None, "S_CON_INDATE"),
+        ("20240101", "", "S_CON_OUTDATE"),
+    ],
+)
+def test_constituent_invalid_date_fails_closed(
+    indate: str | None, outdate: str | None, field: str
+) -> None:
+    conn = _conn_rows([_crow("000001.SZ", indate, outdate)])
+    with pytest.raises(InvalidQueryError, match=field):
+        PostgresUniverseRepository(conn, contract=_contract()).members_at(
+            as_of=AS_OF,
+            dt=AS_OF,
+            universe_id="index:000300.SH",
+        )
+
+
+@pytest.mark.unit
+def test_constituent_overlap_on_dt_fails_closed() -> None:
+    conn = _conn_rows(
+        [
+            _crow("601058.SH", "20250206", None),
+            _crow("601058.SH", "20250304", None),
+        ]
+    )
+    with pytest.raises(InvalidQueryError, match="重叠"):
+        PostgresUniverseRepository(conn, contract=_contract()).members_at(
+            as_of=date(2025, 3, 5),
+            dt=date(2025, 3, 5),
+            universe_id="index:000300.SH",
+        )
+
+
+@pytest.mark.unit
+def test_constituent_no_row_covering_dt_is_empty_domain() -> None:
+    conn = _conn_rows([_crow("000001.SZ", "20250101", None)])
+    with pytest.raises(EmptyDomainError):
+        PostgresUniverseRepository(conn, contract=_contract()).members_at(
+            as_of=AS_OF,
+            dt=AS_OF,
+            universe_id="index:000300.SH",
+        )
+
+
+@pytest.mark.unit
+def test_constituent_empty_code_fails_closed() -> None:
+    conn = _conn_rows([_crow("", "20200101", None)])
+    with pytest.raises(InvalidQueryError, match="S_CON_WINDCODE"):
+        PostgresUniverseRepository(conn, contract=_contract()).members_at(
+            as_of=AS_OF,
+            dt=AS_OF,
+            universe_id="index:000300.SH",
+        )

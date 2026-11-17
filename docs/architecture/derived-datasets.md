@@ -45,6 +45,10 @@ superseded_by: null
 > **2026-11-17 起不物化。** 股票池改为读取时从源表计算，接口与字段形状不变，
 > 见 [股票池按读取时计算](../adr/2026-11-17-universe-computed-on-read.md)。下文的层归属与
 > 字段说明仍是成员行的形状定义；`mart.universe_member` 目录暂不产出。
+>
+> 现有 `universe_id`：`all_a`（按日成员）；`<family>:<index_code>` 成分池，family 为
+> `index`（`AINDEXMEMBERS`）、`citics1/2/3`（中信一二三级）、`sw`（`SWINDEXMEMBERS`），
+> 按 `S_CON_INDATE`/`S_CON_OUTDATE` 闭区间命中，`pit_grade` 为 B，同一成分区间重叠即报错。
 
 **归属 `mart` 而不是 `feature`。** 因为 `feature` 计算要读它，而 `mart`
 不允许反向读 `feature`。放错一层会直接违反数据分层的不得反向依赖约束。
