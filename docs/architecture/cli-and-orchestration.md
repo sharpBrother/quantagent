@@ -144,7 +144,7 @@ quantagent feature matrix --start 2024-01-01 --end 2024-01-31 --as-of 2024-02-01
 
 现役调度（`orchestration/schedules/wind.py`）：`wind_source_daily_close` 16:30、
 `wind_source_daily_morning` 06:00（Asia/Shanghai），对应旧仓 `wind_to_sql_2` 与
-`wind_to_sql_am`。都跑 `wind_source_daily`：标准日历加全部已接入 Wind 源表，并发上限 2，
+`wind_to_sql_am`。都跑 `wind_source_daily`：标准日历加全部已接入 Wind 源表，资产串行执行（ToDesk 转发在并发下出现过结果截断），
 真写、不限页、页大小 10000。SSE 非交易日跳过；上一轮未结束则跳过，避免全量回填叠跑。
 默认处于运行状态，daemon 启动即生效；是否真写仍取决于执行机的 `QUANTAGENT_ALLOW_DB_WRITE`。
 实例使用 `QueuedRunCoordinator`（`max_concurrent_runs: 1`）：run 由 daemon 启动，不挂在提交命令下。

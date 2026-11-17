@@ -17,9 +17,10 @@ wind_source_refresh = define_asset_job(
         src_wind_ashareeodprices,
     ),
 )
-# 并发上限 2：避免同时打开过多 Wind 连接。资金流已观察到吞吐偏低，多开连接不会加快总耗时。
+# 串行：执行机经 ToDesk 端口转发连 PG。2026-11-17 两个资产并发时出现回读截在第 2,500 行、
+# 参数里混入 0x8d 半个多字节字符，单跑同一页都通过，按链路在并发下截断处理。
 wind_source_daily = define_asset_job(
     name="wind_source_daily",
     selection=AssetSelection.assets(*WIND_SOURCE_ASSETS, std_trade_calendar),
-    executor_def=multiprocess_executor.configured({"max_concurrent": 2}),
+    executor_def=multiprocess_executor.configured({"max_concurrent": 1}),
 )
