@@ -278,6 +278,7 @@ def ingest_wind_verify(
         raise typer.Exit(code=1) from exc
     typer.echo(
         f"dataset={result.dataset} rows={result.row_count} mismatched={result.mismatched} "
+        f"type_only={result.type_only} "
         f"samples={list(result.samples)}"
     )
     if result.mismatched:

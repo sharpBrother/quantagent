@@ -375,7 +375,7 @@ def test_feature_matrix_rejects_incomplete_keys(raw: str) -> None:
 def test_ingest_wind_verify_exits_nonzero_on_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "quantagent.cli.ingest.verify_wind_table",
-        lambda **_: WindVerifyResult("src.wind.x", 10, 1, ("('k',)",)),
+        lambda **_: WindVerifyResult("src.wind.x", 10, 1, 0, ("('k',)",)),
     )
     result = runner.invoke(app, ["ingest", "wind", "verify", "AINDEXEODPRICES"])
     assert result.exit_code == 1

@@ -131,6 +131,12 @@ applies_to:
    daemon 必须带 `--workspace`，执行机的启动脚本是 `var/run-dagster-daemon.cmd`。
    调度状态在 daemon 第一轮遍历后才写进 `ops.instigators`，启动后要等几分钟再核对。
    执行机的 agent 不能调用 `schtasks`，计划任务由负责人手工创建。
+   **经 ToDesk 写入的历史数据已核对（2026-11-17）。** 执行机在两个资产并发时出现回读截断与
+   `0x8d` 非法字节，作业已改串行，写后回读加了逐列核对。用 `quantagent ingest wind verify <表>`
+   按库里的值重算 `_row_hash`：资金流 4,600,000、指数日行情 24,603,478、A 股日行情 18,870,269、
+   指数估值 710,000、中信行业行情 30,000、四张成分表共 45,959 行，业务值不一致 0。
+   `AINDEXMEMBERSCITICS2` 的 8,765 行只差在 `CUR_SIGN` 的表示：PG 建成 `integer`，源端是
+   numeric，值相等。
 4. **首个量价因子已对上一个小样本。** `pf_single_cutamp_1_mean_neg` 来自旧仓
    `CUTAMP`：20 个交易日的振幅，去掉收盘触及涨跌停的日子，按复权收盘价切 25%。
    Current-20 取相反数。2024-01-02 至 01-05 的 `000001.SZ` 与 `600000.SH`，
