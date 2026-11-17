@@ -91,4 +91,5 @@ def test_paged_whitelist_is_explicit() -> None:
     money = resolve_wind_paged_table("ASHAREMONEYFLOW")
     assert "GSUPDTIME" not in money.spec.native_columns
     with pytest.raises(TargetNotAllowedError, match="白名单"):
-        resolve_wind_paged_table("ASHAREDESCRIPTION")
+        # 源是 AINDEXDESCRIPTION 的子集，不按同名分页接入。
+        resolve_wind_paged_table("AINDEXINDUSTRIESCITICS")

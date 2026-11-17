@@ -14,6 +14,7 @@ from quantagent.adapters.postgres.src_targets import (
     ASHAREEODPRICES,
     ASHAREINCOME,
     ASHAREMONEYFLOW,
+    FIRST_BATCH_WIND_SPECS,
     SrcTableWriteSpec,
 )
 from quantagent.ingest.errors import TargetNotAllowedError
@@ -74,6 +75,29 @@ WIND_PAGED_TABLES: dict[str, WindPagedTable] = {
         chi_fields=(),
     ),
 }
+
+
+# 旧仓 data/wind_to_sql_2.py、wind_to_sql_am.py 对这些表传的 chi_field：
+# 源端中文 varchar 以 latin1 读出，需按 gbk 修复。未列出的表旧仓不修复。
+_FIRST_BATCH_CHI_FIELDS: dict[str, tuple[str, ...]] = {
+    "ASHAREDESCRIPTION": ("S_INFO_NAME", "S_INFO_COMPNAME", "S_INFO_LISTBOARDNAME"),
+    "ASHAREFINANCIALINDICATOR": ("STATEMENT_TYPE",),
+    "ASHAREPROFITNOTICE": ("S_PROFITNOTICE_ABSTRACT", "S_PROFITNOTICE_REASON"),
+    "ASHAREDIVIDEND": ("S_DIV_OBJECT",),
+    "ASHAREST": ("REASON",),
+    "ASHARETRADINGSUSPENSION": ("S_DQ_CHANGEREASON",),
+}
+
+WIND_PAGED_TABLES.update(
+    {
+        name: WindPagedTable(
+            source_table=name,
+            spec=spec,
+            chi_fields=_FIRST_BATCH_CHI_FIELDS.get(name, ()),
+        )
+        for name, spec in FIRST_BATCH_WIND_SPECS.items()
+    }
+)
 
 
 def resolve_wind_paged_table(name: str) -> WindPagedTable:

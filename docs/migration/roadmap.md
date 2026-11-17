@@ -2,7 +2,7 @@
 title: 迁移路线 P0–P6
 status: active
 created: 2026-09-16
-updated: 2026-09-18
+updated: 2026-11-17
 applies_to:
   - src/quantagent/
   - orchestration/
@@ -32,6 +32,19 @@ applies_to:
 | P4 | 建模与策略 | Dataset/Estimator 抽象、回测语义合同、内核对照 |
 | P5 | 发布与前端 | 冻结制品迁入、publish 契约、apps/web |
 | P6 | 旧仓封存 | pycharm_workspace 转只读归档 |
+
+## 当前进度 · 2026-11-17
+
+| 阶段 | 状态 |
+|---|---|
+| P0 | 完成。门禁 ruff、mypy、import-linter、pytest 全绿 |
+| P1 | 完成。两面迁移可独立 migrate/status，DuckDB 会话、缺规则 fail-closed 测试、因子布局 ADR 均已落地 |
+| P2 | 进行中。两份清单完成。第一批 59 张源表 DDL 已建；Wind 30 张里 25 张已接分页采集，有数据的 4 张（日历、A 股日行情、指数日行情全量，资金流 9 万行）。剩 5 张无主键表、`AINDEXINDUSTRIESCITICS`、`CBONDCURVECNBD` 待定。Tushare 除日历外、JYDB、朝阳永续、宏观未接。源表 visibility 只写了 4 张。第四类运维表未动 |
+| P3 | 提前起步。domain 的 calendar/pit/universe/prices、8 个 port、三套适配器已有；golden 只覆盖日行情与 cutamp；两个量价因子小样本入长表 |
+| P4–P6 | 未开始 |
+
+P3 先于 P2 验收起步是有意的：用第一个因子把采集、PIT 读取、长表写入整条链路跑通。
+P2 的验收标准仍是 P3 收尾的前提。
 
 ---
 
@@ -92,7 +105,7 @@ PG schema 可整体 drop 重建（此时无真实数据）。`var/lake/` 可整�
 
 ### 内容
 
-1. **先产出 `wx2` 逐表处置清单**（标准见 [wx2-disposition.md](wx2-disposition.md)，清单见 [wx2-table-list.md](wx2-table-list.md)）。清单已产出，迁入仍未开始。
+1. **先产出 `wx2` 逐表处置清单**（标准见 [wx2-disposition.md](wx2-disposition.md)，清单见 [wx2-table-list.md](wx2-table-list.md)）。清单已产出，迁入进行中，见上方当前进度。
 2. 按类别分别执行：源数据迁 `src_*`，派生数据不迁，不可重算历史冻结到
    `var/lake/legacy/`，控制状态重新建模到 `ops_*`，无消费者不迁
 3. Wind / Tushare / JYDB / 朝阳永续 / 宏观 ETL 重写为 Dagster asset
@@ -102,7 +115,7 @@ PG schema 可整体 drop 重建（此时无真实数据）。`var/lake/` 可整�
 
 ### 顺序约束
 
-**清单已产出，迁入仍未开始。** 先迁一部分再补清单，会出现"已经迁进来但发现
+**清单已产出，迁入进行中。** 先迁一部分再补清单，会出现"已经迁进来但发现
 应该不迁"，而删除已迁入的数据比一开始不迁麻烦得多。类别 1 补收录仍须
 负责人确认；visibility 从旧仓下游反推，不必每张表先送审。
 

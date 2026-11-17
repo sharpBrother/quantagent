@@ -110,6 +110,16 @@ applies_to:
    写入规则已改为自动跟随（[ADR](../adr/2026-11-17-wind-revision-auto-replace.md)）：
    只变系统列的跳过，只变复权列的自动替换，其余变化仍拒绝。用 wx2 游标后的 10,463 行
    只读推演：新增 5,579、自动替换 4,884、无报错。本机没有 Wind，未真写。
+   **第一批其余 15 张常规 Wind 表已接入分页采集（2026-11-17，未真写）。** 命令
+   `quantagent ingest wind first-batch`，也可单表 `quantagent ingest wind <表名>`。顺序：
+   `ASHAREDESCRIPTION`、四张成分表、`SWINDEXMEMBERS`、`ASHAREFINANCIALINDICATOR`、
+   `ASHAREPROFITNOTICE`、`ASHAREDIVIDEND`、`ASHAREST`、`ASHARETRADINGSUSPENSION`、
+   `AINDEXINDUSTRIESEODCITICS`、两张两融、`CHINAMUTUALFUNDSTOCKPORTFOLIO`。全表镜像，
+   不沿用旧仓按指数清单或 `CUR_SIGN=1` 的子集过滤，与指数日行情一致。采集列取本机物理表，
+   测试核对与已应用 DDL 一致；中文解码列按旧仓 `chi_field`。默认干跑一页，页大小 10000。
+   未接的 7 张：`CBONDCURVECSI`、`FXEODPRICES`、`CBONDREPO`、`CBONDPRICESREPO`、
+   `CBONDREPOANDIBLEODPRICES` 的物理表没有主键；`AINDEXINDUSTRIESCITICS` 在旧仓由
+   `AINDEXDESCRIPTION` 筛出，源表不同名；`CBONDCURVECNBD` 全表体量未评估。
 4. **首个量价因子已对上一个小样本。** `pf_single_cutamp_1_mean_neg` 来自旧仓
    `CUTAMP`：20 个交易日的振幅，去掉收盘触及涨跌停的日子，按复权收盘价切 25%。
    Current-20 取相反数。2024-01-02 至 01-05 的 `000001.SZ` 与 `600000.SH`，

@@ -9,6 +9,7 @@ from unittest.mock import Mock
 import pytest
 from typer.testing import CliRunner
 
+from quantagent.adapters.postgres.wind_first_batch_columns import FIRST_BATCH_WIND_SYNC
 from quantagent.adapters.postgres.wind_large_columns import LARGE_WIND_SYNC
 from quantagent.cli.app import app
 from quantagent.domain.feature_value import FeatureKey
@@ -268,6 +269,28 @@ def test_ingest_wind_large_replace_applies_to_one_table(
     assert [(name, flag) for name, _, flag in calls] == [
         (name, name == "ASHAREEODPRICES") for name in LARGE_WIND_SYNC
     ]
+
+
+@pytest.mark.unit
+def test_ingest_wind_first_batch_runs_in_order(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = _fake_large_job(monkeypatch)
+    result = runner.invoke(
+        app,
+        ["ingest", "wind", "first-batch", "--replace-existing", "ASHAREDESCRIPTION"],
+    )
+    assert result.exit_code == 0, result.output
+    assert calls == [(name, 10_000, name == "ASHAREDESCRIPTION") for name in FIRST_BATCH_WIND_SYNC]
+
+
+@pytest.mark.unit
+def test_ingest_wind_single_first_batch_table_dispatches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    job = Mock()
+    monkeypatch.setattr("quantagent.cli.ingest.ingest_wind_paged", job)
+    result = runner.invoke(app, ["ingest", "wind", "SWINDEXMEMBERS", "--max-pages", "1"])
+    assert result.exit_code == 0, result.output
+    assert job.call_args.kwargs["table"] == "SWINDEXMEMBERS"
 
 
 @pytest.mark.unit

@@ -12,6 +12,7 @@ from quantagent.adapters.postgres.errors import (
     PostgresAdapterError,
     TransactionUnknownError,
 )
+from quantagent.adapters.postgres.wind_first_batch_columns import FIRST_BATCH_WIND_SYNC
 from quantagent.adapters.postgres.wind_large_columns import LARGE_WIND_SYNC
 from quantagent.ingest.errors import IngestError
 from quantagent.ingest.jobs.trade_cal import ingest_tushare_trade_cal
@@ -163,18 +164,33 @@ def ingest_wind_table(
     )
 
 
+for _name in FIRST_BATCH_WIND_SYNC:
+    wind_app.command(_name)(ingest_wind_table)
+
+
+_ReplaceOption = Annotated[
+    str | None,
+    typer.Option(
+        "--replace-existing",
+        metavar="TABLE",
+        help="只对这一张表允许 DELETE+INSERT 替换已有键与 OPMODE=2 删除；其余表仍拒绝覆盖",
+    ),
+]
+_MaxPagesOption = Annotated[
+    int | None,
+    typer.Option("--max-pages", help="每张表最多处理页数；干跑默认 1，真写默认不限制"),
+]
+_FromCursorOption = Annotated[
+    str | None,
+    typer.Option("--from-cursor", help="只用于单表。按顺序跑多张表时不要传"),
+]
+
+
 @wind_app.command("large")
 def ingest_wind_large(
     *,
     write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
-    replace_existing: Annotated[
-        str | None,
-        typer.Option(
-            "--replace-existing",
-            metavar="TABLE",
-            help="只对这一张表允许 DELETE+INSERT 替换已有键与 OPMODE=2 删除；其余表仍拒绝覆盖",
-        ),
-    ] = None,
+    replace_existing: _ReplaceOption = None,
     page_size: Annotated[
         int,
         typer.Option(
@@ -182,30 +198,65 @@ def ingest_wind_large(
             help="每页行数。这批大表默认 10000，是分页上限，也是指数全量测到的较快档",
         ),
     ] = 10_000,
-    max_pages: Annotated[
-        int | None,
-        typer.Option("--max-pages", help="每张表最多处理页数；干跑默认 1，真写默认不限制"),
-    ] = None,
-    from_cursor: Annotated[
-        str | None,
-        typer.Option("--from-cursor", help="只用于单表。按体积顺序跑时不要传"),
-    ] = None,
+    max_pages: _MaxPagesOption = None,
+    from_cursor: _FromCursorOption = None,
 ) -> None:
     """按源库体积从大到小同步达到 3GB 的表。默认每张干跑。"""
+    _run_wind_sequence(
+        LARGE_WIND_SYNC,
+        write_db=write_db,
+        replace_existing=replace_existing,
+        page_size=page_size,
+        max_pages=max_pages,
+        from_cursor=from_cursor,
+    )
+
+
+@wind_app.command("first-batch")
+def ingest_wind_first_batch(
+    *,
+    write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
+    replace_existing: _ReplaceOption = None,
+    page_size: Annotated[
+        int, typer.Option("--page-size", help="每页行数，默认 10000（分页上限）")
+    ] = 10_000,
+    max_pages: _MaxPagesOption = None,
+    from_cursor: _FromCursorOption = None,
+) -> None:
+    """同步第一批其余常规 Wind 表：股票池与成分表在前。默认每张干跑。"""
+    _run_wind_sequence(
+        FIRST_BATCH_WIND_SYNC,
+        write_db=write_db,
+        replace_existing=replace_existing,
+        page_size=page_size,
+        max_pages=max_pages,
+        from_cursor=from_cursor,
+    )
+
+
+def _run_wind_sequence(
+    tables: tuple[str, ...],
+    *,
+    write_db: bool,
+    replace_existing: str | None,
+    page_size: int,
+    max_pages: int | None,
+    from_cursor: str | None,
+) -> None:
     if from_cursor is not None:
-        typer.secho("按体积顺序同步时不能传 --from-cursor", fg=typer.colors.RED, err=True)
+        typer.secho("按顺序同步多张表时不能传 --from-cursor", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
-    # 替换必须指定范围（AGENTS.md §6.4）：一次只放开一张表，避免一个开关覆盖七张表。
-    if replace_existing is not None and replace_existing not in LARGE_WIND_SYNC:
+    # 替换必须指定范围（AGENTS.md §6.4）：一次只放开一张表，避免一个开关覆盖整批表。
+    if replace_existing is not None and replace_existing not in tables:
         typer.secho(
-            f"--replace-existing 必须是 {', '.join(LARGE_WIND_SYNC)} 之一: {replace_existing}",
+            f"--replace-existing 必须是 {', '.join(tables)} 之一: {replace_existing}",
             fg=typer.colors.RED,
             err=True,
         )
         raise typer.Exit(code=1)
     settings = get_settings()
     paths = resolve_var_paths(settings, repo_root=detect_repo_root())
-    for table in LARGE_WIND_SYNC:
+    for table in tables:
         try:
             result = ingest_wind_paged(
                 settings=settings,

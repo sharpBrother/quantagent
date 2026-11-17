@@ -16,6 +16,7 @@ from quantagent.adapters.postgres.src_targets import (
     ASHAREEODPRICES,
     ASHAREINCOME,
     ASHAREMONEYFLOW,
+    FIRST_BATCH_WIND_SPECS,
     TRADE_CAL,
     SrcTableWriteSpec,
 )
@@ -32,6 +33,7 @@ ALLOWED_SRC_WRITE_TARGETS: dict[str, SrcTableWriteSpec] = {
     ASHAREINCOME.dataset: ASHAREINCOME,
     ASHAREBALANCESHEET.dataset: ASHAREBALANCESHEET,
     AINDEXVALUATION.dataset: AINDEXVALUATION,
+    **{spec.dataset: spec for spec in FIRST_BATCH_WIND_SPECS.values()},
 }
 
 # 旁表只允许写入器按批次协议 INSERT，不能当业务目标表；其余 tushare 表本

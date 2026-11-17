@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from quantagent.adapters.postgres import wind_first_batch_columns as _first_batch
+from quantagent.adapters.postgres.wind_first_batch_columns import (
+    FIRST_BATCH_WIND_SYNC,
+)
 from quantagent.adapters.postgres.wind_large_columns import (
     AINDEXVALUATION_COLUMNS,
     ASHAREBALANCESHEET_COLUMNS,
@@ -142,3 +146,10 @@ ASHARECASHFLOW = _wind_table("ASHARECASHFLOW", ASHARECASHFLOW_COLUMNS)
 ASHAREINCOME = _wind_table("ASHAREINCOME", ASHAREINCOME_COLUMNS)
 ASHAREBALANCESHEET = _wind_table("ASHAREBALANCESHEET", ASHAREBALANCESHEET_COLUMNS)
 AINDEXVALUATION = _wind_table("AINDEXVALUATION", AINDEXVALUATION_COLUMNS)
+
+
+# 第一批其余常规 Wind 表，按 FIRST_BATCH_WIND_SYNC 顺序。名字即 PG 表名与源表名。
+FIRST_BATCH_WIND_SPECS: dict[str, SrcTableWriteSpec] = {
+    name: _wind_table(name, getattr(_first_batch, f"{name}_COLUMNS"))
+    for name in FIRST_BATCH_WIND_SYNC
+}
