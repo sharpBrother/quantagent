@@ -127,6 +127,34 @@ class PostgresSrcStore:
                     found[tuple(row[:-1])] = str(row[-1])
         return found
 
+    def existing_values(
+        self,
+        spec: SrcTableWriteSpec,
+        keys: Sequence[tuple[object, ...]],
+        columns: Sequence[str],
+    ) -> dict[tuple[object, ...], tuple[object, ...]]:
+        found: dict[tuple[object, ...], tuple[object, ...]] = {}
+        if not keys:
+            return found
+        width = len(spec.keys)
+        key_sql = ", ".join(quote_ident(name) for name in spec.keys)
+        select_sql = ", ".join(quote_ident(name) for name in (*spec.keys, *columns))
+        table_sql = _table_sql(spec)
+        row_placeholder = "(" + ", ".join(["%s"] * width) + ")"
+        for offset in range(0, len(keys), _KEY_CHUNK):
+            chunk = keys[offset : offset + _KEY_CHUNK]
+            values_sql = ", ".join([row_placeholder] * len(chunk))
+            statement = (
+                f"SELECT {select_sql} FROM {table_sql} WHERE ({key_sql}) IN (VALUES {values_sql})"
+            )
+            assert_src_dml_sql(statement)
+            params = [item for key in chunk for item in key]
+            with self._conn.cursor() as cur:
+                cur.execute(statement, params)
+                for row in cur.fetchall():
+                    found[tuple(row[:width])] = tuple(row[width:])
+        return found
+
     def latest_source_cursor(self, spec: SrcTableWriteSpec) -> str | None:
         table_sql = f"{quote_ident(spec.pg_schema)}.{quote_ident('_batch')}"
         statement = (

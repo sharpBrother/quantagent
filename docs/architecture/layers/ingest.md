@@ -60,7 +60,8 @@ applies_to:
 `src.wind.ashareeodprices`。`src_*._batch` 与其余源表显式禁写。批次行与
 数据行在同一事务里一次完成（含 `finished_at`），禁止事后 UPDATE 批次
 状态。Wind 分页把检查点写在 `_batch.source_cursor`（`OPDATE+OBJECT_ID`），
-提交成功才推进；内容变化或 `OPMODE=2` 必须显式 `--replace-existing`。
+提交成功才推进；业务字段变化或 `OPMODE=2` 必须显式 `--replace-existing`。
+Wind 重发的修订若只改了系统列（`OPDATE`、`OPMODE`、`gsUTime`、`gsCTime`、`mopdate`），业务字段逐列相等，就跳过不写，计入 `metadata_skipped`；库里这些系统列会旧于源端。变化全部落在 `AUTO_REPLACE_COLUMNS` 声明列（日行情是七个复权列）里的修订自动替换，计入 `auto_replaced`。大表任务的 `--replace-existing TABLE` 一次只放开一张表。见 [Wind 源镜像修订自动跟随](../../adr/2026-11-17-wind-revision-auto-replace.md)。
 
 ### 每页查询的开销不能随表变大
 

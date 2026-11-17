@@ -156,7 +156,9 @@ def ingest_wind_table(
     typer.echo(
         f"{mode} dataset={result.dataset} table={result.table} pages={result.pages} "
         f"rows={result.row_count} inserted={result.inserted} replaced={result.replaced} "
-        f"deleted={result.deleted} skipped={result.skipped} dml={result.dml_count} "
+        f"deleted={result.deleted} skipped={result.skipped} "
+        f"metadata_skipped={result.metadata_skipped} auto_replaced={result.auto_replaced} "
+        f"dml={result.dml_count} "
         f"digest={result.payload_digest} cursor={result.source_cursor}"
     )
 
@@ -166,14 +168,20 @@ def ingest_wind_large(
     *,
     write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
     replace_existing: Annotated[
-        bool,
+        str | None,
         typer.Option(
-            "--replace-existing", help="允许 DELETE+INSERT 替换已有键，以及 OPMODE=2 删除"
+            "--replace-existing",
+            metavar="TABLE",
+            help="只对这一张表允许 DELETE+INSERT 替换已有键与 OPMODE=2 删除；其余表仍拒绝覆盖",
         ),
-    ] = False,
+    ] = None,
     page_size: Annotated[
-        int, typer.Option("--page-size", help="每页行数，默认 1000")
-    ] = DEFAULT_PAGE_SIZE,
+        int,
+        typer.Option(
+            "--page-size",
+            help="每页行数。这批大表默认 10000，是分页上限，也是指数全量测到的较快档",
+        ),
+    ] = 10_000,
     max_pages: Annotated[
         int | None,
         typer.Option("--max-pages", help="每张表最多处理页数；干跑默认 1，真写默认不限制"),
@@ -187,6 +195,14 @@ def ingest_wind_large(
     if from_cursor is not None:
         typer.secho("按体积顺序同步时不能传 --from-cursor", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
+    # 替换必须指定范围（AGENTS.md §6.4）：一次只放开一张表，避免一个开关覆盖七张表。
+    if replace_existing is not None and replace_existing not in LARGE_WIND_SYNC:
+        typer.secho(
+            f"--replace-existing 必须是 {', '.join(LARGE_WIND_SYNC)} 之一: {replace_existing}",
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(code=1)
     settings = get_settings()
     paths = resolve_var_paths(settings, repo_root=detect_repo_root())
     for table in LARGE_WIND_SYNC:
@@ -196,7 +212,7 @@ def ingest_wind_large(
                 paths=paths,
                 table=table,
                 write_db=write_db,
-                replace_existing=replace_existing,
+                replace_existing=table == replace_existing,
                 page_size=page_size,
                 max_pages=max_pages,
             )
@@ -219,5 +235,7 @@ def ingest_wind_large(
             mode = "dry-run"
         typer.echo(
             f"{mode} dataset={result.dataset} table={result.table} pages={result.pages} "
-            f"rows={result.row_count} dml={result.dml_count} cursor={result.source_cursor}"
+            f"rows={result.row_count} metadata_skipped={result.metadata_skipped} "
+            f"auto_replaced={result.auto_replaced} "
+            f"dml={result.dml_count} cursor={result.source_cursor}"
         )

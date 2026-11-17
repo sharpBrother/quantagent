@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 import pytest
@@ -25,11 +26,13 @@ class FakeSrcStore:
         self,
         *,
         hashes: dict[tuple[object, ...], str] | None = None,
+        values: dict[tuple[object, ...], Mapping[str, object]] | None = None,
         cursor: str | None = None,
         readback: list[str] | None = None,
         commit_error: Exception | None = None,
     ) -> None:
         self.hashes = dict(hashes or {})
+        self.values: dict[tuple[object, ...], Mapping[str, object]] = dict(values or {})
         self.cursor = cursor
         self._forced_readback = readback
         self.commit_error = commit_error
@@ -54,6 +57,18 @@ class FakeSrcStore:
         keys: Sequence[tuple[object, ...]],
     ) -> dict[tuple[object, ...], str]:
         return {key: self.hashes[key] for key in keys if key in self.hashes}
+
+    def existing_values(
+        self,
+        spec: object,
+        keys: Sequence[tuple[object, ...]],
+        columns: Sequence[str],
+    ) -> dict[tuple[object, ...], tuple[object, ...]]:
+        return {
+            key: tuple(self.values[key][name] for name in columns)
+            for key in keys
+            if key in self.values
+        }
 
     def latest_source_cursor(self, spec: object) -> str | None:
         return self.cursor
@@ -225,7 +240,7 @@ def test_same_hash_is_skipped_and_cursor_still_advances() -> None:
 def test_changed_hash_requires_replace_flag() -> None:
     row = _row(close=11.0)
     store = FakeSrcStore(hashes={("oid-1",): "old"})
-    with pytest.raises(ReplaceRequiredError, match="内容变了"):
+    with pytest.raises(ReplaceRequiredError, match="业务字段变了"):
         write_wind_page(
             spec=ASHAREEODPRICES,
             rows=[row],
@@ -255,6 +270,140 @@ def test_replace_existing_deletes_then_inserts() -> None:
     assert result.dml_count == 3
     # 回读只按本页写入的主键查，不扫全表。
     assert [keys for _, keys in store.readback_calls] == [[("oid-1",)]]
+
+
+def _wind_resend(stored: dict[str, object]) -> dict[str, object]:
+    """Wind 重发同一行：业务字段不变，只刷新系统列。"""
+    resent = dict(stored)
+    resent.update(
+        {
+            "OPDATE": datetime(2026, 11, 16, 15, 11, 9),
+            "OPMODE": "1",
+            "gsUTime": datetime(2026, 11, 16, 15, 25, 31),
+        }
+    )
+    return resent
+
+
+@pytest.mark.unit
+def test_system_column_only_revision_is_skipped_not_written() -> None:
+    stored = _row(close=10.0, opdate=datetime(2026, 7, 14, 15, 11, 45))
+    store = FakeSrcStore(
+        hashes={("oid-1",): row_hash(stored, ASHAREEODPRICES.native_columns)},
+        values={("oid-1",): stored},
+    )
+    result = write_wind_page(
+        spec=ASHAREEODPRICES,
+        rows=[_wind_resend(stored)],
+        settings=_settings(allow_db_write=True),
+        write_db=True,
+        store=store,
+    )
+    assert result.metadata_skipped == 1
+    assert (result.inserted, result.replaced, result.skipped) == (0, 0, 0)
+    assert store.deleted == []
+    assert store.inserted == []
+    # 游标照常推进到本页最后一行。
+    assert store.commit_calls == 1
+    assert result.source_cursor == cursor_from_row(_wind_resend(stored)).encode()
+
+
+@pytest.mark.unit
+def test_system_column_only_revision_compares_decimals_by_value() -> None:
+    # 库里 numeric(20,4) 读回 Decimal('10.5000')，源端可能给 Decimal('10.5')。
+    stored = _row(opdate=datetime(2026, 7, 14, 15, 11, 45))
+    stored["S_DQ_CLOSE"] = Decimal("10.5000")
+    resent = _wind_resend(stored)
+    resent["S_DQ_CLOSE"] = Decimal("10.5")
+    store = FakeSrcStore(hashes={("oid-1",): "old"}, values={("oid-1",): stored})
+    result = write_wind_page(
+        spec=ASHAREEODPRICES,
+        rows=[resent],
+        settings=_settings(allow_db_write=True),
+        write_db=True,
+        store=store,
+    )
+    assert result.metadata_skipped == 1
+    assert store.inserted == []
+
+
+@pytest.mark.unit
+def test_business_change_in_resend_still_refuses_overwrite() -> None:
+    stored = _row(close=10.0, opdate=datetime(2026, 7, 14, 15, 11, 45))
+    resent = _wind_resend(stored)
+    resent["S_DQ_CLOSE"] = 10.01
+    store = FakeSrcStore(
+        hashes={("oid-1",): row_hash(stored, ASHAREEODPRICES.native_columns)},
+        values={("oid-1",): stored},
+    )
+    with pytest.raises(ReplaceRequiredError, match="业务字段变了"):
+        write_wind_page(
+            spec=ASHAREEODPRICES,
+            rows=[resent],
+            settings=_settings(allow_db_write=True),
+            write_db=True,
+            store=store,
+        )
+    assert store.commit_calls == 0
+    assert store.inserted == []
+
+
+@pytest.mark.unit
+def test_system_column_only_revision_is_skipped_even_with_replace_flag() -> None:
+    stored = _row(close=10.0, opdate=datetime(2026, 7, 14, 15, 11, 45))
+    store = FakeSrcStore(hashes={("oid-1",): "old"}, values={("oid-1",): stored})
+    result = write_wind_page(
+        spec=ASHAREEODPRICES,
+        rows=[_wind_resend(stored)],
+        settings=_settings(allow_db_write=True),
+        write_db=True,
+        replace_existing=True,
+        store=store,
+    )
+    assert (result.metadata_skipped, result.replaced) == (1, 0)
+    assert store.deleted == []
+
+
+@pytest.mark.unit
+def test_adjusted_price_revision_is_replaced_automatically() -> None:
+    # 2026-11-16 Wind 改写 601881.SH 整段后复权收盘，例如 20210305 由 9.3488 改为 9.2272。
+    stored = _row(opdate=datetime(2026, 7, 14, 15, 11, 45))
+    stored["S_DQ_ADJCLOSE_BACKWARD"] = Decimal("9.3488")
+    resent = _wind_resend(stored)
+    resent["S_DQ_ADJCLOSE_BACKWARD"] = Decimal("9.2272")
+    store = FakeSrcStore(hashes={("oid-1",): "old"}, values={("oid-1",): stored})
+    result = write_wind_page(
+        spec=ASHAREEODPRICES,
+        rows=[resent],
+        settings=_settings(allow_db_write=True),
+        write_db=True,
+        store=store,
+    )
+    assert (result.auto_replaced, result.replaced, result.metadata_skipped) == (1, 0, 0)
+    assert store.deleted == [("oid-1",)]
+    assert store.inserted == [resent]
+    assert result.dml_count == 3
+    assert store.commit_calls == 1
+
+
+@pytest.mark.unit
+def test_adjusted_and_raw_change_together_still_refuses() -> None:
+    stored = _row(close=10.0, opdate=datetime(2026, 7, 14, 15, 11, 45))
+    stored["S_DQ_ADJCLOSE"] = Decimal("100.0")
+    resent = _wind_resend(stored)
+    resent["S_DQ_ADJCLOSE"] = Decimal("101.0")
+    resent["S_DQ_CLOSE"] = 10.1
+    store = FakeSrcStore(hashes={("oid-1",): "old"}, values={("oid-1",): stored})
+    with pytest.raises(ReplaceRequiredError, match="业务字段变了"):
+        write_wind_page(
+            spec=ASHAREEODPRICES,
+            rows=[resent],
+            settings=_settings(allow_db_write=True),
+            write_db=True,
+            store=store,
+        )
+    assert store.deleted == []
+    assert store.commit_calls == 0
 
 
 @pytest.mark.unit

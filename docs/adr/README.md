@@ -48,6 +48,7 @@ applies_to:
 | 2026-09-17 | [因子配套派生数据集的层归属](2026-09-17-derived-dataset-boundaries.md) |
 | 2026-09-17 | [因子长表 Parquet 物理布局](2026-09-17-feature-value-parquet-layout.md) |
 | 2026-09-17 | [源数据不做批次 vintage 归档](2026-09-17-no-source-vintage-archive.md) |
+| 2026-11-17 | [Wind 源镜像修订自动跟随](2026-11-17-wind-revision-auto-replace.md) |
 
 ## 研究口径决策
 

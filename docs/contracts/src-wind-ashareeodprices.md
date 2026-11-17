@@ -2,7 +2,7 @@
 title: Wind A 股日行情源镜像
 status: active
 created: 2026-09-19
-updated: 2026-11-14
+updated: 2026-11-17
 applies_to:
   - src/quantagent/contracts/schemas/pg/src.wind.ashareeodprices.yaml
   - src/quantagent/contracts/visibility/src.wind.ashareeodprices.yaml
@@ -44,5 +44,6 @@ applies_to:
 用目标表 `max(OPDATE)`，也**不**用 `TRADE_DT` 窗口。同一毫秒内后续
 `OBJECT_ID` 必须能续上；提交成功才推进游标。
 
-`OPMODE=2` 与内容变化的已有键默认 fail-closed，必须显式
+`OPMODE=2` 与业务字段变化的已有键默认 fail-closed，必须显式
 `--replace-existing`（DELETE+INSERT，禁止 UPDATE/MERGE）。
+Wind 重发的修订若只改了系统列（`OPDATE`、`OPMODE`、`gsUTime`、`gsCTime`、`mopdate`），业务字段逐列相等，就跳过不写，计入 `metadata_skipped`；库里这些系统列会旧于源端。变化全部落在 `AUTO_REPLACE_COLUMNS` 声明列（日行情是七个复权列）里的修订自动替换，计入 `auto_replaced`。大表任务的 `--replace-existing TABLE` 一次只放开一张表。见 [Wind 源镜像修订自动跟随](../adr/2026-11-17-wind-revision-auto-replace.md)。

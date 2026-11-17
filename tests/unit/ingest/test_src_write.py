@@ -94,6 +94,14 @@ class FakeSrcStore:
     ) -> dict[tuple[object, ...], str]:
         return {}
 
+    def existing_values(
+        self,
+        spec: SrcTableWriteSpec,
+        keys: Sequence[tuple[object, ...]],
+        columns: Sequence[str],
+    ) -> dict[tuple[object, ...], tuple[object, ...]]:
+        return {}
+
     def latest_source_cursor(self, spec: SrcTableWriteSpec) -> str | None:
         return self.last_source_cursor
 

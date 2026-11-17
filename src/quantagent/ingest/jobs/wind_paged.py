@@ -44,6 +44,8 @@ class _CommittedPages:
     replaced: int = 0
     deleted: int = 0
     skipped: int = 0
+    metadata_skipped: int = 0
+    auto_replaced: int = 0
     dml_count: int = 0
     last_digest: str = ""
     last_output: str = ""
@@ -61,6 +63,8 @@ class WindPagedIngestResult:
     replaced: int
     deleted: int
     skipped: int
+    metadata_skipped: int
+    auto_replaced: int
     dml_count: int
     payload_digest: str
     output_digest: str
@@ -186,6 +190,8 @@ def _run_pages(
     replaced = 0
     deleted = 0
     skipped = 0
+    metadata_skipped = 0
+    auto_replaced = 0
     dml_count = 0
     last_digest = digest_json([])
     last_output = last_digest
@@ -215,6 +221,8 @@ def _run_pages(
         replaced += page.replaced
         deleted += page.deleted
         skipped += page.skipped
+        metadata_skipped += page.metadata_skipped
+        auto_replaced += page.auto_replaced
         dml_count += page.dml_count
         last_digest = page.payload_digest
         last_output = page.output_digest
@@ -226,6 +234,8 @@ def _run_pages(
         committed.replaced = replaced
         committed.deleted = deleted
         committed.skipped = skipped
+        committed.metadata_skipped = metadata_skipped
+        committed.auto_replaced = auto_replaced
         committed.dml_count = dml_count
         committed.last_digest = last_digest
         committed.last_output = last_output
@@ -239,6 +249,8 @@ def _run_pages(
             "replaced": replaced,
             "deleted": deleted,
             "skipped": skipped,
+            "metadata_skipped": metadata_skipped,
+            "auto_replaced": auto_replaced,
             "source_cursor": current.encode(),
             "last_page": last_output,
         }
@@ -253,6 +265,8 @@ def _run_pages(
         replaced=replaced,
         deleted=deleted,
         skipped=skipped,
+        metadata_skipped=metadata_skipped,
+        auto_replaced=auto_replaced,
         dml_count=dml_count,
         payload_digest=last_digest,
         output_digest=output,
@@ -279,6 +293,8 @@ def _partial_result(
             "replaced": committed.replaced,
             "deleted": committed.deleted,
             "skipped": committed.skipped,
+            "metadata_skipped": committed.metadata_skipped,
+            "auto_replaced": committed.auto_replaced,
             "source_cursor": committed.cursor.encode(),
             "last_page": committed.last_output,
         }
@@ -293,6 +309,8 @@ def _partial_result(
         replaced=committed.replaced,
         deleted=committed.deleted,
         skipped=committed.skipped,
+        metadata_skipped=committed.metadata_skipped,
+        auto_replaced=committed.auto_replaced,
         dml_count=committed.dml_count,
         payload_digest=committed.last_digest,
         output_digest=output,

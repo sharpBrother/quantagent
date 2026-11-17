@@ -37,6 +37,15 @@ class SrcWriteStore(Protocol):
         keys: Sequence[tuple[object, ...]],
     ) -> dict[tuple[object, ...], str]: ...
 
+    def existing_values(
+        self,
+        spec: SrcTableWriteSpec,
+        keys: Sequence[tuple[object, ...]],
+        columns: Sequence[str],
+    ) -> dict[tuple[object, ...], tuple[object, ...]]:
+        """按主键读已有行的指定列，值顺序同 ``columns``。只对指纹变了的少数键调用。"""
+        ...
+
     def latest_source_cursor(self, spec: SrcTableWriteSpec) -> str | None: ...
 
     def delete_keys(

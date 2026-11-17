@@ -17,7 +17,7 @@ from quantagent.platform.config import Settings
 from quantagent.platform.storage.paths import resolve_var_paths
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
     from pathlib import Path
 
     from quantagent.adapters.postgres.src_targets import SrcTableWriteSpec
@@ -57,6 +57,7 @@ class FakeSrcStore:
     def __init__(self, cursor: str | None = None) -> None:
         self.cursor = cursor
         self.hashes: dict[tuple[object, ...], str] = {}
+        self.values: dict[tuple[object, ...], Mapping[str, object]] = {}
         self.batch_cursors: list[str | None] = []
         self.batch_windows: list[tuple[str | None, str | None]] = []
         self.inserted = 0
@@ -72,6 +73,18 @@ class FakeSrcStore:
         keys: Sequence[tuple[object, ...]],
     ) -> dict[tuple[object, ...], str]:
         return {key: self.hashes[key] for key in keys if key in self.hashes}
+
+    def existing_values(
+        self,
+        spec: object,
+        keys: Sequence[tuple[object, ...]],
+        columns: Sequence[str],
+    ) -> dict[tuple[object, ...], tuple[object, ...]]:
+        return {
+            key: tuple(self.values[key][name] for name in columns)
+            for key in keys
+            if key in self.values
+        }
 
     def latest_source_cursor(self, spec: object) -> str | None:
         return self.cursor
