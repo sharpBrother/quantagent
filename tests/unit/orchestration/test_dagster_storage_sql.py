@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
+import yaml
 from orchestration.dagster_storage import dagster_ops_migration_sql, dagster_ops_statements
 
 from quantagent.adapters.postgres.migrate import split_sql_statements
@@ -27,11 +28,12 @@ def test_dagster_storage_migration_matches_installed_metadata(repo_root: Path) -
 
 
 @pytest.mark.unit
-def test_dagster_instance_template_disables_autocreate(repo_root: Path) -> None:
-    text = (repo_root / "orchestration" / "dagster.yaml").read_text(encoding="utf-8")
-    assert "should_autocreate_tables: false" in text
-    assert "telemetry:" in text
-    assert "enabled: false" in text
-    assert "-csearch_path=ops" in text
-    assert "QUANTAGENT_PG_OPS_PASSWORD" in text
-    assert "postgres://" not in text
+def test_dagster_instance_template_uses_local_storage(repo_root: Path) -> None:
+    # 执行机经 ToDesk 连 PG，daemon 的常驻连接会被吞掉；运行存储必须是本地 SQLite。
+    data = yaml.safe_load(
+        (repo_root / "orchestration" / "dagster.yaml").read_text(encoding="utf-8")
+    )
+    assert "storage" not in data
+    assert "run_storage" not in data
+    assert data["run_coordinator"]["class"] == "QueuedRunCoordinator"
+    assert data["run_coordinator"]["config"]["max_concurrent_runs"] == 1
