@@ -121,3 +121,23 @@ def test_ops_sql_creates_schema_only(repo_root: Path) -> None:
     text = (repo_root / "db" / "migrations" / "ops" / "0001_schema.sql").read_text(encoding="utf-8")
     assert "CREATE SCHEMA ops;" in text
     assert "CREATE TABLE" not in text
+
+
+@pytest.mark.unit
+def test_batch_id_index_follows_last_table_rebuild(repo_root: Path) -> None:
+    # 删表重建会连带删掉索引：每张表最后一次 CREATE TABLE 之后必须再有 _batch_id 索引。
+    files = list_migration_files(repo_root, "src")
+    statements: list[str] = []
+    for item in files:
+        statements.extend(split_sql_statements(item.path.read_text(encoding="utf-8")))
+    last_create: dict[str, int] = {}
+    last_index: dict[str, int] = {}
+    for pos, stmt in enumerate(statements):
+        created = re.match(r"CREATE TABLE (src_\w+\.\"[^\"]+\")", stmt)
+        if created is not None and "_batch_id bigint NOT NULL REFERENCES" in stmt:
+            last_create[created.group(1)] = pos
+        indexed = re.match(r"CREATE INDEX \"[^\"]+\" ON (src_\w+\.\"[^\"]+\") \(_batch_id\)$", stmt)
+        if indexed is not None:
+            last_index[indexed.group(1)] = pos
+    missing = sorted(t for t, pos in last_create.items() if last_index.get(t, -1) < pos)
+    assert missing == []
