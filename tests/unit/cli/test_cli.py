@@ -13,6 +13,7 @@ from quantagent.adapters.postgres.wind_first_batch_columns import FIRST_BATCH_WI
 from quantagent.adapters.postgres.wind_large_columns import LARGE_WIND_SYNC
 from quantagent.cli.app import app
 from quantagent.domain.feature_value import FeatureKey
+from quantagent.ingest.jobs.wind_verify import WindVerifyResult
 from quantagent.platform.config import cache_clear
 from quantagent.platform.config.settings import Settings
 
@@ -372,8 +373,6 @@ def test_feature_matrix_rejects_incomplete_keys(raw: str) -> None:
 
 @pytest.mark.unit
 def test_ingest_wind_verify_exits_nonzero_on_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
-    from quantagent.ingest.jobs.wind_verify import WindVerifyResult
-
     monkeypatch.setattr(
         "quantagent.cli.ingest.verify_wind_table",
         lambda **_: WindVerifyResult("src.wind.x", 10, 1, ("('k',)",)),
