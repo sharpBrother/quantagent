@@ -18,6 +18,7 @@ from orchestration.assets.wind import (
 from orchestration.resources.wind import TradeCalendarResource, WindIngestResource
 from tests.unit.ingest.test_wind_job import FakeSrcStore, FakeWindSource
 
+from quantagent.contracts.loader import load_bundle
 from quantagent.ingest.jobs.wind_paged import WindPagedIngestResult
 from quantagent.ingest.sources.wind.tables import WIND_PAGED_TABLES
 from quantagent.ingest.writers.tables import ASHARECALENDAR
@@ -263,3 +264,11 @@ def test_calendar_asset_passes_append_flags_through(tmp_path: Path) -> None:
     )
     assert result.success
     assert seen == [(False, True, 7)]
+
+
+@pytest.mark.unit
+def test_unconfigured_tables_really_lack_visibility() -> None:
+    # 补了契约的表必须移出 unconfigured，否则资产 metadata 会把已有等级写成 unconfigured。
+    visibilities = load_bundle().visibilities
+    for table in UNCONFIGURED_WIND_TABLES:
+        assert f"src.wind.{table.lower()}" not in visibilities, table

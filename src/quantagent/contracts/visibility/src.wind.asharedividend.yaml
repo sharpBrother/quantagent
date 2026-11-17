@@ -1,0 +1,12 @@
+dataset: src.wind.asharedividend
+doc_ref: docs/contracts/src-wind-first-batch.md
+temporal_kind: period_with_revision
+period_fields:
+  - REPORT_PERIOD
+visibility:
+  rule: source_field
+  field: ANN_DT
+  grade: B
+  rationale: >
+    分红。旧仓研究读取 factors/factor_fundamental.py 与宽基配置策略均按 ANN_DT 截止；EX_DT 只出现在采集修复与审计脚本。分红从预案到实施在同一行原地更新，ANN_DT 随进度后移、EX_DT 等字段事后补写，历史时点的预案状态不可恢复，故标 B。
+pit_recoverable: true

@@ -1,0 +1,12 @@
+dataset: src.wind.chinamutualfundstockportfolio
+doc_ref: docs/contracts/src-wind-first-batch.md
+temporal_kind: period_with_revision
+period_fields:
+  - F_PRT_ENDDATE
+visibility:
+  rule: source_field
+  field: ANN_DATE
+  grade: A
+  rationale: >
+    基金持仓。旧仓唯一读取 alpha_factory/data_gateway.py get_fund_high_dividend_holdings 用 ANN_DATE < adj_date；数据集规则按财报先例取 ANN_DATE <= as_of，调仓日不含当天由调用方把 as_of 设为前一日表达。
+pit_recoverable: true

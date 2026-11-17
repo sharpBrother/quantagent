@@ -1,0 +1,10 @@
+dataset: src.wind.asharetradingsuspension
+doc_ref: docs/contracts/src-wind-first-batch.md
+temporal_kind: point_event
+event_field: S_DQ_SUSPENDDATE
+visibility:
+  rule: same_day_close
+  grade: B
+  rationale: >
+    停牌事件。旧仓唯一读取 factors/factor_etf.py 按 S_DQ_SUSPENDDATE 区间与等值过滤。源表无公告日；S_DQ_RESUMPDATE 在复牌后原地补写，按停牌日读取时不得用复牌日判断当时状态，故标 B。
+pit_recoverable: true

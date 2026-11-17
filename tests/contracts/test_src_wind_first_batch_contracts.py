@@ -1,4 +1,4 @@
-"""Wind 第一批 10 张源镜像的契约：schema 列与写入规格一致，visibility 规则与口径一致。
+"""Wind 第一批 14 张源镜像的契约：schema 列与写入规格一致，visibility 规则与口径一致。
 
 口径由项目负责人裁定，见 docs/contracts/src-wind-first-batch.md。这里只校验
 YAML 与裁定口径、与写入白名单的 native_columns 是否一致，不重新裁定规则。
@@ -13,34 +13,37 @@ from quantagent.contracts.loader import load_bundle
 from quantagent.ingest.writers.tables import ALLOWED_SRC_WRITE_TARGETS
 from quantagent.platform.storage import detect_repo_root
 
-# (dataset, temporal_kind, visibility rule, visibility field, event_field, period_fields)
-_CASES: list[tuple[str, str, str, str | None, str | None, tuple[str, ...] | None]] = [
+# (dataset, temporal_kind, visibility rule, visibility field, grade, event_field, period_fields)
+_CASES: list[tuple[str, str, str, str | None, str, str | None, tuple[str, ...] | None]] = [
     # A 组：交易所日频点事件，same_day_close。
-    ("src.wind.asharemoneyflow", "point_event", "same_day_close", None, "TRADE_DT", None),
+    ("src.wind.asharemoneyflow", "point_event", "same_day_close", None, "A", "TRADE_DT", None),
     (
         "src.wind.ashareeodderivativeindicator",
         "point_event",
         "same_day_close",
         None,
+        "A",
         "TRADE_DT",
         None,
     ),
-    ("src.wind.aindexvaluation", "point_event", "same_day_close", None, "TRADE_DT", None),
+    ("src.wind.aindexvaluation", "point_event", "same_day_close", None, "A", "TRADE_DT", None),
     (
         "src.wind.aindexindustrieseodcitics",
         "point_event",
         "same_day_close",
         None,
+        "A",
         "TRADE_DT",
         None,
     ),
-    ("src.wind.asharemargintradesum", "point_event", "same_day_close", None, "TRADE_DT", None),
+    ("src.wind.asharemargintradesum", "point_event", "same_day_close", None, "A", "TRADE_DT", None),
     # B 组：财报与财务指标，source_field ANN_DT，不写 fallback。
     (
         "src.wind.ashareincome",
         "period_with_revision",
         "source_field",
         "ANN_DT",
+        "A",
         None,
         ("REPORT_PERIOD", "STATEMENT_TYPE"),
     ),
@@ -49,6 +52,7 @@ _CASES: list[tuple[str, str, str, str | None, str | None, tuple[str, ...] | None
         "period_with_revision",
         "source_field",
         "ANN_DT",
+        "A",
         None,
         ("REPORT_PERIOD", "STATEMENT_TYPE"),
     ),
@@ -57,6 +61,7 @@ _CASES: list[tuple[str, str, str, str | None, str | None, tuple[str, ...] | None
         "period_with_revision",
         "source_field",
         "ANN_DT",
+        "A",
         None,
         ("REPORT_PERIOD", "STATEMENT_TYPE"),
     ),
@@ -65,6 +70,7 @@ _CASES: list[tuple[str, str, str, str | None, str | None, tuple[str, ...] | None
         "period_with_revision",
         "source_field",
         "ANN_DT",
+        "A",
         None,
         ("REPORT_PERIOD", "STATEMENT_TYPE"),
     ),
@@ -74,8 +80,38 @@ _CASES: list[tuple[str, str, str, str | None, str | None, tuple[str, ...] | None
         "period_with_revision",
         "source_field",
         "S_PROFITNOTICE_DATE",
+        "A",
         None,
         ("S_PROFITNOTICE_PERIOD",),
+    ),
+    # D 组：两融与停牌为点事件；基金持仓与分红为期间加修订。停牌与分红标 B。
+    ("src.wind.asharemargintrade", "point_event", "same_day_close", None, "A", "TRADE_DT", None),
+    (
+        "src.wind.asharetradingsuspension",
+        "point_event",
+        "same_day_close",
+        None,
+        "B",
+        "S_DQ_SUSPENDDATE",
+        None,
+    ),
+    (
+        "src.wind.chinamutualfundstockportfolio",
+        "period_with_revision",
+        "source_field",
+        "ANN_DATE",
+        "A",
+        None,
+        ("F_PRT_ENDDATE",),
+    ),
+    (
+        "src.wind.asharedividend",
+        "period_with_revision",
+        "source_field",
+        "ANN_DT",
+        "B",
+        None,
+        ("REPORT_PERIOD",),
     ),
 ]
 
@@ -95,13 +131,17 @@ def test_schema_columns_follow_native_columns(dataset: str) -> None:
 
 
 @pytest.mark.contracts
-@pytest.mark.parametrize(("dataset", "kind", "rule", "field", "event", "period"), _CASES)
+@pytest.mark.parametrize(
+    ("dataset", "kind", "rule", "field", "grade", "event", "period"),
+    _CASES,
+)
 def test_visibility_matches_ruling(
     *,
     dataset: str,
     kind: str,
     rule: str,
     field: str | None,
+    grade: str,
     event: str | None,
     period: tuple[str, ...] | None,
 ) -> None:
@@ -109,7 +149,7 @@ def test_visibility_matches_ruling(
     vis = bundle.visibilities[dataset]
     assert vis.temporal_kind == kind
     assert vis.visibility.rule == rule
-    assert vis.visibility.grade == "A"
+    assert vis.visibility.grade == grade
     assert vis.visibility.field == field
     assert vis.visibility.fallback is None
     assert vis.event_field == event

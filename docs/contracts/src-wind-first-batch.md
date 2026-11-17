@@ -1,5 +1,5 @@
 ---
-title: Wind 第一批 10 张源镜像的可见性规则
+title: Wind 第一批 14 张源镜像的可见性规则
 status: active
 created: 2026-11-17
 updated: 2026-11-17
@@ -7,9 +7,9 @@ applies_to:
   - src/quantagent/contracts/schemas/pg/
   - src/quantagent/contracts/visibility/
 ---
-# Wind 第一批 10 张源镜像的可见性规则
+# Wind 第一批 14 张源镜像的可见性规则
 
-这 10 张 Wind 源表已接入采集。每张表有一份 schema YAML 和一份 visibility YAML，
+这 14 张 Wind 源表已接入采集。每张表有一份 schema YAML 和一份 visibility YAML，
 `doc_ref` 都指向本页。规则的判定方法见 [`../domain/pit-rules.md`](../domain/pit-rules.md)。
 表的 PG 物理结构在 `db/migrations/src/`，列清单由 `src_targets.py` 与
 `ingest/writers/tables.py` 的 `native_columns` 决定。
@@ -51,3 +51,14 @@ applies_to:
 
 `temporal_kind: period_with_revision`，`period_fields: [S_PROFITNOTICE_PERIOD]`。
 旧仓下游按 `S_PROFITNOTICE_DATE` 过滤，公告日 `<= as_of` 可见。
+## D 组：两融、停牌、基金持仓、分红
+| 表 | dataset | 可见性字段 | rule | grade | temporal_kind |
+|---|---|---|---|---|---|
+| ASHAREMARGINTRADE | `src.wind.asharemargintrade` | `TRADE_DT` | `same_day_close` | A | `point_event` |
+| ASHARETRADINGSUSPENSION | `src.wind.asharetradingsuspension` | `S_DQ_SUSPENDDATE` | `same_day_close` | B | `point_event` |
+| CHINAMUTUALFUNDSTOCKPORTFOLIO | `src.wind.chinamutualfundstockportfolio` | `ANN_DATE` | `source_field` | A | `period_with_revision`，`period_fields: [F_PRT_ENDDATE]` |
+| ASHAREDIVIDEND | `src.wind.asharedividend` | `ANN_DT` | `source_field` | B | `period_with_revision`，`period_fields: [REPORT_PERIOD]` |
+- **ASHAREMARGINTRADE（A）**：两融明细。旧仓 `factors/factor_etf_margin.py` 按 `TRADE_DT` 闭区间读取，ETF 四象限推送按 `TRADE_DT` 等值读取，含当日。收盘后公布。
+- **ASHARETRADINGSUSPENSION（B）**：停牌事件。旧仓唯一读取是 `factors/factor_etf.py`，按 `S_DQ_SUSPENDDATE` 区间与等值过滤。源表无公告日。`S_DQ_RESUMPDATE` 在复牌后原地补写，按停牌日读取时不能用复牌日判断当时状态，故标 B。
+- **CHINAMUTUALFUNDSTOCKPORTFOLIO（A）**：基金持仓。旧仓唯一读取是 `alpha_factory/data_gateway.py` 的 `get_fund_high_dividend_holdings`，用 `ANN_DATE < adj_date`。数据集规则按财报先例取 `ANN_DATE <= as_of`。调仓日当天不含，由调用方把 `as_of` 设为前一日表达。
+- **ASHAREDIVIDEND（B）**：分红。旧仓研究读取 `factors/factor_fundamental.py` 与宽基配置策略均按 `ANN_DT` 截止。`EX_DT` 只出现在采集修复与审计脚本中。分红从预案到实施在同一行原地更新，`ANN_DT` 随进度后移，`EX_DT` 等字段事后补写，历史时点的预案状态不可恢复，故标 B。

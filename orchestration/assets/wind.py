@@ -29,15 +29,7 @@ NOT_PIT_WIND_TABLES: frozenset[str] = frozenset(
     }
 )
 # 这些表的可见性规则尚未裁定。写 "unconfigured" 让资产可以物化，但 pit_grade 不冒充已配置。
-UNCONFIGURED_WIND_TABLES: frozenset[str] = frozenset(
-    {
-        "ASHAREDIVIDEND",
-        "ASHAREST",
-        "ASHARETRADINGSUSPENSION",
-        "ASHAREMARGINTRADE",
-        "CHINAMUTUALFUNDSTOCKPORTFOLIO",
-    }
-)
+UNCONFIGURED_WIND_TABLES: frozenset[str] = frozenset({"ASHAREST"})
 
 
 class IngestRunConfig(Config):

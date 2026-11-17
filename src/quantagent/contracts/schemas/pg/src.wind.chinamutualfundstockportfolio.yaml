@@ -1,0 +1,98 @@
+dataset: src.wind.chinamutualfundstockportfolio
+layer: pg
+doc_ref: docs/contracts/src-wind-first-batch.md
+temporal_kind: period_with_revision
+keys:
+  - OBJECT_ID
+reads: []
+period_fields:
+  - F_PRT_ENDDATE
+columns:
+  OBJECT_ID:
+    dtype: string
+    nullable: false
+    description: "Wind 行对象主键"
+  S_INFO_WINDCODE:
+    dtype: string
+    nullable: true
+    description: ""
+  F_PRT_ENDDATE:
+    dtype: string
+    nullable: true
+    description: ""
+  CRNCY_CODE:
+    dtype: string
+    nullable: true
+    description: ""
+  S_INFO_STOCKWINDCODE:
+    dtype: string
+    nullable: true
+    description: ""
+  F_PRT_STKVALUE:
+    dtype: float64
+    nullable: true
+    description: ""
+  F_PRT_STKQUANTITY:
+    dtype: float64
+    nullable: true
+    description: ""
+  F_PRT_STKVALUETONAV:
+    dtype: float64
+    nullable: true
+    description: ""
+  F_PRT_POSSTKVALUE:
+    dtype: float64
+    nullable: true
+    description: ""
+  F_PRT_POSSTKQUANTITY:
+    dtype: float64
+    nullable: true
+    description: ""
+  F_PRT_POSSTKTONAV:
+    dtype: float64
+    nullable: true
+    description: ""
+  F_PRT_PASSTKEVALUE:
+    dtype: float64
+    nullable: true
+    description: ""
+  F_PRT_PASSTKQUANTITY:
+    dtype: float64
+    nullable: true
+    description: ""
+  F_PRT_PASSTKTONAV:
+    dtype: float64
+    nullable: true
+    description: ""
+  ANN_DATE:
+    dtype: string
+    nullable: true
+    description: "PIT 可见日依据"
+  STOCK_PER:
+    dtype: float64
+    nullable: true
+    description: ""
+  FLOAT_SHR_PER:
+    dtype: float64
+    nullable: true
+    description: ""
+  OPDATE:
+    dtype: datetime
+    nullable: true
+    description: "Wind 运维时间，采集游标用，不是 PIT 可见日"
+  OPMODE:
+    dtype: string
+    nullable: true
+    description: "0 新增 1 修改 2 删除"
+  gsUTime:
+    dtype: datetime
+    nullable: true
+    description: ""
+  mopdate:
+    dtype: datetime
+    nullable: true
+    description: ""
+  gsCTime:
+    dtype: datetime
+    nullable: true
+    description: ""
