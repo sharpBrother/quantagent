@@ -2,7 +2,7 @@
 title: QuantDB 挂载与 PostgreSQL 启停
 status: active
 created: 2026-11-14
-updated: 2026-11-14
+updated: 2026-11-17
 applies_to:
   - .env.example
   - src/quantagent/cli/db.py
@@ -42,3 +42,22 @@ applies_to:
 ```
 
 确认命令返回 `server stopped` 后，在访达弹出 QuantDB，再拔掉硬盘。
+
+## Dagster 运行存储账号 `quantagent_dagster`（2026-11-17）
+Dagster 要对 `ops` 里自己的 21 张运行表做增删改查。用专用角色，不给 `quantagent_ingest`
+扩权：ingest 只写研究数据面。角色只在控制库 `quantagent_ops` 的 `ops` 上有 DML，
+不能建表，研究库 `quantagent` 里没有任何 `src_*` 权限。由 `leo` 执行：
+```sql
+CREATE ROLE quantagent_dagster LOGIN;
+GRANT CONNECT ON DATABASE quantagent_ops TO quantagent_dagster;
+GRANT USAGE ON SCHEMA ops TO quantagent_dagster;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ops TO quantagent_dagster;
+GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA ops TO quantagent_dagster;
+ALTER DEFAULT PRIVILEGES FOR ROLE leo IN SCHEMA ops
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO quantagent_dagster;
+ALTER DEFAULT PRIVILEGES FOR ROLE leo IN SCHEMA ops
+  GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO quantagent_dagster;
+```
+密码由负责人设置：`ALTER ROLE quantagent_dagster PASSWORD '...';`，执行机 `.env` 填
+`QUANTAGENT_PG_OPS_USER=quantagent_dagster` 与 `QUANTAGENT_PG_OPS_PASSWORD`，库名
+`quantagent_ops`，主机端口与研究库相同。仓库里不存密码。
