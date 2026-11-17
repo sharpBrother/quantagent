@@ -20,6 +20,7 @@ from orchestration.assets.wind import WIND_SOURCE_ASSETS, std_trade_calendar
 from orchestration.jobs.wind import wind_source_daily
 from quantagent.adapters.lake.trade_calendar import LakeCalendarRepository
 from quantagent.domain.calendar.queries import CalendarQueries
+from quantagent.lake.materialize.trade_calendar import DAILY_HORIZON_DAYS
 from quantagent.platform.config import get_settings
 from quantagent.platform.storage import detect_repo_root, resolve_var_paths
 
@@ -55,7 +56,12 @@ def _run_config(today: str) -> dict[str, object]:
             }
         }
     ops[std_trade_calendar.op.name] = {
-        "config": {"as_of": today, "rebuild": False, "skip_if_unchanged": True}
+        "config": {
+            "as_of": today,
+            "rebuild": False,
+            "append_only": True,
+            "horizon_days": DAILY_HORIZON_DAYS,
+        }
     }
     return {"ops": ops}
 

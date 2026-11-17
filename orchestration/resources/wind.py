@@ -74,7 +74,8 @@ class TradeCalendarResource:
         *,
         as_of: date,
         rebuild: bool,
-        skip_if_unchanged: bool = False,
+        append_only: bool = False,
+        horizon_days: int | None = None,
     ) -> TradeCalendarMaterializeResult:
         return materialize_trade_calendar(
             settings=self._settings,
@@ -82,5 +83,6 @@ class TradeCalendarResource:
             as_of=as_of,
             rebuild=rebuild,
             src_rows=self._src_rows,
-            skip_if_unchanged=skip_if_unchanged,
+            append_only=append_only,
+            horizon_days=horizon_days,
         )

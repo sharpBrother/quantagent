@@ -213,9 +213,9 @@ def test_max_pages_none_reaches_ingest_unchanged() -> None:
 
 
 @pytest.mark.unit
-def test_calendar_asset_passes_skip_flag_through(tmp_path: Path) -> None:
+def test_calendar_asset_passes_append_flags_through(tmp_path: Path) -> None:
     settings, paths = _paths(tmp_path, allow_db_write=False)
-    seen: list[tuple[bool, bool]] = []
+    seen: list[tuple[bool, bool, int | None]] = []
 
     class _Calendar(TradeCalendarResource):
         def materialize(
@@ -223,13 +223,15 @@ def test_calendar_asset_passes_skip_flag_through(tmp_path: Path) -> None:
             *,
             as_of: date,
             rebuild: bool,
-            skip_if_unchanged: bool = False,
+            append_only: bool = False,
+            horizon_days: int | None = None,
         ) -> TradeCalendarMaterializeResult:
-            seen.append((rebuild, skip_if_unchanged))
+            seen.append((rebuild, append_only, horizon_days))
             return super().materialize(
                 as_of=as_of,
                 rebuild=rebuild,
-                skip_if_unchanged=skip_if_unchanged,
+                append_only=append_only,
+                horizon_days=horizon_days,
             )
 
     result = materialize(
@@ -252,11 +254,12 @@ def test_calendar_asset_passes_skip_flag_through(tmp_path: Path) -> None:
                     "config": {
                         "as_of": "2026-11-15",
                         "rebuild": False,
-                        "skip_if_unchanged": True,
+                        "append_only": True,
+                        "horizon_days": 7,
                     }
                 },
             }
         },
     )
     assert result.success
-    assert seen == [(False, True)]
+    assert seen == [(False, True, 7)]

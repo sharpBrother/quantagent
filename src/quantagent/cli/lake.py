@@ -92,6 +92,14 @@ def lake_benchmark_layout(
 def lake_materialize_trade_calendar(
     as_of: Annotated[str, typer.Option("--as-of", help="物化运行日 YYYY-MM-DD，只写入 run log")],
     rebuild: Annotated[bool, typer.Option("--rebuild", help="允许覆盖已有 parquet")] = False,
+    horizon_days: Annotated[
+        int | None,
+        typer.Option("--horizon-days", min=0, help="只保留 cal_dt <= as_of + N 天的行"),
+    ] = None,
+    append_only: Annotated[
+        bool,
+        typer.Option("--append-only", help="只追加快照里新出现的日期，不改既有分片"),
+    ] = False,
 ) -> None:
     """将 Wind 日历快照物化为 std.trade_calendar，供按 as_of 读取。"""
     settings = get_settings()
@@ -103,13 +111,15 @@ def lake_materialize_trade_calendar(
             paths=paths,
             as_of=as_of_date,
             rebuild=rebuild,
+            append_only=append_only,
+            horizon_days=horizon_days,
         )
     except (LakeLayoutError, PostgresAdapterError, ConfigError, RunLogError, ValueError) as exc:
         typer.secho(str(exc), fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1) from exc
     typer.echo(
         f"wrote dataset={result.dataset} rows={result.row_count} "
-        f"digest={result.output_digest} path={result.path}"
+        f"appended={result.appended} digest={result.output_digest} path={result.path}"
     )
 
 

@@ -51,7 +51,10 @@ class IngestRunConfig(Config):
 class CalendarMaterializeConfig(Config):
     as_of: str
     rebuild: bool = False
-    skip_if_unchanged: bool = False
+    # 追加模式：只写快照里新出现的日期，既有分片不动。日更使用此模式。
+    append_only: bool = False
+    # 非 None 时只保留 cal_dt <= as_of + horizon_days 的行。
+    horizon_days: int | None = None
 
 
 def _as_of(value: str) -> date:
@@ -156,11 +159,13 @@ def std_trade_calendar(
     result = trade_calendar.materialize(
         as_of=parsed,
         rebuild=config.rebuild,
-        skip_if_unchanged=config.skip_if_unchanged,
+        append_only=config.append_only,
+        horizon_days=config.horizon_days,
     )
     return MaterializeResult(
         metadata={
             "row_count": result.row_count,
+            "appended": result.appended,
             "rebuilt": result.rebuilt,
             "as_of": parsed.isoformat(),
             "pit_grade": _pit_grade("std.trade_calendar"),

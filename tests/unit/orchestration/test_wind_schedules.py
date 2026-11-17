@@ -19,7 +19,10 @@ from orchestration.schedules import wind as wind_schedules
 from orchestration.schedules.wind import wind_source_daily_close, wind_source_daily_morning
 
 from quantagent.domain.errors import EmptyDomainError
-from quantagent.lake.materialize.trade_calendar import materialize_trade_calendar
+from quantagent.lake.materialize.trade_calendar import (
+    DAILY_HORIZON_DAYS,
+    materialize_trade_calendar,
+)
 from quantagent.platform.config import Settings
 from quantagent.platform.storage.paths import VarPaths
 
@@ -104,11 +107,15 @@ def test_open_day_returns_run_request_with_pinned_config(
             "max_pages": None,
             "page_size": 10000,
         }
-    assert ops[std_trade_calendar.op.name]["config"] == {
+    calendar_cfg = ops[std_trade_calendar.op.name]["config"]
+    assert calendar_cfg == {
         "as_of": "2026-01-05",
         "rebuild": False,
-        "skip_if_unchanged": True,
+        "append_only": True,
+        "horizon_days": 7,
     }
+    assert calendar_cfg["append_only"] is True
+    assert calendar_cfg["horizon_days"] == DAILY_HORIZON_DAYS
 
 
 @pytest.mark.unit

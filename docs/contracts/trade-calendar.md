@@ -2,7 +2,7 @@
 title: 交易日历契约
 status: active
 created: 2026-09-16
-updated: 2026-11-15
+updated: 2026-11-17
 applies_to:
   - src/quantagent/contracts/schemas/lake/std.trade_calendar.yaml
   - src/quantagent/contracts/visibility/std.trade_calendar.yaml
@@ -40,3 +40,12 @@ Wind 源列没有年度日历的公告日。`OPDATE` 记供应商运维时间，
 
 - 源采集使用 `quantagent ingest wind ASHARECALENDAR`。
 - 物化使用 `quantagent lake materialize trade-calendar --as-of YYYY-MM-DD`。
+
+## 物化范围与追加（2026-11-17）
+快照只保留 `cal_dt <= as_of + 7` 天的行（`DAILY_HORIZON_DAYS`）。Wind 把 SSE/SZSE 预填到 2040 年，
+年底公布休市安排时会改写远期行；不落盘就不会和已写分片冲突。可见性是 `same_day_close`，远期行本来读不到。
+日更用 `append_only`：新出现的日期写成新分片 `part-NNNNN.parquet`，既有分片不改；已写日期的
+`is_open` 或 `prev_trade_dt` 变了、或已写日期在源端消失，都报错停下。2026-11-17 以
+`--rebuild --horizon-days 7` 重建一次，36,611 行，digest
+`e02a41713b76e7875300128dbeaf79ecc8c1d094bcd2df380612343f36faf607`；旧快照（47,389 行，到 2040 年）
+备份在 `var/backup/std_trade_calendar_20261117/`。

@@ -297,6 +297,8 @@ def test_lake_materialize_trade_calendar_help() -> None:
     assert result.exit_code == 0
     assert "--as-of" in text
     assert "--rebuild" in text
+    assert "--append-only" in text
+    assert "--horizon-days" in text
 
 
 @pytest.mark.unit
