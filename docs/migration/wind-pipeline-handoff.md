@@ -125,6 +125,12 @@ applies_to:
    `git pull`；`quantagent db migrate`（干跑确认 0012–0016 待应用）后带写闸真跑，五张重建表必须在首次
    写入前迁移；设 `QUANTAGENT_ALLOW_DB_WRITE=true` 与 `DAGSTER_HOME`；启动 `dagster-daemon run`。
    首次调度会对尚为空的表做全量回填，资金流与衍生指标要数小时，期间下一次触发会跳过。
+   **执行机上线记录（2026-11-17）。** 0012–0017 已在研究库执行。执行机同步依赖要用
+   `uv sync --extra sources --extra orchestration`，只带 orchestration 会卸掉 pymssql 与 tushare。
+   `DAGSTER_HOME` 要设成系统或用户环境变量，Dagster 不读 `.env`。仓库没有 `[tool.dagster]`，
+   daemon 必须带 `--workspace`，执行机的启动脚本是 `var/run-dagster-daemon.cmd`。
+   调度状态在 daemon 第一轮遍历后才写进 `ops.instigators`，启动后要等几分钟再核对。
+   执行机的 agent 不能调用 `schtasks`，计划任务由负责人手工创建。
 4. **首个量价因子已对上一个小样本。** `pf_single_cutamp_1_mean_neg` 来自旧仓
    `CUTAMP`：20 个交易日的振幅，去掉收盘触及涨跌停的日子，按复权收盘价切 25%。
    Current-20 取相反数。2024-01-02 至 01-05 的 `000001.SZ` 与 `600000.SH`，
