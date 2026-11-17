@@ -2,7 +2,7 @@
 title: PIT 规则体系
 status: active
 created: 2026-09-16
-updated: 2026-09-18
+updated: 2026-11-17
 applies_to:
   - src/quantagent/contracts/visibility/
   - src/quantagent/domain/pit/
@@ -84,6 +84,7 @@ YAML**，也**不得作为 PIT 查询的数据集**（fail-closed 仍然成立�
 | 事件因子 `stock_event_*` | `confirm_date <= as_of` | `source_field` `field=confirm_date`。`get_events` / `get_events_2` 的 T−2 是策略层（只要已发生且已确认），不是数据集规则 |
 | `fund_share` | `trade_date` 区间，MDS **不**前值填充 | `same_day_close`；禁止 ffill |
 | 指数 / 行业成分 `AINDEXMEMBERS*` | `S_CON_INDATE <= as_of` 且 `(OUTDATE IS NULL OR OUTDATE >= as_of)` | 区间命中，闭区间；源表无公告日，`knowledge_dt = valid_from = INDATE` |
+| ST `ASHAREST` | 多数 `ENTRY_DT <= dt AND (REMOVE_DT IS NULL OR dt < REMOVE_DT)`；`data_gateway` 写 `ENTRY_DT <`、`universe_provider` 区间含摘帽日 | **不配 visibility**，只经 `StStatusRepository.st_codes_at(as_of, dt)` 读。左闭右开：戴帽当天算、摘帽当天不算，grade B（2026-11-17 裁定） |
 | 当前名册 `strategy_etf_list*` | 无历史进出，类似 `ASHAREDESCRIPTION` | **不配 PIT**，不得当 PIT 数据集读 |
 
 公共 PIT 原语只保证 `visible_col <= as_of`；具体列由调用方传入。`latest_visible_by_key` 在旧仓生产路径上**未接线**。

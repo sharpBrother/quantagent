@@ -51,6 +51,7 @@ applies_to:
 | 2026-11-17 | [Wind 源镜像修订自动跟随](2026-11-17-wind-revision-auto-replace.md)（已被取代） |
 | 2026-11-17 | [Wind 源镜像全自动跟随源端](2026-11-17-src-mirror-follows-source.md) |
 | 2026-11-17 | [股票池按读取时计算，不物化](2026-11-17-universe-computed-on-read.md) |
+| 2026-11-17 | [ST 状态按左闭右开区间判断](2026-11-17-st-status-half-open.md) |
 
 ## 研究口径决策
 

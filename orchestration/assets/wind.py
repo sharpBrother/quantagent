@@ -26,10 +26,12 @@ NOT_PIT_WIND_TABLES: frozenset[str] = frozenset(
         "AINDEXMEMBERSCITICS2",
         "AINDEXMEMBERSCITICS3",
         "SWINDEXMEMBERS",
+        # ST 区间只经 domain.universe.st 的 st_codes_at 读取（2026-11-17 裁定）。
+        "ASHAREST",
     }
 )
 # 这些表的可见性规则尚未裁定。写 "unconfigured" 让资产可以物化，但 pit_grade 不冒充已配置。
-UNCONFIGURED_WIND_TABLES: frozenset[str] = frozenset({"ASHAREST"})
+UNCONFIGURED_WIND_TABLES: frozenset[str] = frozenset()
 
 
 class IngestRunConfig(Config):

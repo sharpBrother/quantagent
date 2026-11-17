@@ -10,6 +10,7 @@ from quantagent.adapters.memory.forward_return import MemoryForwardReturnReposit
 from quantagent.adapters.memory.group_nav import MemoryGroupNavRepository
 from quantagent.adapters.memory.index_returns import MemoryIndexReturnRepository
 from quantagent.adapters.memory.prices import MemoryDailyPriceRepository
+from quantagent.adapters.memory.st import MemoryStStatusRepository
 from quantagent.adapters.memory.universe_member import MemoryUniverseRepository
 
 __all__ = [
@@ -20,5 +21,6 @@ __all__ = [
     "MemoryForwardReturnRepository",
     "MemoryGroupNavRepository",
     "MemoryIndexReturnRepository",
+    "MemoryStStatusRepository",
     "MemoryUniverseRepository",
 ]

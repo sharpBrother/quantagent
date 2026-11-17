@@ -61,3 +61,11 @@ ALTER DEFAULT PRIVILEGES FOR ROLE leo IN SCHEMA ops
 密码由负责人设置：`ALTER ROLE quantagent_dagster PASSWORD '...';`，执行机 `.env` 填
 `QUANTAGENT_PG_OPS_USER=quantagent_dagster` 与 `QUANTAGENT_PG_OPS_PASSWORD`，库名
 `quantagent_ops`，主机端口与研究库相同。仓库里不存密码。
+
+## ingest 只读迁移登记表（2026-11-17）
+否则 `quantagent db status` 在 ingest 账号下读不到 `qa_migrate.applied`，显示 `applied=0`。
+两个库都由 `leo` 执行：
+```sql
+GRANT USAGE ON SCHEMA qa_migrate TO quantagent_ingest;
+GRANT SELECT ON qa_migrate.applied TO quantagent_ingest;
+```
