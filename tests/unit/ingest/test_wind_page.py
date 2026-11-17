@@ -36,6 +36,7 @@ class FakeSrcStore:
         self.deleted: list[tuple[object, ...]] = []
         self.inserted: list[Mapping[str, object]] = []
         self.batch_cursors: list[str | None] = []
+        self.readback_calls: list[tuple[int, list[tuple[object, ...]]]] = []
         self.commit_calls = 0
         self.rollback_calls = 0
         self._last_hashes: list[str] = []
@@ -92,7 +93,10 @@ class FakeSrcStore:
         for row, digest in zip(rows, hashes, strict=True):
             self.hashes[(row["OBJECT_ID"],)] = digest
 
-    def readback_hashes(self, spec: object, batch_id: int) -> list[str]:
+    def readback_hashes(
+        self, spec: object, batch_id: int, keys: Sequence[tuple[object, ...]]
+    ) -> list[str]:
+        self.readback_calls.append((batch_id, list(keys)))
         if self._forced_readback is not None:
             return list(self._forced_readback)
         return list(self._last_hashes)
@@ -249,6 +253,8 @@ def test_replace_existing_deletes_then_inserts() -> None:
     assert store.deleted == [("oid-1",)]
     assert len(store.inserted) == 1
     assert result.dml_count == 3
+    # 回读只按本页写入的主键查，不扫全表。
+    assert [keys for _, keys in store.readback_calls] == [[("oid-1",)]]
 
 
 @pytest.mark.unit

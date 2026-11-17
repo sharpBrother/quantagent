@@ -108,7 +108,9 @@ class FakeSrcStore:
         self.inserted += len(rows)
         self._last = list(hashes)
 
-    def readback_hashes(self, spec: object, batch_id: int) -> list[str]:
+    def readback_hashes(
+        self, spec: object, batch_id: int, keys: Sequence[tuple[object, ...]]
+    ) -> list[str]:
         return list(getattr(self, "_last", []))
 
     def commit(self) -> None:

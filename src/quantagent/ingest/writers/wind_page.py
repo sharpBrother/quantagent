@@ -133,7 +133,8 @@ def write_wind_page(
     except SrcConflictError as exc:
         _rollback_or_unknown(store)
         raise ReplaceRequiredError(f"{spec.dataset} 插入时撞上已有键，已回滚") from exc
-    readback = store.readback_hashes(spec, batch_id)
+    insert_keys = [tuple(row[name] for name in spec.keys) for row in plan.insert_rows]
+    readback = store.readback_hashes(spec, batch_id, insert_keys)
     if len(readback) != len(plan.insert_hashes) or sorted(readback) != sorted(plan.insert_hashes):
         _rollback_or_unknown(store)
         raise ReadbackError(

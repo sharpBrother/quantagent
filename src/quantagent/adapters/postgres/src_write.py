@@ -188,15 +188,36 @@ class PostgresSrcStore:
             except psycopg.errors.IntegrityError as exc:
                 raise SrcConflictError(f"{spec.dataset} 数据插入冲突") from exc
 
-    def readback_hashes(self, spec: SrcTableWriteSpec, batch_id: int) -> list[str]:
-        statement = (
-            f"SELECT {quote_ident('_row_hash')} FROM {_table_sql(spec)} "
-            f"WHERE {quote_ident('_batch_id')} = %s"
-        )
-        assert_src_dml_sql(statement)
-        with self._conn.cursor(row_factory=dict_row) as cur:
-            cur.execute(statement, (batch_id,))
-            return [str(row["_row_hash"]) for row in cur.fetchall()]
+    def readback_hashes(
+        self,
+        spec: SrcTableWriteSpec,
+        batch_id: int,
+        keys: Sequence[tuple[object, ...]],
+    ) -> list[str]:
+        # 按本页主键回读，走主键索引，开销只随页大小增长，不随表大小增长。
+        # 同时带上 _batch_id 条件：主键命中但批次不对的行不算回读成功。
+        # 批次号是本事务刚生成的，只有本页会写它，所以按键回读和按批次回读校验的内容相同。
+        found: list[str] = []
+        if not keys:
+            return found
+        key_sql = ", ".join(quote_ident(name) for name in spec.keys)
+        table_sql = _table_sql(spec)
+        width = len(spec.keys)
+        row_placeholder = "(" + ", ".join(["%s"] * width) + ")"
+        for offset in range(0, len(keys), _KEY_CHUNK):
+            chunk = keys[offset : offset + _KEY_CHUNK]
+            values_sql = ", ".join([row_placeholder] * len(chunk))
+            statement = (
+                f"SELECT {quote_ident('_row_hash')} FROM {table_sql} "
+                f"WHERE {quote_ident('_batch_id')} = %s "
+                f"AND ({key_sql}) IN (VALUES {values_sql})"
+            )
+            assert_src_dml_sql(statement)
+            params = [batch_id, *(item for key in chunk for item in key)]
+            with self._conn.cursor(row_factory=dict_row) as cur:
+                cur.execute(statement, params)
+                found.extend(str(row["_row_hash"]) for row in cur.fetchall())
+        return found
 
     def commit(self) -> None:
         try:

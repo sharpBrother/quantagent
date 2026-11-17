@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 
 import pytest
@@ -56,6 +57,33 @@ def test_tech_columns_and_quoted_native_names(repo_root: Path) -> None:
     assert 'CREATE TABLE src_wind."FIN_APPO_RELE_DATE"' not in wind
     macro = (repo_root / "db" / "migrations" / "src" / "0007_macro.sql").read_text(encoding="utf-8")
     assert "macro_eco_cal" not in macro
+
+
+@pytest.mark.unit
+def test_every_batch_id_column_is_indexed(repo_root: Path) -> None:
+    # 外键列不会自动建索引。新表带 _batch_id 时必须在迁移里补上索引。
+    files = list_migration_files(repo_root, "src")
+    statements: list[str] = []
+    for item in files:
+        statements.extend(split_sql_statements(item.path.read_text(encoding="utf-8")))
+    with_batch = {
+        match.group(1)
+        for stmt in statements
+        if (match := re.match(r"CREATE TABLE (src_\w+\.\"[^\"]+\")", stmt)) is not None
+        and "_batch_id bigint NOT NULL REFERENCES" in stmt
+    }
+    indexed = {
+        match.group(1)
+        for stmt in statements
+        if (
+            match := re.match(
+                r"CREATE INDEX \"[^\"]+\" ON (src_\w+\.\"[^\"]+\") \(_batch_id\)$", stmt
+            )
+        )
+        is not None
+    }
+    assert len(with_batch) == 60
+    assert with_batch - indexed == set()
 
 
 @pytest.mark.unit

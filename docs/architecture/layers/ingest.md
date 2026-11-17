@@ -2,7 +2,7 @@
 title: ingest 层职责
 status: active
 created: 2026-09-16
-updated: 2026-09-19
+updated: 2026-11-17
 applies_to:
   - src/quantagent/ingest/
   - db/migrations/src/
@@ -61,6 +61,25 @@ applies_to:
 数据行在同一事务里一次完成（含 `finished_at`），禁止事后 UPDATE 批次
 状态。Wind 分页把检查点写在 `_batch.source_cursor`（`OPDATE+OBJECT_ID`），
 提交成功才推进；内容变化或 `OPMODE=2` 必须显式 `--replace-existing`。
+
+### 每页查询的开销不能随表变大
+
+分页采集的每页查询都必须走索引，开销只能跟页大小有关，不能跟表大小有关。
+否则全量初始化会越跑越慢，日常增量哪怕只写一页也要扫一遍全表。
+
+- **回读按本页主键查**：`readback_hashes(spec, batch_id, keys)` 的条件是
+  `_batch_id = 本批次 AND (主键) IN (本页写入的键)`，走主键索引。`batch_id`
+  是本事务刚生成的，只有本页会写它，所以和按 `_batch_id` 回读校验的内容
+  相同。主键命中但批次不对的行不算回读成功。
+- **`_batch_id` 必须有索引**：PostgreSQL 不会给外键的引用列自动建索引。
+  按批次查血缘、删除 `_batch` 行时的外键检查都按这一列过滤。
+  `0011_src_batch_id_indexes.sql` 给全部 60 张带 `_batch_id` 的表补了索引。
+  以后新建源表要在同一个迁移里建上这个索引，
+  `test_every_batch_id_column_is_indexed` 会检查。
+
+由来：`AINDEXEODPRICES` 全量初始化（2,460 万行）时，回读按 `_batch_id`
+过滤，而这一列没有索引，每页做一次全表顺序扫描。吞吐从 1,440 行/秒降到
+508，除去断链停机仍比预估的 5.4 小时慢不少。
 
 ### 采集时间不是 PIT
 

@@ -55,7 +55,14 @@ class SrcWriteStore(Protocol):
         ingested_at: datetime,
     ) -> None: ...
 
-    def readback_hashes(self, spec: SrcTableWriteSpec, batch_id: int) -> list[str]: ...
+    def readback_hashes(
+        self,
+        spec: SrcTableWriteSpec,
+        batch_id: int,
+        keys: Sequence[tuple[object, ...]],
+    ) -> list[str]:
+        """按本页写入的主键回读 ``_row_hash``，只返回 ``_batch_id`` 等于本批次的行。"""
+        ...
 
     def commit(self) -> None: ...
 

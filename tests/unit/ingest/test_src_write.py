@@ -55,6 +55,7 @@ class FakeSrcStore:
         self.rollback_error = rollback_error
         self.conflict_on_insert = conflict_on_insert
         self.existing_calls = 0
+        self.readback_keys: list[tuple[object, ...]] = []
         self.insert_batch_calls = 0
         self.insert_row_calls = 0
         self.commit_calls = 0
@@ -117,7 +118,10 @@ class FakeSrcStore:
             raise SrcConflictError("pk")
         self.hashes = list(hashes)
 
-    def readback_hashes(self, spec: SrcTableWriteSpec, batch_id: int) -> list[str]:
+    def readback_hashes(
+        self, spec: SrcTableWriteSpec, batch_id: int, keys: Sequence[tuple[object, ...]]
+    ) -> list[str]:
+        self.readback_keys = list(keys)
         if self._forced_readback is not None:
             return list(self._forced_readback)
         return list(self.hashes)
@@ -337,3 +341,4 @@ def test_successful_write_commits_once() -> None:
     assert store.insert_row_calls == 1
     assert store.commit_calls == 1
     assert store.rollback_calls == 0
+    assert store.readback_keys == [("SSE", "20260105"), ("SZSE", "20260105")]

@@ -84,10 +84,8 @@ def write_src_snapshot(
     assert_db_write_allowed(settings=settings, write_db=True)
     if store is None:
         raise IngestError("write_db 为真时必须提供 SrcWriteStore")
-    existing = store.existing_keys(
-        spec,
-        [tuple(row[key] for key in spec.keys) for row in native_rows],
-    )
+    row_keys = [tuple(row[key] for key in spec.keys) for row in native_rows]
+    existing = store.existing_keys(spec, row_keys)
     if existing:
         sample = ", ".join(repr(key) for key in sorted(existing)[:5])
         raise DuplicateKeyError(f"{spec.dataset} 目标键已存在，拒绝覆盖: {sample}")
@@ -115,7 +113,7 @@ def write_src_snapshot(
     except SrcConflictError as exc:
         _rollback_or_unknown(store)
         raise DuplicateKeyError(f"{spec.dataset} 插入时撞上已有键，已回滚") from exc
-    readback = store.readback_hashes(spec, batch_id)
+    readback = store.readback_hashes(spec, batch_id, row_keys)
     if len(readback) != len(hashes) or sorted(readback) != sorted(hashes):
         _rollback_or_unknown(store)
         raise ReadbackError(f"{spec.dataset} 回读不一致：wrote={len(hashes)} read={len(readback)}")
