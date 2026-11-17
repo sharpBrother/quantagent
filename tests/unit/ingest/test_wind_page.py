@@ -6,10 +6,11 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
+import psycopg
 import pytest
 
 from quantagent.adapters.postgres.errors import TransactionUnknownError
-from quantagent.ingest.errors import ReadbackError, SourceFetchError
+from quantagent.ingest.errors import IngestError, ReadbackError, SourceFetchError
 from quantagent.ingest.sources.wind.cursor import cursor_from_row
 from quantagent.ingest.writers.src_insert import row_hash
 from quantagent.ingest.writers.tables import ASHAREEODPRICES
@@ -415,3 +416,41 @@ def test_unknown_commit_does_not_retry() -> None:
         )
     assert store.commit_calls == 1
     assert store.rollback_calls == 0
+
+
+@pytest.mark.unit
+def test_readback_mismatch_reports_missing_keys() -> None:
+    store = FakeSrcStore(readback=[])
+    with pytest.raises(ReadbackError, match="缺失样例") as info:
+        write_wind_page(
+            spec=ASHAREEODPRICES,
+            rows=[_row()],
+            settings=_settings(allow_db_write=True),
+            write_db=True,
+            store=store,
+        )
+    assert "oid-1" in str(info.value)
+    assert store.rollback_calls == 1
+    assert store.commit_calls == 0
+
+
+class _RejectingInsertStore(FakeSrcStore):
+    def insert_rows(self, *args: object, **kwargs: object) -> None:
+        raise psycopg.errors.CharacterNotInRepertoire("invalid byte sequence")
+
+
+@pytest.mark.unit
+def test_pg_data_error_names_suspicious_value_and_rolls_back() -> None:
+    row = _row()
+    row["S_INFO_WINDCODE"] = b"\x8d"
+    store = _RejectingInsertStore()
+    with pytest.raises(IngestError, match=r"S_INFO_WINDCODE@\('oid-1',\)=bytes"):
+        write_wind_page(
+            spec=ASHAREEODPRICES,
+            rows=[row],
+            settings=_settings(allow_db_write=True),
+            write_db=True,
+            store=store,
+        )
+    assert store.rollback_calls == 1
+    assert store.commit_calls == 0

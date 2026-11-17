@@ -11,7 +11,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING, Literal
+
+import psycopg
 
 from quantagent.adapters.postgres.errors import SrcConflictError, TransactionUnknownError
 from quantagent.ingest.errors import (
@@ -43,6 +46,8 @@ OpMode = Literal[0, 1, 2]
 OPMODE_INSERT: OpMode = 0
 OPMODE_UPDATE: OpMode = 1
 OPMODE_DELETE: OpMode = 2
+# 诊断信息里最多列几个样例。
+_SAMPLE = 5
 
 # Wind 的同步簿记列：变更时间、变更类型和 Wind 内部时间戳。Wind 会对历史行重发 OPMODE=1，
 # 业务字段不变、只刷新这些列。这类修订不写库，库里该行的这些列会旧于源端；游标存在 _batch，
@@ -107,7 +112,11 @@ def write_wind_page(
     assert_db_write_allowed(settings=settings, write_db=True)
     if store is None:
         raise IngestError("write_db 为真时必须提供 SrcWriteStore")
-    existing = store.existing_hashes(spec, [item.key for item in plan.items])
+    try:
+        existing = store.existing_hashes(spec, [item.key for item in plan.items])
+    except psycopg.errors.DataError as exc:
+        _rollback_or_unknown(store)
+        raise IngestError(_data_error_detail(spec, native_rows, exc)) from exc
     metadata_only = _metadata_only_keys(spec, plan, existing, store)
     plan = _apply_existing(plan, existing, metadata_only=metadata_only)
     clock = now or (lambda: datetime.now(UTC))
@@ -126,29 +135,18 @@ def write_wind_page(
         finished_at=finished_at,
         source_cursor=end_cursor.encode(),
     )
-    dml_count = 1
-    try:
-        if plan.delete_keys:
-            store.delete_keys(spec, plan.delete_keys)
-            dml_count += 1
-        if plan.insert_rows:
-            store.insert_rows(
-                spec,
-                plan.insert_rows,
-                hashes=plan.insert_hashes,
-                batch_id=batch_id,
-                ingested_at=finished_at,
-            )
-            dml_count += 1
-    except SrcConflictError as exc:
-        _rollback_or_unknown(store)
-        raise ReplaceRequiredError(f"{spec.dataset} 插入时撞上已有键，已回滚") from exc
+    dml_count = _apply_dml(
+        spec, store, plan, native_rows, batch_id=batch_id, ingested_at=finished_at
+    )
     insert_keys = [tuple(row[name] for name in spec.keys) for row in plan.insert_rows]
     readback = store.readback_hashes(spec, batch_id, insert_keys)
     if len(readback) != len(plan.insert_hashes) or sorted(readback) != sorted(plan.insert_hashes):
+        # 先在同一事务里查清缺的行现在是什么状态，再回滚；只报前 5 个，供排查。
+        detail = _readback_detail(spec, store, plan, readback, insert_keys)
         _rollback_or_unknown(store)
         raise ReadbackError(
-            f"{spec.dataset} 回读不一致：wrote={len(plan.insert_hashes)} read={len(readback)}"
+            f"{spec.dataset} 回读不一致：wrote={len(plan.insert_hashes)} read={len(readback)} "
+            f"inserted={plan.inserted} replaced={plan.replaced} deleted={plan.deleted}；{detail}"
         )
     try:
         store.commit()
@@ -359,6 +357,78 @@ def _result(
         hashes=hashes,
         source_cursor=cursor.encode(),
     )
+
+
+def _apply_dml(
+    spec: SrcTableWriteSpec,
+    store: SrcWriteStore,
+    plan: _PagePlan,
+    native_rows: Sequence[Mapping[str, object]],
+    *,
+    batch_id: int,
+    ingested_at: datetime,
+) -> int:
+    """按主键删、再插入。返回含批次登记在内的 DML 条数。失败时回滚。"""
+    dml_count = 1
+    try:
+        if plan.delete_keys:
+            store.delete_keys(spec, plan.delete_keys)
+            dml_count += 1
+        if plan.insert_rows:
+            store.insert_rows(
+                spec,
+                plan.insert_rows,
+                hashes=plan.insert_hashes,
+                batch_id=batch_id,
+                ingested_at=ingested_at,
+            )
+            dml_count += 1
+    except SrcConflictError as exc:
+        _rollback_or_unknown(store)
+        raise ReplaceRequiredError(f"{spec.dataset} 插入时撞上已有键，已回滚") from exc
+    except psycopg.errors.DataError as exc:
+        _rollback_or_unknown(store)
+        raise IngestError(_data_error_detail(spec, native_rows, exc)) from exc
+    return dml_count
+
+
+def _readback_detail(
+    spec: SrcTableWriteSpec,
+    store: SrcWriteStore,
+    plan: _PagePlan,
+    readback: Sequence[str],
+    insert_keys: Sequence[tuple[object, ...]],
+) -> str:
+    seen = set(readback)
+    missing = [
+        key
+        for key, digest in zip(insert_keys, plan.insert_hashes, strict=True)
+        if digest not in seen
+    ][:_SAMPLE]
+    try:
+        stored = store.existing_values(spec, missing, ("_batch_id", "_row_hash"))
+    except Exception as exc:  # 诊断失败不能掩盖原错误
+        return f"缺失样例 {missing!r}，查询现状失败: {exc}"
+    return f"缺失样例 {[(key, stored.get(key)) for key in missing]!r}"
+
+
+def _is_suspect(value: object) -> bool:
+    if isinstance(value, str):
+        return "\x00" in value or not value.isascii()
+    return not isinstance(value, (int, float, Decimal, datetime, type(None)))
+
+
+def _data_error_detail(
+    spec: SrcTableWriteSpec, rows: Sequence[Mapping[str, object]], exc: Exception
+) -> str:
+    # PG 拒收参数时只给参数序号。这里扫一遍本页，找出不是常规类型、或含 NUL / 非 ASCII 的值。
+    suspects = [
+        f"{name}@{tuple(row[k] for k in spec.keys)!r}={type(value).__name__}:{value!r:.80}"
+        for row in rows
+        for name in spec.native_columns
+        if _is_suspect(value := row[name])
+    ][:_SAMPLE]
+    return f"{spec.dataset} 参数被 PG 拒收：{exc}；可疑值 {suspects or '无'}"
 
 
 def _rollback_or_unknown(store: SrcWriteStore) -> None:
