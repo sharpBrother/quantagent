@@ -667,4 +667,3 @@ AINDEXVALUATION_COLUMNS: tuple[str, ...] = (
     "gsCTime",
     "mopdate",
 )
-

@@ -38,7 +38,6 @@ def test_feature_table_matches_legacy_loader_sign() -> None:
         for row in rows
     }
     expected = {
-        (item["trade_dt"], item["wind_code"]): -Decimal(item["cutamp"])
-        for item in payload["rows"]
+        (item["trade_dt"], item["wind_code"]): -Decimal(item["cutamp"]) for item in payload["rows"]
     }
     assert actual == expected

@@ -38,7 +38,7 @@ def test_replace_sql_allows_delete_but_not_update() -> None:
     assert_src_replace_sql(
         'DELETE FROM src_wind."ASHAREEODPRICES" WHERE ("OBJECT_ID") IN (VALUES (%s))'
     )
-    with pytest.raises(ForbiddenSqlError, match="非法|禁止"):
+    with pytest.raises(ForbiddenSqlError, match=r"非法|禁止"):
         assert_src_replace_sql('UPDATE src_wind."ASHAREEODPRICES" SET "OPMODE" = %s')
     with pytest.raises(ForbiddenSqlError):
         assert_src_dml_sql(

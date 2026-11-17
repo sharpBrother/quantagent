@@ -86,12 +86,27 @@ def test_every_batch_id_column_is_indexed(repo_root: Path) -> None:
     assert with_batch - indexed == set()
 
 
+# 历史例外：0003 已应用后发现两张空表多建了源端没有的列，0009/0010 删表重建。
+# 两条都已在库里执行，迁移不重跑，表现在已有数据。只放行这两条、且只放行
+# 删除随后在同文件重建的那张表；之后的源面迁移仍只能是 CREATE（AGENTS.md §6.3）。
+_HISTORICAL_DROP_REBUILD = {
+    "0009_aindexeodprices_source_columns.sql": 'src_wind."AINDEXEODPRICES"',
+    "0010_asharemoneyflow_source_columns.sql": 'src_wind."ASHAREMONEYFLOW"',
+}
+
+
 @pytest.mark.unit
 def test_src_sql_has_no_drop_or_dml(repo_root: Path) -> None:
     files = list_migration_files(repo_root, "src")
     statements: list[str] = []
     for item in files:
-        statements.extend(split_sql_statements(item.path.read_text(encoding="utf-8")))
+        file_statements = split_sql_statements(item.path.read_text(encoding="utf-8"))
+        rebuilt = _HISTORICAL_DROP_REBUILD.get(item.path.name)
+        if rebuilt is not None:
+            assert file_statements[0] == f"DROP TABLE {rebuilt}", item.path.name
+            assert file_statements[1].startswith(f"CREATE TABLE {rebuilt} ("), item.path.name
+            file_statements = file_statements[1:]
+        statements.extend(file_statements)
     assert statements
     assert all(stmt.split(None, 1)[0].upper() == "CREATE" for stmt in statements)
 

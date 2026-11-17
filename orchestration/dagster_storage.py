@@ -13,7 +13,7 @@ from sqlalchemy import MetaData
 from sqlalchemy.dialects.postgresql import dialect
 from sqlalchemy.schema import CreateIndex, CreateTable
 
-_DIALECT = dialect()
+_DIALECT = dialect()  # type: ignore[no-untyped-call]  # SQLAlchemy 方言构造器无类型注解
 _HEADER = """-- Dagster 1.13.22 / dagster-postgres 0.29.22 的当前表形。
 -- 运行存储放在 ops。不走自建表：自建会执行 alembic，其中包含 ALTER。
 -- 实例配置必须 should_autocreate_tables: false，并且 search_path=ops。
