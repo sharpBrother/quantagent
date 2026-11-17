@@ -9,10 +9,11 @@ from typing import TYPE_CHECKING
 import pytest
 
 from quantagent.adapters.postgres.errors import TransactionUnknownError
+from quantagent.adapters.postgres.src_targets import AINDEXVALUATION
 from quantagent.ingest.errors import SourceFetchError
 from quantagent.ingest.jobs.wind_paged import ingest_wind_paged
 from quantagent.ingest.sources.wind.cursor import decode_cursor, initial_cursor
-from quantagent.ingest.writers.tables import AINDEXVALUATION, ASHARECALENDAR, ASHAREEODPRICES
+from quantagent.ingest.writers.tables import ASHARECALENDAR, ASHAREEODPRICES
 from quantagent.platform.config import Settings
 from quantagent.platform.storage.paths import resolve_var_paths
 
