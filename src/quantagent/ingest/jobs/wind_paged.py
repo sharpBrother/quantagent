@@ -81,6 +81,7 @@ def ingest_wind_paged(
     source: WindPageSource | None = None,
     store: SrcWriteStore | None = None,
     now: Callable[[], datetime] | None = None,
+    on_page: Callable[[int], None] | None = None,
 ) -> WindPagedIngestResult:
     started = datetime.now(UTC)
     catalog = resolve_wind_paged_table(table)
@@ -99,6 +100,12 @@ def ingest_wind_paged(
         ):
             owned_pg = connect(settings, "src")
             resolved_store = PostgresSrcStore(owned_pg)
+        if owned_pg is not None and write_db:
+            # 转发吞掉的连接会留下孤儿事务，若它仍持有本页主键，重试会在唯一索引上等锁。
+            # 这里只限制等锁时长；正常写入不等锁，不影响 30 秒级的页。
+            # psycopg 默认非自动提交，SET 必须单独提交，否则会和第一页落在同一事务里。
+            owned_pg.execute("SET lock_timeout = '60s'")
+            owned_pg.commit()
         cursor = _start_cursor(resolved_store, catalog.spec, from_cursor)
         _assert_source_columns(resolved_source, catalog.spec)
         committed = _CommittedPages(cursor=cursor)
@@ -113,6 +120,7 @@ def ingest_wind_paged(
             max_pages=page_limit,
             now=now,
             committed=committed,
+            on_page=on_page,
         )
     except Exception as exc:
         # 已返回的页已经提交。正在写入的页，尤其是提交结果未知的页，不计入日志，也不重试。
@@ -174,6 +182,7 @@ def _run_pages(
     max_pages: int | None,
     now: Callable[[], datetime] | None,
     committed: _CommittedPages,
+    on_page: Callable[[int], None] | None = None,
 ) -> WindPagedIngestResult:
     pages = 0
     row_count = 0
@@ -227,6 +236,9 @@ def _run_pages(
         committed.last_digest = last_digest
         committed.last_output = last_output
         committed.cursor = current
+        # 放在本页已提交之后。调用方据此判断是否有新页，回调异常照常向外抛。
+        if on_page is not None:
+            on_page(pages)
     output = digest_json(
         {
             "dataset": catalog.spec.dataset,

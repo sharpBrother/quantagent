@@ -1,31 +1,16 @@
 # Dagster 实例配置。复制到 DAGSTER_HOME，不要把 DAGSTER_HOME 指到本目录。
 # 本目录若被当成 DAGSTER_HOME，运行历史会写进仓库。
-# 表由 db/migrations/ops/0002_dagster_storage.sql 创建。这里关闭自建，
-# 避免 alembic 在 ops 里执行 ALTER。search_path 让运行表落在 ops 而不是 public。
+#
+# 运行存储用 Dagster 默认的本地 SQLite（DAGSTER_HOME/history、schedules、storage），
+# 不再连 PG 控制库 ops。执行机经 ToDesk 转发连 PG，daemon 的常驻线程各持一条空闲长连接，
+# 会被转发吞掉而永久卡死。见 docs/adr/2026-11-17-dagster-local-run-storage.md。
+# 只有采集步骤本身连 PG 研究库，串行、一次一条连接，并由子进程看门狗兜底。
 
-storage:
-  postgres:
-    postgres_db:
-      username:
-        env: QUANTAGENT_PG_OPS_USER
-      password:
-        env: QUANTAGENT_PG_OPS_PASSWORD
-      hostname:
-        env: QUANTAGENT_PG_OPS_HOST
-      db_name:
-        env: QUANTAGENT_PG_OPS_DATABASE
-      port:
-        env: QUANTAGENT_PG_OPS_PORT
-      params:
-        options: "-csearch_path=ops"
-    should_autocreate_tables: false
-
-telemetry:
-  enabled: false
-# 手动或调度提交的 run 先进队列，由 daemon 从自己的代码服务器启动。
-# 这样 run 不挂在提交命令的进程下；同时最多跑一个，首次全量回填期间不叠跑。
+# run 先进队列，由 daemon 启动，不挂在提交命令的进程下；同时最多跑一个。
 run_coordinator:
   module: dagster.core.run_coordinator
   class: QueuedRunCoordinator
   config:
     max_concurrent_runs: 1
+telemetry:
+  enabled: false

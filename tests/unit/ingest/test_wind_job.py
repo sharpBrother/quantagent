@@ -400,3 +400,70 @@ def test_source_column_case_difference_is_tolerated(tmp_path: Path) -> None:
         store=FakeSrcStore(),
     )
     assert result.pages == 0
+
+
+@pytest.mark.unit
+def test_on_page_called_after_each_committed_page(tmp_path: Path) -> None:
+    settings, paths = _paths(tmp_path)
+    source = FakeWindSource(
+        [
+            [_row("a", datetime(2024, 1, 2, 10, 0, 0))],
+            [_row("b", datetime(2024, 1, 2, 11, 0, 0))],
+            [],
+        ]
+    )
+    seen: list[int] = []
+    result = ingest_wind_paged(
+        settings=settings,
+        paths=paths,
+        table="ASHAREEODPRICES",
+        write_db=True,
+        source=source,
+        store=FakeSrcStore(),
+        on_page=seen.append,
+    )
+    assert result.pages == 2
+    assert seen == [1, 2]
+
+
+@pytest.mark.unit
+def test_on_page_called_in_dry_run(tmp_path: Path) -> None:
+    settings, paths = _paths(tmp_path)
+    seen: list[int] = []
+    ingest_wind_paged(
+        settings=settings,
+        paths=paths,
+        table="ASHAREEODPRICES",
+        write_db=False,
+        source=FakeWindSource([[_row("a", datetime(2024, 1, 2, 10, 0, 0))]]),
+        store=FakeSrcStore(),
+        on_page=seen.append,
+    )
+    assert seen == [1]
+
+
+class _PageCallbackFails(RuntimeError):
+    pass
+
+
+def _raise_on_page(pages: int) -> None:
+    raise _PageCallbackFails(f"回调在第 {pages} 页失败")
+
+
+@pytest.mark.unit
+def test_on_page_exception_aborts_job(tmp_path: Path) -> None:
+    settings, paths = _paths(tmp_path)
+    source = FakeWindSource(
+        [[_row("a", datetime(2024, 1, 2, 10, 0, 0))], [_row("b", datetime(2024, 1, 2, 11, 0, 0))]]
+    )
+    with pytest.raises(_PageCallbackFails, match="第 1 页"):
+        ingest_wind_paged(
+            settings=settings,
+            paths=paths,
+            table="ASHAREEODPRICES",
+            write_db=True,
+            source=source,
+            store=FakeSrcStore(),
+            on_page=_raise_on_page,
+        )
+    assert len(source.seen) == 1

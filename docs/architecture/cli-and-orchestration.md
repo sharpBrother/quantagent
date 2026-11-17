@@ -148,6 +148,7 @@ quantagent feature matrix --start 2024-01-01 --end 2024-01-31 --as-of 2024-02-01
 真写、不限页、页大小 10000。SSE 非交易日跳过；上一轮未结束则跳过，避免全量回填叠跑。
 默认处于运行状态，daemon 启动即生效；是否真写仍取决于执行机的 `QUANTAGENT_ALLOW_DB_WRITE`。
 实例使用 `QueuedRunCoordinator`（`max_concurrent_runs: 1`）：run 由 daemon 启动，不挂在提交命令下。
+运行存储是 `DAGSTER_HOME` 下的本地 SQLite，不连 PG 控制库（[ADR](../adr/2026-11-17-dagster-local-run-storage.md)）。每张表的采集在子进程里跑，600 秒无新页提交即终止，下一轮从游标续跑。
 手动立即跑一轮与调度同样的配置：
 ```
 uv run python -c "import json, datetime as d; from orchestration.schedules.wind import _run_config; print(json.dumps(_run_config(d.date.today().isoformat())))" > var/dagster/run_now.json

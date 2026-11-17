@@ -29,3 +29,7 @@ class ReplaceRequiredError(IngestError):
 
 class SourceFetchError(IngestError):
     """源端拉取失败，或返回了无法按原生口径解释的值。"""
+
+
+class IngestStalledError(IngestError):
+    """采集子进程超过 stall_seconds 没有新页提交，已被父进程终止。已提交页保留，下次从游标续跑。"""
