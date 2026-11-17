@@ -79,6 +79,13 @@ applies_to:
    行 digest `836ead683163f55b2f50e1403a0b2b8ae192343a2814f5f648ac9468e162d994`。
    12 行在 8 位小数上与 `wx2` 一致，`knowledge_dt` 等于截面日，`pit_grade` 为 A。
    3 月原有 parquet 未改，同一范围再写被拒绝。
+   2024-03-11 的同样两只股票经 `DAGSTER_HOME` 物化 2 行，digest
+   `b6dbf2fd8a03cc48099b109f167b1acbd300a76578f7ab8c2c9eedfdfbcc9459`，
+   追加为 `asset_class=stock/ym=202403/part-00003.parquet`，文件 sha256
+   `f997943adbac24a086378536f81f2597dca57b2497ace5616d7979d68ea6c8d2`。
+   2 行在 8 位小数上与 `wx2` 一致。03-01 至 03-08 的 part 文件 sha256 未变。
+   运行 `81da3817-4ad2-4c4e-bd42-ab06e9807fd5` 在 `ops.runs` 中为 `SUCCESS`，
+   `event_logs` 12 行。`ops` 仍是 21 张表。
    旧表 `stock_tr_umr` 不迁，旧入口不切。
 3. **达到 3GB 的源表按体积从大到小采集。** 命令是 `quantagent ingest wind large`。
    顺序：`ASHAREMONEYFLOW` 32GB、`ASHAREEODDERIVATIVEINDICATOR` 19GB、
