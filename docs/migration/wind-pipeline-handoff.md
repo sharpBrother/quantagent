@@ -69,6 +69,12 @@ applies_to:
    `387dc05b9f095664b21ad9863825107dae6c5b7eb32803d710d818cc26b00f21`，
    行 digest `2a57c3516b526ba09541d8d6220f0cff30ed139540b79138ee790ccdc0955693`。
    12 行在 8 位小数上与 `wx2` 一致。2 月原有 parquet 未改，同一范围再写被拒绝。
+   2024-03-01 至 03-08 的 6 个开市日、同样两只股票共 12 行已写入
+   `asset_class=stock/ym=202403/part-00002.parquet`，文件 sha256
+   `8e46edf195e73665ac473d4163a1074cc77072e507e8e923f5e5bfd8ef05c4f7`，
+   行 digest `836ead683163f55b2f50e1403a0b2b8ae192343a2814f5f648ac9468e162d994`。
+   12 行在 8 位小数上与 `wx2` 一致，`knowledge_dt` 等于截面日，`pit_grade` 为 A。
+   3 月原有 parquet 未改，同一范围再写被拒绝。
    旧表 `stock_tr_umr` 不迁，旧入口不切。
 3. **达到 3GB 的源表按体积从大到小采集。** 命令是 `quantagent ingest wind large`。
    顺序：`ASHAREMONEYFLOW` 32GB、`ASHAREEODDERIVATIVEINDICATOR` 19GB、
