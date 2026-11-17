@@ -120,6 +120,11 @@ applies_to:
    未接的 7 张：`CBONDCURVECSI`、`FXEODPRICES`、`CBONDREPO`、`CBONDPRICESREPO`、
    `CBONDREPOANDIBLEODPRICES` 的物理表没有主键；`AINDEXINDUSTRIESCITICS` 在旧仓由
    `AINDEXDESCRIPTION` 筛出，源表不同名；`CBONDCURVECNBD` 全表体量未评估。
+   **日更调度已接入（2026-11-17，未在执行机启动）。** 见
+   [编排架构的调度一节](../architecture/cli-and-orchestration.md#调度)。上线步骤：在能连 Wind 的执行机
+   `git pull`；`quantagent db migrate`（干跑确认 0012–0016 待应用）后带写闸真跑，五张重建表必须在首次
+   写入前迁移；设 `QUANTAGENT_ALLOW_DB_WRITE=true` 与 `DAGSTER_HOME`；启动 `dagster-daemon run`。
+   首次调度会对尚为空的表做全量回填，资金流与衍生指标要数小时，期间下一次触发会跳过。
 4. **首个量价因子已对上一个小样本。** `pf_single_cutamp_1_mean_neg` 来自旧仓
    `CUTAMP`：20 个交易日的振幅，去掉收盘触及涨跌停的日子，按复权收盘价切 25%。
    Current-20 取相反数。2024-01-02 至 01-05 的 `000001.SZ` 与 `600000.SH`，

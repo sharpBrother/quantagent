@@ -43,7 +43,7 @@ class WindIngestResource:
         *,
         write_db: bool,
         page_size: int,
-        max_pages: int,
+        max_pages: int | None,
     ) -> WindPagedIngestResult:
         return ingest_wind_paged(
             settings=self._settings,
@@ -69,11 +69,18 @@ class TradeCalendarResource:
         self._paths = paths
         self._src_rows = src_rows
 
-    def materialize(self, *, as_of: date, rebuild: bool) -> TradeCalendarMaterializeResult:
+    def materialize(
+        self,
+        *,
+        as_of: date,
+        rebuild: bool,
+        skip_if_unchanged: bool = False,
+    ) -> TradeCalendarMaterializeResult:
         return materialize_trade_calendar(
             settings=self._settings,
             paths=self._paths,
             as_of=as_of,
             rebuild=rebuild,
             src_rows=self._src_rows,
+            skip_if_unchanged=skip_if_unchanged,
         )

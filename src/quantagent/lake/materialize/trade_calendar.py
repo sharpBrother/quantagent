@@ -73,6 +73,7 @@ def materialize_trade_calendar(
     rebuild: bool = False,
     src_rows: Sequence[Mapping[str, object]] | None = None,
     conn: psycopg.Connection[object] | None = None,
+    skip_if_unchanged: bool = False,
 ) -> TradeCalendarMaterializeResult:
     started = datetime.now(UTC)
     dest = paths.lake / "std" / "trade_calendar"
@@ -87,13 +88,19 @@ def materialize_trade_calendar(
             owned_conn = connect(settings, "src")
             rows = scan_trade_cal(owned_conn)
         table = src_rows_to_std(rows)
-        written = _write_std_parquet(table, dest, rebuild=rebuild)
+        written = _write_std_parquet(
+            table,
+            dest,
+            rebuild=rebuild,
+            skip_if_unchanged=skip_if_unchanged,
+        )
         result = TradeCalendarMaterializeResult(
             dataset=DATASET,
             row_count=table.num_rows,
             output_digest=str(written["digest"]),
             path=written["path"],  # type: ignore[arg-type]
-            rebuilt=rebuild,
+            # 内容未变时没有重写文件，不算 rebuild。
+            rebuilt=rebuild and not written["skipped"],
         )
     except Exception as exc:
         with suppress(RunLogError):
@@ -122,9 +129,22 @@ def materialize_trade_calendar(
     return result
 
 
-def _write_std_parquet(table: pa.Table, dest: Path, *, rebuild: bool) -> dict[str, object]:
+def _write_std_parquet(
+    table: pa.Table,
+    dest: Path,
+    *,
+    rebuild: bool,
+    skip_if_unchanged: bool = False,
+) -> dict[str, object]:
     dest.mkdir(parents=True, exist_ok=True)
     final_path = dest / "part-00000.parquet"
+    # 日更每天都会跑；快照内容没变时不重写文件，避免无谓地改动 mtime 与 digest。
+    if (
+        skip_if_unchanged
+        and final_path.is_file()
+        and _same_snapshot(pq.read_table(final_path), table)
+    ):
+        return {"path": final_path, "digest": digest_file(final_path), "skipped": True}
     existing = [path for path in dest.glob("*.parquet") if path.is_file()]
     if existing and not rebuild:
         raise LakeLayoutError(f"拒绝覆盖既有分区: {dest}")
@@ -143,7 +163,13 @@ def _write_std_parquet(table: pa.Table, dest: Path, *, rebuild: bool) -> dict[st
         for path in existing:
             path.unlink()
     tmp_path.replace(final_path)
-    return {"path": final_path, "digest": file_digest}
+    return {"path": final_path, "digest": file_digest, "skipped": False}
+
+
+def _same_snapshot(existing: pa.Table, new: pa.Table) -> bool:
+    # 两边都按主键排序后逐行逐列比较；列类型不同也视为不同。
+    keys = [("cal_dt", "ascending"), ("exchange", "ascending")]
+    return bool(existing.sort_by(keys).equals(new.sort_by(keys)))
 
 
 def _src_row_to_std(row: Mapping[str, object], index: int) -> dict[str, object]:
