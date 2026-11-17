@@ -2,7 +2,7 @@
 title: 派生数据集清单与归属
 status: active
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-11-17
 applies_to:
   - src/quantagent/lake/
   - src/quantagent/features/
@@ -41,6 +41,10 @@ superseded_by: null
 `diagnostics` 见 [backtest-contract.md](backtest-contract.md)，不在这里重复。
 
 ## universe_member：规则在 domain，物化在 mart
+
+> **2026-11-17 起不物化。** 股票池改为读取时从源表计算，接口与字段形状不变，
+> 见 [股票池按读取时计算](../adr/2026-11-17-universe-computed-on-read.md)。下文的层归属与
+> 字段说明仍是成员行的形状定义；`mart.universe_member` 目录暂不产出。
 
 **归属 `mart` 而不是 `feature`。** 因为 `feature` 计算要读它，而 `mart`
 不允许反向读 `feature`。放错一层会直接违反数据分层的不得反向依赖约束。
