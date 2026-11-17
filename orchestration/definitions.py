@@ -9,12 +9,14 @@ from __future__ import annotations
 from dagster import Definitions
 
 from orchestration.assets.cutamp import feature_pf_single_cutamp
+from orchestration.assets.tr_umr import feature_pf_single_tr_umr
 from orchestration.assets.wind import (
     src_wind_asharecalendar,
     src_wind_ashareeodprices,
     std_trade_calendar,
 )
 from orchestration.jobs.cutamp import feature_cutamp
+from orchestration.jobs.tr_umr import feature_tr_umr
 from orchestration.jobs.wind import wind_source_refresh
 from orchestration.resources.wind import TradeCalendarResource, WindIngestResource
 from quantagent.platform.config import get_settings
@@ -36,7 +38,8 @@ defs = Definitions(
         std_trade_calendar,
         src_wind_ashareeodprices,
         feature_pf_single_cutamp,
+        feature_pf_single_tr_umr,
     ],
-    jobs=[wind_source_refresh, feature_cutamp],
+    jobs=[wind_source_refresh, feature_cutamp, feature_tr_umr],
     resources=_resources(),
 )

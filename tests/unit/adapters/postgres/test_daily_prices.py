@@ -8,7 +8,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from quantagent.adapters.postgres.daily_prices import PostgresDailyPriceRepository
+from quantagent.adapters.postgres.daily_prices import (
+    PostgresDailyPriceRepository,
+    _row_from_mapping,
+)
 from quantagent.contracts.spec import VisibilityContract
 from quantagent.domain.errors import PriceLookupError
 
@@ -58,6 +61,9 @@ def test_query_uses_visibility_cutoff_and_closed_bounds() -> None:
     statement, params = cur.execute.call_args.args
     assert '"TRADE_DT" BETWEEN %s AND %s' in statement
     assert '"src_wind"."ASHAREEODPRICES"' in statement
+    assert '"S_DQ_ADJHIGH"' in statement
+    assert '"S_DQ_ADJLOW"' in statement
+    assert '"S_DQ_ADJPRECLOSE"' in statement
     assert params == ("20240102", "20240103", ["000001.SZ"])
     assert rows[0].close == Decimal("9.2100")
     assert rows[0].trade_dt == date(2024, 1, 2)
@@ -78,3 +84,17 @@ def test_duplicate_key_fails_closed() -> None:
             end=date(2024, 1, 2),
             wind_codes=("000001.SZ",),
         )
+
+
+@pytest.mark.unit
+def test_adjusted_range_columns_enter_daily_price() -> None:
+    mapping = _fetched("20240102", "000001.SZ", "9.2100")
+    mapping["S_DQ_ADJHIGH"] = Decimal("10.5")
+    mapping["S_DQ_ADJLOW"] = Decimal("9.4")
+    mapping["S_DQ_ADJPRECLOSE"] = Decimal("9.8")
+    row = _row_from_mapping(mapping)
+    assert row.adj_high == Decimal("10.5")
+    assert row.adj_low == Decimal("9.4")
+    assert row.adj_preclose == Decimal("9.8")
+    assert row.wind_code == "000001.SZ"
+    assert row.trade_dt == date(2024, 1, 2)

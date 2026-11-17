@@ -2,7 +2,7 @@
 title: Wind 数据链路迁移交接
 status: active
 created: 2026-11-15
-updated: 2026-11-15
+updated: 2026-11-17
 applies_to:
   - orchestration/
   - src/quantagent/ingest/jobs/wind_paged.py
@@ -32,13 +32,14 @@ applies_to:
    表形写在 `db/migrations/ops/0002_dagster_storage.sql`，只含 `CREATE`。
    实例模板关闭自建表，并已复制到 `QUANTAGENT_VAR_ROOT/dagster`。用它物化 2024-03-01 至 03-08 两只样本股票，12 行与 `wx2` 在 6 位小数上一致。`ops.runs` 记下一次 `SUCCESS`。
    写库沿用双闸。失败日志保留已提交页；提交结果未知的页不计入、不自动重试。
-5. **指数日行情表还是空的。** `src_wind.AINDEXEODPRICES` 已有表结构，2026-11-16 为 0 行。
-   采集命令是 `quantagent ingest wind AINDEXEODPRICES`，游标与 A 股日行情相同。
-   采集列和物理表都只跟 `wind_db.dbo.AINDEXEODPRICES`，另加三个系统列。
-   `0009_aindexeodprices_source_columns.sql` 在表为空时删掉重建，去掉 19 个简介列。
-   本机没有 Wind。初始化要在能连源库的机器上做：先干跑一页，再开写闸。
-   真写默认不限页。可见性是 `TRADE_DT` 的 `same_day_close` / A。
-   `pf_single_tr_umr_1_mean_pos` 等这张表有数后再算。
+5. **指数日行情已落地。** 2026-11-17 核对 `src_wind.AINDEXEODPRICES`：全表 24598322 行；
+   `000985.CSI` 5311 行，`TRADE_DT` 从 20041231 到 20261116；最新成功游标 `opdate` 为
+   2026-11-16T21:26:24。采集命令仍是 `quantagent ingest wind AINDEXEODPRICES`，游标与
+   A 股日行情相同。可见性是 `TRADE_DT` 的 `same_day_close` / A。
+   `pf_single_tr_umr_1_mean_pos` 已按旧仓 `TR_UMR` 重算，消费窗口为 1、方向 +1。
+   2024-01-02 至 01-05 的 `000001.SZ` 与 `600000.SH` 共 8 行，四舍五入到 8 位小数后与
+   `wx2.dbo.stock_tr_umr.tr_umr` 一致，绝对差在 1e-9 量级。这 8 行还没有写入 `feature.value`。
+   旧表 `stock_tr_umr` 不迁，旧入口不切。
 2. **首个量价因子已对上一个小样本。** `pf_single_cutamp_1_mean_neg` 来自旧仓
    `CUTAMP`：20 个交易日的振幅，去掉收盘触及涨跌停的日子，按复权收盘价切 25%。
    Current-20 取相反数。2024-01-02 至 01-05 的 `000001.SZ` 与 `600000.SH`，

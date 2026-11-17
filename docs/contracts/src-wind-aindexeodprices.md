@@ -2,7 +2,7 @@
 title: Wind 指数日行情源镜像
 status: active
 created: 2026-11-16
-updated: 2026-11-16
+updated: 2026-11-17
 applies_to:
   - src/quantagent/contracts/schemas/pg/src.wind.aindexeodprices.yaml
   - src/quantagent/contracts/visibility/src.wind.aindexeodprices.yaml
@@ -13,8 +13,9 @@ applies_to:
 # Wind 指数日行情源镜像
 
 `src.wind.aindexeodprices` 是 Wind `AINDEXEODPRICES` 的源原生镜像。物理表已在
-`0003_wind.sql` 里。2026-11-16 本机该表为 0 行，采集口与 A 股日行情共用
-`OPDATE + OBJECT_ID` 游标。
+`0003_wind.sql` 里。2026-11-17 核对：全表 24598322 行；`000985.CSI` 5311 行，
+`TRADE_DT` 从 20041231 到 20261116；最新成功游标 `opdate` 为 2026-11-16T21:26:24。
+采集口与 A 股日行情共用 `OPDATE + OBJECT_ID` 游标。
 
 采集列和物理表都跟 `wind_db.dbo.AINDEXEODPRICES`：行情字段、`SEC_ID`、`OPDATE`、
 `OPMODE`、`gsCTime`、`gsUTime`、`mopdate`。另外只保留 `_batch_id`、`_ingested_at`、

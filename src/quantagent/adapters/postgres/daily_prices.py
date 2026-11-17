@@ -39,6 +39,9 @@ _VALUE_COLUMNS = (
     "S_DQ_LIMIT",
     "S_DQ_STOPPING",
     "S_DQ_ADJCLOSE",
+    "S_DQ_ADJHIGH",
+    "S_DQ_ADJLOW",
+    "S_DQ_ADJPRECLOSE",
 )
 
 
@@ -122,6 +125,9 @@ def _row_from_mapping(row: dict[str, object]) -> DailyPrice:
         limit_up=_decimal(row.get("S_DQ_LIMIT"), "S_DQ_LIMIT"),
         limit_down=_decimal(row.get("S_DQ_STOPPING"), "S_DQ_STOPPING"),
         adj_close=_decimal(row.get("S_DQ_ADJCLOSE"), "S_DQ_ADJCLOSE"),
+        adj_high=_decimal(row.get("S_DQ_ADJHIGH"), "S_DQ_ADJHIGH"),
+        adj_low=_decimal(row.get("S_DQ_ADJLOW"), "S_DQ_ADJLOW"),
+        adj_preclose=_decimal(row.get("S_DQ_ADJPRECLOSE"), "S_DQ_ADJPRECLOSE"),
     )
 
 

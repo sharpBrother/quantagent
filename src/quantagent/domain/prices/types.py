@@ -24,3 +24,6 @@ class DailyPrice:
     limit_up: Decimal | None = None
     limit_down: Decimal | None = None
     adj_close: Decimal | None = None
+    adj_high: Decimal | None = None
+    adj_low: Decimal | None = None
+    adj_preclose: Decimal | None = None
