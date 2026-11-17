@@ -147,6 +147,12 @@ quantagent feature matrix --start 2024-01-01 --end 2024-01-31 --as-of 2024-02-01
 `wind_to_sql_am`。都跑 `wind_source_daily`：标准日历加全部已接入 Wind 源表，并发上限 2，
 真写、不限页、页大小 10000。SSE 非交易日跳过；上一轮未结束则跳过，避免全量回填叠跑。
 默认处于运行状态，daemon 启动即生效；是否真写仍取决于执行机的 `QUANTAGENT_ALLOW_DB_WRITE`。
+实例使用 `QueuedRunCoordinator`（`max_concurrent_runs: 1`）：run 由 daemon 启动，不挂在提交命令下。
+手动立即跑一轮与调度同样的配置：
+```
+uv run python -c "import json, datetime as d; from orchestration.schedules.wind import _run_config; print(json.dumps(_run_config(d.date.today().isoformat())))" > var/dagster/run_now.json
+uv run dagster job launch -w var/dagster/workspace.yaml -j wind_source_daily -c var/dagster/run_now.json
+```
 标准日历只保留到 `as_of + 7` 天，每天把新出现的日期追加为新分片，已写分片不动；已写日期的开市标记被源端改动时失败（fail-closed）。远期行不落盘，所以年底公布休市安排不影响日更。
 
 ### 远端部署

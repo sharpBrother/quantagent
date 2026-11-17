@@ -22,3 +22,10 @@ storage:
 
 telemetry:
   enabled: false
+# 手动或调度提交的 run 先进队列，由 daemon 从自己的代码服务器启动。
+# 这样 run 不挂在提交命令的进程下；同时最多跑一个，首次全量回填期间不叠跑。
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 1
