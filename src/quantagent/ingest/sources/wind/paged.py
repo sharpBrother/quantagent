@@ -58,6 +58,21 @@ class PymssqlWindPageSource:
             rows.append(decode_chi_row(payload, chi_fields))
         return rows
 
+    def source_columns(self, table: str) -> list[str]:
+        if not _IDENT.match(table):
+            raise SourceFetchError(f"Wind 表名非法: {table}")
+        with self._conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT COLUMN_NAME
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = %s
+                ORDER BY ORDINAL_POSITION
+                """,
+                (table,),
+            )
+            return [str(row[0]) for row in cur.fetchall()]
+
 
 def build_page_sql(*, table: str, columns: Sequence[str], limit: int) -> str:
     if not _IDENT.match(table):

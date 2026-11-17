@@ -330,3 +330,28 @@ def test_unknown_commit_stops_without_counting_or_retrying(tmp_path: Path) -> No
     assert log["dml_count"] == 2
     assert log["row_count"] == 1
     assert decode_cursor(str(log["error"]).split("source_cursor=", 1)[1]).object_id == "a"
+
+
+class _ColumnSource(FakeWindSource):
+    def __init__(self, columns: list[str]) -> None:
+        super().__init__([])
+        self.columns = columns
+
+    def source_columns(self, table: str) -> list[str]:
+        return list(self.columns)
+
+
+@pytest.mark.unit
+def test_source_column_mismatch_stops_before_fetch(tmp_path: Path) -> None:
+    settings, paths = _paths(tmp_path)
+    source = _ColumnSource(["OBJECT_ID"])
+    with pytest.raises(SourceFetchError, match="列与源表不一致"):
+        ingest_wind_paged(
+            settings=settings,
+            paths=paths,
+            table="AINDEXVALUATION",
+            write_db=False,
+            source=source,
+            store=FakeSrcStore(),
+        )
+    assert source.seen == []

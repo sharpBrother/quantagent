@@ -88,5 +88,7 @@ def test_paged_whitelist_is_explicit() -> None:
     index = resolve_wind_paged_table("AINDEXEODPRICES")
     assert index.spec.pg_table == "AINDEXEODPRICES"
     assert index.chi_fields == ()
+    money = resolve_wind_paged_table("ASHAREMONEYFLOW")
+    assert "GSUPDTIME" not in money.spec.native_columns
     with pytest.raises(TargetNotAllowedError, match="白名单"):
-        resolve_wind_paged_table("ASHAREMONEYFLOW")
+        resolve_wind_paged_table("ASHAREDESCRIPTION")

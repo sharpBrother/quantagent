@@ -9,6 +9,7 @@ from unittest.mock import Mock
 import pytest
 from typer.testing import CliRunner
 
+from quantagent.adapters.postgres.wind_large_columns import LARGE_WIND_SYNC
 from quantagent.cli.app import app
 from quantagent.domain.feature_value import FeatureKey
 from quantagent.platform.config import cache_clear
@@ -222,7 +223,36 @@ def test_ingest_wind_ashareeodprices_help() -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize("table", ["ASHARECALENDAR", "ASHAREEODPRICES", "AINDEXEODPRICES"])
+def test_ingest_wind_large_runs_largest_first(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+
+    def fake(**kwargs: object) -> object:
+        calls.append(str(kwargs["table"]))
+        return type(
+            "Result",
+            (),
+            {
+                "written": False,
+                "dataset": "x",
+                "table": kwargs["table"],
+                "pages": 1,
+                "row_count": 0,
+                "dml_count": 0,
+                "source_cursor": "{}",
+            },
+        )()
+
+    monkeypatch.setattr("quantagent.cli.ingest.ingest_wind_paged", fake)
+    result = runner.invoke(app, ["ingest", "wind", "large", "--max-pages", "1"])
+    assert result.exit_code == 0, result.output
+    assert calls == list(LARGE_WIND_SYNC)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "table",
+    ["ASHARECALENDAR", "ASHAREEODPRICES", "AINDEXEODPRICES", "ASHAREMONEYFLOW"],
+)
 def test_ingest_wind_dispatches_to_paged_job(monkeypatch: pytest.MonkeyPatch, table: str) -> None:
     job = Mock()
     monkeypatch.setattr("quantagent.cli.ingest.ingest_wind_paged", job)

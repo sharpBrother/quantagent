@@ -4,6 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from quantagent.adapters.postgres.wind_large_columns import (
+    AINDEXVALUATION_COLUMNS,
+    ASHAREBALANCESHEET_COLUMNS,
+    ASHARECASHFLOW_COLUMNS,
+    ASHAREEODDERIVATIVEINDICATOR_COLUMNS,
+    ASHAREINCOME_COLUMNS,
+    ASHAREMONEYFLOW_COLUMNS,
+)
+
 
 @dataclass(frozen=True)
 class SrcTableWriteSpec:
@@ -89,8 +98,6 @@ AINDEXEODPRICES = SrcTableWriteSpec(
     dataset="src.wind.aindexeodprices",
     pg_schema="src_wind",
     pg_table="AINDEXEODPRICES",
-    # 只采集 wind_db.dbo.AINDEXEODPRICES 的列。物理表多出的 19 个简介列
-    # 来自已应用的 0003_wind.sql，源表没有，不读、不写、不进内容指纹。
     native_columns=(
         "OBJECT_ID",
         "S_INFO_WINDCODE",
@@ -114,3 +121,24 @@ AINDEXEODPRICES = SrcTableWriteSpec(
     ),
     keys=("OBJECT_ID",),
 )
+
+
+def _wind_table(name: str, columns: tuple[str, ...]) -> SrcTableWriteSpec:
+    return SrcTableWriteSpec(
+        dataset=f"src.wind.{name.lower()}",
+        pg_schema="src_wind",
+        pg_table=name,
+        native_columns=columns,
+        keys=("OBJECT_ID",),
+    )
+
+
+ASHAREMONEYFLOW = _wind_table("ASHAREMONEYFLOW", ASHAREMONEYFLOW_COLUMNS)
+ASHAREEODDERIVATIVEINDICATOR = _wind_table(
+    "ASHAREEODDERIVATIVEINDICATOR",
+    ASHAREEODDERIVATIVEINDICATOR_COLUMNS,
+)
+ASHARECASHFLOW = _wind_table("ASHARECASHFLOW", ASHARECASHFLOW_COLUMNS)
+ASHAREINCOME = _wind_table("ASHAREINCOME", ASHAREINCOME_COLUMNS)
+ASHAREBALANCESHEET = _wind_table("ASHAREBALANCESHEET", ASHAREBALANCESHEET_COLUMNS)
+AINDEXVALUATION = _wind_table("AINDEXVALUATION", AINDEXVALUATION_COLUMNS)

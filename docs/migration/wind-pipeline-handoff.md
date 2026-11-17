@@ -46,7 +46,12 @@ applies_to:
    2024-01-05 当天 `wx2` 有值的 4861 只全部算出。其中 4858 只在 8 位小数上一致。
    不一致的 3 只输入不同：`000717.SZ` 与 `000016.SZ` 的复权价有 0.0001 的差别，涨跌幅相同；
    `000078.SZ` 的复权价是常数比例，真实波幅里这个比例会消掉，因子只剩 7e-9。
-   这 4861 行没有写入长表。旧表 `stock_tr_umr` 不迁，旧入口不切。
+   这 4861 行没有写入长表。2024-02-01 至 02-08 的 6 个开市日、同样两只股票共 12 行
+   已写入 `asset_class=stock/ym=202402/part-00001.parquet`，文件 sha256
+   `387dc05b9f095664b21ad9863825107dae6c5b7eb32803d710d818cc26b00f21`，
+   行 digest `2a57c3516b526ba09541d8d6220f0cff30ed139540b79138ee790ccdc0955693`。
+   12 行在 8 位小数上与 `wx2` 一致。2 月原有 parquet 未改，同一范围再写被拒绝。
+   旧表 `stock_tr_umr` 不迁，旧入口不切。
 6. **达到 3GB 的源表按体积从大到小采集。** 命令是 `quantagent ingest wind large`。
    顺序：`ASHAREMONEYFLOW` 32GB、`ASHAREEODDERIVATIVEINDICATOR` 19GB、
    `ASHAREEODPRICES` 15GB、`ASHARECASHFLOW` 6.4GB、`ASHAREINCOME` 5.8GB、

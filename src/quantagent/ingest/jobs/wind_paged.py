@@ -100,6 +100,7 @@ def ingest_wind_paged(
             owned_pg = connect(settings, "src")
             resolved_store = PostgresSrcStore(owned_pg)
         cursor = _start_cursor(resolved_store, catalog.spec, from_cursor)
+        _assert_source_columns(resolved_source, catalog.spec)
         committed = _CommittedPages(cursor=cursor)
         result = _run_pages(
             settings=settings,
@@ -297,6 +298,23 @@ def _partial_result(
         output_digest=output,
         source_cursor=committed.cursor.encode(),
         replace_existing=replace_existing,
+    )
+
+
+def _assert_source_columns(source: WindPageSource, spec: SrcTableWriteSpec) -> None:
+    reader = getattr(source, "source_columns", None)
+    if reader is None:
+        return
+    actual = list(reader(spec.pg_table))
+    expected = list(spec.native_columns)
+    if not actual:
+        raise SourceFetchError(f"{spec.pg_table} 在 wind_db 不存在")
+    if set(actual) == set(expected):
+        return
+    only_source = sorted(set(actual) - set(expected))
+    only_spec = sorted(set(expected) - set(actual))
+    raise SourceFetchError(
+        f"{spec.pg_table} 列与源表不一致 source_only={only_source} spec_only={only_spec}"
     )
 
 

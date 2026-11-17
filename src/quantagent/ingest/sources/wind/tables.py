@@ -6,8 +6,14 @@ from dataclasses import dataclass
 
 from quantagent.adapters.postgres.src_targets import (
     AINDEXEODPRICES,
+    AINDEXVALUATION,
+    ASHAREBALANCESHEET,
     ASHARECALENDAR,
+    ASHARECASHFLOW,
+    ASHAREEODDERIVATIVEINDICATOR,
     ASHAREEODPRICES,
+    ASHAREINCOME,
+    ASHAREMONEYFLOW,
     SrcTableWriteSpec,
 )
 from quantagent.ingest.errors import TargetNotAllowedError
@@ -35,6 +41,36 @@ WIND_PAGED_TABLES: dict[str, WindPagedTable] = {
     "AINDEXEODPRICES": WindPagedTable(
         source_table="AINDEXEODPRICES",
         spec=AINDEXEODPRICES,
+        chi_fields=(),
+    ),
+    "ASHAREMONEYFLOW": WindPagedTable(
+        source_table="ASHAREMONEYFLOW",
+        spec=ASHAREMONEYFLOW,
+        chi_fields=(),
+    ),
+    "ASHAREEODDERIVATIVEINDICATOR": WindPagedTable(
+        source_table="ASHAREEODDERIVATIVEINDICATOR",
+        spec=ASHAREEODDERIVATIVEINDICATOR,
+        chi_fields=(),
+    ),
+    "ASHARECASHFLOW": WindPagedTable(
+        source_table="ASHARECASHFLOW",
+        spec=ASHARECASHFLOW,
+        chi_fields=(),
+    ),
+    "ASHAREINCOME": WindPagedTable(
+        source_table="ASHAREINCOME",
+        spec=ASHAREINCOME,
+        chi_fields=(),
+    ),
+    "ASHAREBALANCESHEET": WindPagedTable(
+        source_table="ASHAREBALANCESHEET",
+        spec=ASHAREBALANCESHEET,
+        chi_fields=(),
+    ),
+    "AINDEXVALUATION": WindPagedTable(
+        source_table="AINDEXVALUATION",
+        spec=AINDEXVALUATION,
         chi_fields=(),
     ),
 }

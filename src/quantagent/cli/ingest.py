@@ -12,6 +12,7 @@ from quantagent.adapters.postgres.errors import (
     PostgresAdapterError,
     TransactionUnknownError,
 )
+from quantagent.adapters.postgres.wind_large_columns import LARGE_WIND_SYNC
 from quantagent.ingest.errors import IngestError
 from quantagent.ingest.jobs.trade_cal import ingest_tushare_trade_cal
 from quantagent.ingest.jobs.wind_paged import DEFAULT_PAGE_SIZE, ingest_wind_paged
@@ -91,6 +92,12 @@ def _compact_ymd(raw: str, *, flag: str) -> str:
 @wind_app.command("ASHARECALENDAR")
 @wind_app.command("ASHAREEODPRICES")
 @wind_app.command("AINDEXEODPRICES")
+@wind_app.command("ASHAREMONEYFLOW")
+@wind_app.command("ASHAREEODDERIVATIVEINDICATOR")
+@wind_app.command("ASHARECASHFLOW")
+@wind_app.command("ASHAREINCOME")
+@wind_app.command("ASHAREBALANCESHEET")
+@wind_app.command("AINDEXVALUATION")
 def ingest_wind_table(
     ctx: typer.Context,
     *,
@@ -152,3 +159,65 @@ def ingest_wind_table(
         f"deleted={result.deleted} skipped={result.skipped} dml={result.dml_count} "
         f"digest={result.payload_digest} cursor={result.source_cursor}"
     )
+
+
+@wind_app.command("large")
+def ingest_wind_large(
+    *,
+    write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
+    replace_existing: Annotated[
+        bool,
+        typer.Option(
+            "--replace-existing", help="允许 DELETE+INSERT 替换已有键，以及 OPMODE=2 删除"
+        ),
+    ] = False,
+    page_size: Annotated[
+        int, typer.Option("--page-size", help="每页行数，默认 1000")
+    ] = DEFAULT_PAGE_SIZE,
+    max_pages: Annotated[
+        int | None,
+        typer.Option("--max-pages", help="每张表最多处理页数；干跑默认 1，真写默认不限制"),
+    ] = None,
+    from_cursor: Annotated[
+        str | None,
+        typer.Option("--from-cursor", help="只用于单表。按体积顺序跑时不要传"),
+    ] = None,
+) -> None:
+    """按源库体积从大到小同步达到 3GB 的表。默认每张干跑。"""
+    if from_cursor is not None:
+        typer.secho("按体积顺序同步时不能传 --from-cursor", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    for table in LARGE_WIND_SYNC:
+        try:
+            result = ingest_wind_paged(
+                settings=settings,
+                paths=paths,
+                table=table,
+                write_db=write_db,
+                replace_existing=replace_existing,
+                page_size=page_size,
+                max_pages=max_pages,
+            )
+        except (
+            IngestError,
+            WriteGateError,
+            ConfigError,
+            RunLogError,
+            ForbiddenSqlError,
+            TransactionUnknownError,
+            PostgresAdapterError,
+        ) as exc:
+            typer.secho(f"{table} {exc}", fg=typer.colors.RED, err=True)
+            raise typer.Exit(code=1) from exc
+        if result.written:
+            mode = "wrote"
+        elif write_db:
+            mode = "caught-up"
+        else:
+            mode = "dry-run"
+        typer.echo(
+            f"{mode} dataset={result.dataset} table={result.table} pages={result.pages} "
+            f"rows={result.row_count} dml={result.dml_count} cursor={result.source_cursor}"
+        )
