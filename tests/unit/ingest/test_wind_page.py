@@ -117,6 +117,11 @@ class FakeSrcStore:
             return list(self._forced_readback)
         return list(self._last_hashes)
 
+    def mismatched_rows(
+        self, spec: object, batch_id: int, rows: Sequence[Mapping[str, object]]
+    ) -> list[tuple[object, ...]]:
+        return list(getattr(self, "forced_mismatch", []))
+
     def commit(self) -> None:
         self.commit_calls += 1
         if self.commit_error is not None:
@@ -448,6 +453,22 @@ def test_pg_data_error_names_suspicious_value_and_rolls_back() -> None:
         write_wind_page(
             spec=ASHAREEODPRICES,
             rows=[row],
+            settings=_settings(allow_db_write=True),
+            write_db=True,
+            store=store,
+        )
+    assert store.rollback_calls == 1
+    assert store.commit_calls == 0
+
+
+@pytest.mark.unit
+def test_column_level_readback_mismatch_rolls_back() -> None:
+    store = FakeSrcStore()
+    store.forced_mismatch = [("oid-1",)]  # type: ignore[attr-defined]
+    with pytest.raises(ReadbackError, match="逐列核对不一致 1 行"):
+        write_wind_page(
+            spec=ASHAREEODPRICES,
+            rows=[_row()],
             settings=_settings(allow_db_write=True),
             write_db=True,
             store=store,

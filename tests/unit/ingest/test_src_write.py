@@ -134,6 +134,11 @@ class FakeSrcStore:
             return list(self._forced_readback)
         return list(self.hashes)
 
+    def mismatched_rows(
+        self, spec: object, batch_id: int, rows: Sequence[Mapping[str, object]]
+    ) -> list[tuple[object, ...]]:
+        return list(getattr(self, "forced_mismatch", []))
+
     def commit(self) -> None:
         self.commit_calls += 1
         if self.commit_error is not None:

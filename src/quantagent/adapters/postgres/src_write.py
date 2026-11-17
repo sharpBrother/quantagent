@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from datetime import date, datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 import psycopg
@@ -16,7 +19,6 @@ from quantagent.adapters.postgres.src_dml import assert_src_dml_sql, assert_src_
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
-    from datetime import datetime
 
     from quantagent.adapters.postgres.src_targets import SrcTableWriteSpec
 
@@ -247,6 +249,44 @@ class PostgresSrcStore:
                 found.extend(str(row["_row_hash"]) for row in cur.fetchall())
         return found
 
+    def mismatched_rows(
+        self,
+        spec: SrcTableWriteSpec,
+        batch_id: int,
+        rows: Sequence[Mapping[str, object]],
+    ) -> list[tuple[object, ...]]:
+        """逐列核对本页写入的行，返回库里值与源值不一致（或找不到）的主键。
+
+        只比 ``_row_hash`` 挡不住传输中被改坏的业务列：指纹是客户端算好随行发上去的。
+        这里把源值按 JSON 再发一次，由 PG 用 ``jsonb_populate_record`` 按表的列类型解析
+        （与 INSERT 时同一套类型转换），再与库里已写的行逐列 ``IS DISTINCT FROM`` 比较。
+        """
+        mismatched: list[tuple[object, ...]] = []
+        if not rows:
+            return mismatched
+        table_sql = _table_sql(spec)
+        on_sql = " AND ".join(f"t.{quote_ident(k)} = v.{quote_ident(k)}" for k in spec.keys)
+        stored = ", ".join(f"t.{quote_ident(c)}" for c in spec.native_columns)
+        sent = ", ".join(f"v.{quote_ident(c)}" for c in spec.native_columns)
+        statement = (
+            f"SELECT {', '.join(f'v.{quote_ident(k)}' for k in spec.keys)} FROM ("
+            f"SELECT (jsonb_populate_record(NULL::{table_sql}, e.x)).* "
+            "FROM jsonb_array_elements(%s::jsonb) AS e(x)) AS v "
+            f"LEFT JOIN {table_sql} AS t ON {on_sql} AND t.{quote_ident('_batch_id')} = %s "
+            f"WHERE t.{quote_ident(spec.keys[0])} IS NULL OR ({stored}) IS DISTINCT FROM ({sent})"
+        )
+        assert_src_dml_sql(statement)
+        for offset in range(0, len(rows), _KEY_CHUNK):
+            chunk = rows[offset : offset + _KEY_CHUNK]
+            payload = json.dumps(
+                [{c: _json_value(row[c]) for c in spec.native_columns} for row in chunk],
+                ensure_ascii=False,
+            )
+            with self._conn.cursor() as cur:
+                cur.execute(statement, (payload, batch_id))
+                mismatched.extend(tuple(found) for found in cur.fetchall())
+        return mismatched
+
     def commit(self) -> None:
         try:
             self._conn.commit()
@@ -262,3 +302,10 @@ class PostgresSrcStore:
 
 def _table_sql(spec: SrcTableWriteSpec) -> str:
     return f"{quote_ident(spec.pg_schema)}.{quote_ident(spec.pg_table)}"
+
+
+def _json_value(value: object) -> object:
+    # Decimal 与时间用字符串送，避免 JSON 数字丢精度；PG 按列类型解析，与 INSERT 一致。
+    if isinstance(value, Decimal | datetime | date):
+        return str(value)
+    return value

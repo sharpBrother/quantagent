@@ -17,6 +17,7 @@ from quantagent.adapters.postgres.wind_large_columns import LARGE_WIND_SYNC
 from quantagent.ingest.errors import IngestError
 from quantagent.ingest.jobs.trade_cal import ingest_tushare_trade_cal
 from quantagent.ingest.jobs.wind_paged import DEFAULT_PAGE_SIZE, ingest_wind_paged
+from quantagent.ingest.jobs.wind_verify import verify_wind_table
 from quantagent.ingest.sources.tushare.trade_cal import DEFAULT_EXCHANGES
 from quantagent.platform.config import get_settings
 from quantagent.platform.errors import ConfigError, RunLogError, WriteGateError
@@ -261,3 +262,23 @@ def _run_wind_sequence(
             f"metadata_skipped={result.metadata_skipped} "
             f"dml={result.dml_count} cursor={result.source_cursor}"
         )
+
+
+@wind_app.command("verify")
+def ingest_wind_verify(
+    table: Annotated[str, typer.Argument(help="Wind 表名，如 AINDEXEODPRICES")],
+) -> None:
+    """只读：用库里的值重算 _row_hash，与写入时的指纹比对。不一致即退出码 1。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    try:
+        result = verify_wind_table(settings=settings, paths=paths, table=table)
+    except (IngestError, ConfigError, RunLogError, PostgresAdapterError) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(
+        f"dataset={result.dataset} rows={result.row_count} mismatched={result.mismatched} "
+        f"samples={list(result.samples)}"
+    )
+    if result.mismatched:
+        raise typer.Exit(code=1)

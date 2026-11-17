@@ -127,6 +127,11 @@ class FakeSrcStore:
     ) -> list[str]:
         return list(getattr(self, "_last", []))
 
+    def mismatched_rows(
+        self, spec: object, batch_id: int, rows: Sequence[Mapping[str, object]]
+    ) -> list[tuple[object, ...]]:
+        return list(getattr(self, "forced_mismatch", []))
+
     def commit(self) -> None:
         return None
 

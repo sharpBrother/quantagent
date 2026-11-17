@@ -73,6 +73,15 @@ class SrcWriteStore(Protocol):
         """按本页写入的主键回读 ``_row_hash``，只返回 ``_batch_id`` 等于本批次的行。"""
         ...
 
+    def mismatched_rows(
+        self,
+        spec: SrcTableWriteSpec,
+        batch_id: int,
+        rows: Sequence[Mapping[str, object]],
+    ) -> list[tuple[object, ...]]:
+        """逐列核对本批次写入的行，返回库里值与源值不一致或缺失的主键。"""
+        ...
+
     def commit(self) -> None: ...
 
     def rollback(self) -> None: ...

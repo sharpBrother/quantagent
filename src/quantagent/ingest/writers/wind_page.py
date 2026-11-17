@@ -148,6 +148,14 @@ def write_wind_page(
             f"{spec.dataset} 回读不一致：wrote={len(plan.insert_hashes)} read={len(readback)} "
             f"inserted={plan.inserted} replaced={plan.replaced} deleted={plan.deleted}；{detail}"
         )
+    # 指纹一致之后再逐列核对：执行机经端口转发写库，指纹列完好不代表业务列没被改坏。
+    mismatched = store.mismatched_rows(spec, batch_id, plan.insert_rows)
+    if mismatched:
+        _rollback_or_unknown(store)
+        raise ReadbackError(
+            f"{spec.dataset} 回读逐列核对不一致 {len(mismatched)} 行，已回滚；"
+            f"样例 {mismatched[:_SAMPLE]!r}"
+        )
     try:
         store.commit()
     except TransactionUnknownError:
