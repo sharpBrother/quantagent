@@ -37,9 +37,25 @@ applies_to:
    2026-11-16T21:26:24。采集命令仍是 `quantagent ingest wind AINDEXEODPRICES`，游标与
    A 股日行情相同。可见性是 `TRADE_DT` 的 `same_day_close` / A。
    `pf_single_tr_umr_1_mean_pos` 已按旧仓 `TR_UMR` 重算，消费窗口为 1、方向 +1。
-   2024-01-02 至 01-05 的 `000001.SZ` 与 `600000.SH` 共 8 行，四舍五入到 8 位小数后与
-   `wx2.dbo.stock_tr_umr.tr_umr` 一致，绝对差在 1e-9 量级。这 8 行还没有写入 `feature.value`。
-   旧表 `stock_tr_umr` 不迁，旧入口不切。
+   2024-01-02 至 01-05 的 `000001.SZ` 与 `600000.SH` 共 8 行已写入
+   `asset_class=stock/ym=202401/part-00001.parquet`，文件 sha256
+   `1a724e13e9740b4259de1962cf94530ad6068d71ce0f3ef9d945772ea745c55b`，
+   行 digest `3fc0bf560d94ae207f152c9079ec08a2d8f7c1e3fc88d8525f3722f12179d3d0`。
+   同目录里原有的 4 个 parquet 未改。同一范围再写被拒绝。8 行四舍五入到 8 位小数后与
+   `wx2.dbo.stock_tr_umr.tr_umr` 一致。`knowledge_dt` 等于截面日，`pit_grade` 为 A。
+   2024-01-05 当天 `wx2` 有值的 4861 只全部算出。其中 4858 只在 8 位小数上一致。
+   不一致的 3 只输入不同：`000717.SZ` 与 `000016.SZ` 的复权价有 0.0001 的差别，涨跌幅相同；
+   `000078.SZ` 的复权价是常数比例，真实波幅里这个比例会消掉，因子只剩 7e-9。
+   这 4861 行没有写入长表。旧表 `stock_tr_umr` 不迁，旧入口不切。
+6. **达到 3GB 的源表按体积从大到小采集。** 命令是 `quantagent ingest wind large`。
+   顺序：`ASHAREMONEYFLOW` 32GB、`ASHAREEODDERIVATIVEINDICATOR` 19GB、
+   `ASHAREEODPRICES` 15GB、`ASHARECASHFLOW` 6.4GB、`ASHAREINCOME` 5.8GB、
+   `ASHAREBALANCESHEET` 3.7GB、`AINDEXVALUATION` 3GB。
+   默认每张干跑 1 页。真写要开写闸，并且不要传 `--max-pages`。
+   开跑前用 `wind_db` 的列清单对采集列，不一致就停。
+   `ASHAREMONEYFLOW` 是空表，已去掉源端没有的 `GSUPDTIME`。
+   `ASHAREEODPRICES` 已有数据，`GSUPDTIME` 仍留在物理表里、不采集。
+   截图里的 `Bond_CBYieldCurveAll` 不在第一批源表，这次不接。本机不跑这批数据。
 2. **首个量价因子已对上一个小样本。** `pf_single_cutamp_1_mean_neg` 来自旧仓
    `CUTAMP`：20 个交易日的振幅，去掉收盘触及涨跌停的日子，按复权收盘价切 25%。
    Current-20 取相反数。2024-01-02 至 01-05 的 `000001.SZ` 与 `600000.SH`，
