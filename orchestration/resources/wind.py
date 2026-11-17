@@ -8,9 +8,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from quantagent.ingest.jobs.wind_paged import ingest_wind_paged
-from quantagent.lake.materialize.trade_calendar import materialize_trade_calendar
-
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
     from datetime import date
@@ -45,6 +42,10 @@ class WindIngestResource:
         page_size: int,
         max_pages: int | None,
     ) -> WindPagedIngestResult:
+        from quantagent.ingest.jobs.wind_paged import (
+            ingest_wind_paged,
+        )
+
         return ingest_wind_paged(
             settings=self._settings,
             paths=self._paths,
@@ -77,6 +78,10 @@ class TradeCalendarResource:
         append_only: bool = False,
         horizon_days: int | None = None,
     ) -> TradeCalendarMaterializeResult:
+        from quantagent.lake.materialize.trade_calendar import (
+            materialize_trade_calendar,
+        )
+
         return materialize_trade_calendar(
             settings=self._settings,
             paths=self._paths,

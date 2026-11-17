@@ -7,11 +7,13 @@ Config 与 ResourceParam 的注解。
 """
 
 from datetime import date, datetime
+from functools import cache
 
 from dagster import AssetsDefinition, Config, MaterializeResult, ResourceParam, asset
 
 from orchestration.resources.wind import TradeCalendarResource, WindIngestResource
 from quantagent.contracts.loader import load_bundle
+from quantagent.contracts.spec import VisibilityContract
 from quantagent.domain.errors import MissingVisibilityError
 from quantagent.ingest.sources.wind.tables import WIND_PAGED_TABLES
 
@@ -58,8 +60,14 @@ def _as_of(value: str) -> date:
         raise ValueError(f"as_of 必须是 YYYY-MM-DD: {value}") from exc
 
 
+@cache
+def _visibilities() -> dict[str, VisibilityContract]:
+    # 导入期为每个资产取 pit_grade。契约只解析一次：逐个调用 load_bundle 在执行机上要 10 秒以上。
+    return dict(load_bundle().visibilities)
+
+
 def _pit_grade(dataset: str) -> str:
-    contract = load_bundle().visibilities.get(dataset)
+    contract = _visibilities().get(dataset)
     if contract is None:
         raise MissingVisibilityError(dataset)
     return contract.visibility.grade

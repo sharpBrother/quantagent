@@ -126,6 +126,8 @@ ignore = [
 "tests/**" = ["PLR2004", "ANN", "ARG"]
 # notebook 是草稿，只保证语法正确
 "notebooks/**" = ["ANN", "ARG", "E402", "PLR2004", "PD", "T20"]
+# 编排层在函数体内导入业务实现，控制 daemon 加载耗时，见 orchestration/__init__.py
+"orchestration/**" = ["PLC0415"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "parents"

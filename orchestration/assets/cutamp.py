@@ -10,7 +10,6 @@ from datetime import datetime
 from dagster import Config, MaterializeResult, asset
 
 from orchestration.assets.wind import src_wind_ashareeodprices
-from quantagent.cli.cutamp_materialize import materialize_cutamp
 from quantagent.features.library.price.cutamp import DEFINITION_VERSION, FEATURE_ID, PARAM_HASH
 from quantagent.platform.config import get_settings
 from quantagent.platform.storage import detect_repo_root, resolve_var_paths
@@ -45,6 +44,10 @@ def feature_pf_single_cutamp(config: CutampMaterializeConfig) -> MaterializeResu
     settings = get_settings()
     paths = resolve_var_paths(settings, repo_root=detect_repo_root())
     wind_codes = tuple(part.strip() for part in config.codes.split(",") if part.strip())
+    from quantagent.cli.cutamp_materialize import (
+        materialize_cutamp,
+    )
+
     row_count, digest = materialize_cutamp(
         settings=settings,
         paths=paths,

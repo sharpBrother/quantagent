@@ -18,9 +18,6 @@ from dagster import (
 
 from orchestration.assets.wind import WIND_SOURCE_ASSETS, std_trade_calendar
 from orchestration.jobs.wind import wind_source_daily
-from quantagent.adapters.lake.trade_calendar import LakeCalendarRepository
-from quantagent.domain.calendar.queries import CalendarQueries
-from quantagent.lake.materialize.trade_calendar import DAILY_HORIZON_DAYS
 from quantagent.platform.config import get_settings
 from quantagent.platform.storage import detect_repo_root, resolve_var_paths
 
@@ -43,6 +40,10 @@ def _has_active_run(context: ScheduleEvaluationContext) -> bool:
 
 
 def _run_config(today: str) -> dict[str, object]:
+    from quantagent.lake.materialize.trade_calendar import (
+        DAILY_HORIZON_DAYS,
+    )
+
     ops: dict[str, object] = {}
     for asset in WIND_SOURCE_ASSETS:
         ops[asset.op.name] = {
@@ -76,6 +77,13 @@ def _evaluate(context: ScheduleEvaluationContext, schedule_name: str) -> RunRequ
     settings = get_settings()
     paths = resolve_var_paths(settings, repo_root=detect_repo_root())
     # 日历读取出错不吞掉：让 tick 报错，不在日历不可信时默认跑或默认跳过。
+    from quantagent.adapters.lake.trade_calendar import (
+        LakeCalendarRepository,
+    )
+    from quantagent.domain.calendar.queries import (
+        CalendarQueries,
+    )
+
     calendar = CalendarQueries(LakeCalendarRepository(paths.lake / "std" / "trade_calendar"))
     if not calendar.is_open(exchange=_EXCHANGE, cal_dt=today, as_of=today):
         return SkipReason(f"{today.isoformat()} 非 {_EXCHANGE} 交易日")
