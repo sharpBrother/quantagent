@@ -91,6 +91,11 @@ def test_list_migration_files_on_repo(repo_root: Path) -> None:
         "0009_aindexeodprices_source_columns.sql",
         "0010_asharemoneyflow_source_columns.sql",
         "0011_src_batch_id_indexes.sql",
+        "0012_aindexvaluation_source_columns.sql",
+        "0013_aindexmembers_source_columns.sql",
+        "0014_swindexmembers_source_columns.sql",
+        "0015_aindexindustrieseodcitics_source_columns.sql",
+        "0016_asharedividend_source_columns.sql",
     ]
     assert [item.filename for item in ops] == [
         "0001_schema.sql",

@@ -62,31 +62,11 @@ AINDEXMEMBERS_COLUMNS: tuple[str, ...] = (
     "CUR_SIGN",
     "OPDATE",
     "OPMODE",
-    "TRADE_DT",
-    "INDEXNAME",
-    "INDEXNAME_ENG",
-    "EXCHANGE",
-    "TOT_SHR",
-    "FREE_SHR_RATIO",
-    "SHR_CALCULATION",
-    "WEIGHTFACTOR",
-    "CLOSEVALUE",
-    "OPEN_ADJUSTED",
-    "TOT_MV",
-    "MV_CALCULATION",
-    "WEIGHT",
-    "I_WEIGHT",
-    "S_IN_INDEX",
-    "I_WEIGHT_11",
-    "I_WEIGHT_12",
-    "I_WEIGHT_14",
-    "I_WEIGHT_15",
-    "I_WEIGHT_16",
-    "I_WEIGHT_17",
-    "I_WEIGHT_18",
-    "gsUTime",
-    "gsCTime",
+    # 源库 dbo.AINDEXMEMBERS 只有成分关系字段。INDEXNAME、WEIGHT、I_WEIGHT_*、
+    # S_IN_INDEX 等 22 列属于权重表，不在本表，不读、不写、不进内容指纹。
     "mopdate",
+    "gsCTime",
+    "gsUTime",
 )
 
 AINDEXMEMBERSCITICS_COLUMNS: tuple[str, ...] = (
@@ -141,11 +121,11 @@ SWINDEXMEMBERS_COLUMNS: tuple[str, ...] = (
     "CUR_SIGN",
     "OPDATE",
     "OPMODE",
-    "ENTRY_DT",
-    "REMOVE_DT",
+    # 源库 dbo.SWINDEXMEMBERS 用 S_CON_INDATE/S_CON_OUTDATE 记区间，
+    # 没有 ENTRY_DT/REMOVE_DT 这两列。
     "gsUTime",
-    "gsCTime",
     "mopdate",
+    "gsCTime",
 )
 
 ASHAREFINANCIALINDICATOR_COLUMNS: tuple[str, ...] = (
@@ -403,6 +383,8 @@ ASHAREDIVIDEND_COLUMNS: tuple[str, ...] = (
     "DIV_BONUSRATE_DIF",
     "SEC_ID",
     "TOT_SHR",
+    # 源库 dbo.ASHAREDIVIDEND 有这列，0003 建表时漏了。
+    "SPEC_MEMO",
 )
 
 ASHAREST_COLUMNS: tuple[str, ...] = (
@@ -452,25 +434,8 @@ AINDEXINDUSTRIESEODCITICS_COLUMNS: tuple[str, ...] = (
     "S_DQ_AMOUNT",
     "OPDATE",
     "OPMODE",
-    "S_INFO_CODE",
-    "S_INFO_NAME",
-    "S_INFO_COMPNAME",
-    "S_INFO_EXCHMARKET",
-    "S_INFO_INDEX_BASEPER",
-    "S_INFO_INDEX_BASEPT",
-    "S_INFO_LISTDATE",
-    "S_INFO_INDEX_WEIGHTSRULE",
-    "S_INFO_PUBLISHER",
-    "S_INFO_INDEXCODE",
-    "S_INFO_INDEXSTYLE",
-    "INDEX_INTRO",
-    "WEIGHT_TYPE",
-    "EXPIRE_DATE",
-    "INCOME_PROCESSING_METHOD",
-    "CHANGE_HISTORY",
-    "S_INFO_PINYIN",
-    "WEIGHT_TYPE_NAME",
-    "S_INFO_INDEXTYPE",
+    # 源库 dbo.AINDEXINDUSTRIESEODCITICS 是行情镜像，只有 S_DQ_* 那一段。
+    # S_INFO_NAME、INDEX_INTRO、WEIGHT_TYPE 等 19 列属于指数简介表。
     "gsUTime",
     "gsCTime",
     "mopdate",

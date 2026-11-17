@@ -12,7 +12,7 @@ from quantagent.adapters.postgres.errors import TransactionUnknownError
 from quantagent.ingest.errors import SourceFetchError
 from quantagent.ingest.jobs.wind_paged import ingest_wind_paged
 from quantagent.ingest.sources.wind.cursor import decode_cursor, initial_cursor
-from quantagent.ingest.writers.tables import ASHARECALENDAR, ASHAREEODPRICES
+from quantagent.ingest.writers.tables import AINDEXVALUATION, ASHARECALENDAR, ASHAREEODPRICES
 from quantagent.platform.config import Settings
 from quantagent.platform.storage.paths import resolve_var_paths
 
@@ -348,8 +348,13 @@ def test_unknown_commit_stops_without_counting_or_retrying(tmp_path: Path) -> No
 
 
 class _ColumnSource(FakeWindSource):
-    def __init__(self, columns: list[str]) -> None:
-        super().__init__([])
+    def __init__(
+        self,
+        columns: list[str],
+        *,
+        spec: SrcTableWriteSpec = ASHAREEODPRICES,
+    ) -> None:
+        super().__init__([], spec=spec)
         self.columns = columns
 
     def source_columns(self, table: str) -> list[str]:
@@ -370,3 +375,22 @@ def test_source_column_mismatch_stops_before_fetch(tmp_path: Path) -> None:
             store=FakeSrcStore(),
         )
     assert source.seen == []
+
+
+@pytest.mark.unit
+def test_source_column_case_difference_is_tolerated(tmp_path: Path) -> None:
+    # wind_db 的 ASHAREMONEYFLOW 列名是 MOPDATE，spec 写 mopdate；
+    # SQL Server 不分大小写，取数按 spec 里的写法回键名，两者是同一列。
+    settings, paths = _paths(tmp_path)
+    source = _ColumnSource(
+        [name.upper() for name in AINDEXVALUATION.native_columns], spec=AINDEXVALUATION
+    )
+    result = ingest_wind_paged(
+        settings=settings,
+        paths=paths,
+        table="AINDEXVALUATION",
+        write_db=False,
+        source=source,
+        store=FakeSrcStore(),
+    )
+    assert result.pages == 0

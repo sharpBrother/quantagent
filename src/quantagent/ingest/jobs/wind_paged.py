@@ -327,10 +327,14 @@ def _assert_source_columns(source: WindPageSource, spec: SrcTableWriteSpec) -> N
     expected = list(spec.native_columns)
     if not actual:
         raise SourceFetchError(f"{spec.pg_table} 在 wind_db 不存在")
-    if set(actual) == set(expected):
+    # SQL Server 标识符不分大小写，pymssql 按 SELECT 里写的名字回键名，
+    # 所以源端的 MOPDATE 与 spec 里的 mopdate 是同一列，不算不一致。
+    actual_keys = {name.lower() for name in actual}
+    expected_keys = {name.lower() for name in expected}
+    if actual_keys == expected_keys:
         return
-    only_source = sorted(set(actual) - set(expected))
-    only_spec = sorted(set(expected) - set(actual))
+    only_source = sorted({name for name in actual if name.lower() not in expected_keys})
+    only_spec = sorted({name for name in expected if name.lower() not in actual_keys})
     raise SourceFetchError(
         f"{spec.pg_table} 列与源表不一致 source_only={only_source} spec_only={only_spec}"
     )

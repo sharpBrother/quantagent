@@ -92,6 +92,11 @@ def test_every_batch_id_column_is_indexed(repo_root: Path) -> None:
 _HISTORICAL_DROP_REBUILD = {
     "0009_aindexeodprices_source_columns.sql": 'src_wind."AINDEXEODPRICES"',
     "0010_asharemoneyflow_source_columns.sql": 'src_wind."ASHAREMONEYFLOW"',
+    "0012_aindexvaluation_source_columns.sql": 'src_wind."AINDEXVALUATION"',
+    "0013_aindexmembers_source_columns.sql": 'src_wind."AINDEXMEMBERS"',
+    "0014_swindexmembers_source_columns.sql": 'src_wind."SWINDEXMEMBERS"',
+    "0015_aindexindustrieseodcitics_source_columns.sql": 'src_wind."AINDEXINDUSTRIESEODCITICS"',
+    "0016_asharedividend_source_columns.sql": 'src_wind."ASHAREDIVIDEND"',
 }
 
 
