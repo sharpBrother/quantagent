@@ -122,9 +122,9 @@ ARCH_CONCERN → ARCH_REVIEW 升级链。
 3. **SQL 动词白名单**：禁止 `UPDATE` / `MERGE` / `TRUNCATE` / `DROP` /
    `ALTER`。默认 insert-only。
 4. **不覆盖既有行**：遇到目标键已有行就报错退出，不静默覆盖。要替换必须
-   显式传参指定范围。例外：Wind 源镜像里，只变了系统列的修订跳过；变化全落在
-   代码常量 `AUTO_REPLACE_COLUMNS` 声明列里的修订自动替换（见
-   `docs/adr/2026-11-17-wind-revision-auto-replace.md`）。
+   显式传参指定范围。例外：Wind 源镜像全自动跟随源端，业务字段变化按主键
+   删旧插新、`OPMODE=2` 按主键删除，计数写进 run log（见
+   `docs/adr/2026-11-17-src-mirror-follows-source.md`）。
 5. **写后回读**：同一事务内回读比对行数与 digest，不一致立即回滚。
 6. **事务状态未知不重试**：提交或回滚结果不确定时停下报告，不自动重试。
 

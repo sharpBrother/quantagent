@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from quantagent.adapters.postgres.errors import TransactionUnknownError
-from quantagent.ingest.errors import ReadbackError, ReplaceRequiredError, SourceFetchError
+from quantagent.ingest.errors import ReadbackError, SourceFetchError
 from quantagent.ingest.sources.wind.cursor import cursor_from_row
 from quantagent.ingest.writers.src_insert import row_hash
 from quantagent.ingest.writers.tables import ASHAREEODPRICES
@@ -237,23 +237,7 @@ def test_same_hash_is_skipped_and_cursor_still_advances() -> None:
 
 
 @pytest.mark.unit
-def test_changed_hash_requires_replace_flag() -> None:
-    row = _row(close=11.0)
-    store = FakeSrcStore(hashes={("oid-1",): "old"})
-    with pytest.raises(ReplaceRequiredError, match="业务字段变了"):
-        write_wind_page(
-            spec=ASHAREEODPRICES,
-            rows=[row],
-            settings=_settings(allow_db_write=True),
-            write_db=True,
-            store=store,
-        )
-    assert store.commit_calls == 0
-    assert store.inserted == []
-
-
-@pytest.mark.unit
-def test_replace_existing_deletes_then_inserts() -> None:
+def test_business_change_is_replaced_automatically() -> None:
     row = _row(close=11.0)
     store = FakeSrcStore(hashes={("oid-1",): "old"})
     result = write_wind_page(
@@ -261,13 +245,13 @@ def test_replace_existing_deletes_then_inserts() -> None:
         rows=[row],
         settings=_settings(allow_db_write=True),
         write_db=True,
-        replace_existing=True,
         store=store,
     )
-    assert result.replaced == 1
+    assert (result.replaced, result.inserted, result.metadata_skipped) == (1, 0, 0)
     assert store.deleted == [("oid-1",)]
-    assert len(store.inserted) == 1
+    assert store.inserted == [row]
     assert result.dml_count == 3
+    assert store.commit_calls == 1
     # 回读只按本页写入的主键查，不扫全表。
     assert [keys for _, keys in store.readback_calls] == [[("oid-1",)]]
 
@@ -328,49 +312,21 @@ def test_system_column_only_revision_compares_decimals_by_value() -> None:
 
 
 @pytest.mark.unit
-def test_business_change_in_resend_still_refuses_overwrite() -> None:
-    stored = _row(close=10.0, opdate=datetime(2026, 7, 14, 15, 11, 45))
-    resent = _wind_resend(stored)
-    resent["S_DQ_CLOSE"] = 10.01
-    store = FakeSrcStore(
-        hashes={("oid-1",): row_hash(stored, ASHAREEODPRICES.native_columns)},
-        values={("oid-1",): stored},
-    )
-    with pytest.raises(ReplaceRequiredError, match="业务字段变了"):
-        write_wind_page(
-            spec=ASHAREEODPRICES,
-            rows=[resent],
-            settings=_settings(allow_db_write=True),
-            write_db=True,
-            store=store,
-        )
-    assert store.commit_calls == 0
-    assert store.inserted == []
-
-
-@pytest.mark.unit
-def test_system_column_only_revision_is_skipped_even_with_replace_flag() -> None:
-    stored = _row(close=10.0, opdate=datetime(2026, 7, 14, 15, 11, 45))
-    store = FakeSrcStore(hashes={("oid-1",): "old"}, values={("oid-1",): stored})
-    result = write_wind_page(
-        spec=ASHAREEODPRICES,
-        rows=[_wind_resend(stored)],
-        settings=_settings(allow_db_write=True),
-        write_db=True,
-        replace_existing=True,
-        store=store,
-    )
-    assert (result.metadata_skipped, result.replaced) == (1, 0)
-    assert store.deleted == []
-
-
-@pytest.mark.unit
-def test_adjusted_price_revision_is_replaced_automatically() -> None:
-    # 2026-11-16 Wind 改写 601881.SH 整段后复权收盘，例如 20210305 由 9.3488 改为 9.2272。
+@pytest.mark.parametrize(
+    ("column", "old", "new"),
+    [
+        # 2026-11-16 Wind 改写 601881.SH 整段后复权收盘，例如 20210305 由 9.3488 改为 9.2272。
+        ("S_DQ_ADJCLOSE_BACKWARD", Decimal("9.3488"), Decimal("9.2272")),
+        ("S_DQ_CLOSE", Decimal("10.00"), Decimal("10.01")),
+    ],
+)
+def test_resend_with_business_change_follows_source(
+    column: str, old: Decimal, new: Decimal
+) -> None:
     stored = _row(opdate=datetime(2026, 7, 14, 15, 11, 45))
-    stored["S_DQ_ADJCLOSE_BACKWARD"] = Decimal("9.3488")
+    stored[column] = old
     resent = _wind_resend(stored)
-    resent["S_DQ_ADJCLOSE_BACKWARD"] = Decimal("9.2272")
+    resent[column] = new
     store = FakeSrcStore(hashes={("oid-1",): "old"}, values={("oid-1",): stored})
     result = write_wind_page(
         spec=ASHAREEODPRICES,
@@ -379,47 +335,26 @@ def test_adjusted_price_revision_is_replaced_automatically() -> None:
         write_db=True,
         store=store,
     )
-    assert (result.auto_replaced, result.replaced, result.metadata_skipped) == (1, 0, 0)
+    assert (result.replaced, result.metadata_skipped) == (1, 0)
     assert store.deleted == [("oid-1",)]
     assert store.inserted == [resent]
-    assert result.dml_count == 3
     assert store.commit_calls == 1
 
 
 @pytest.mark.unit
-def test_adjusted_and_raw_change_together_still_refuses() -> None:
-    stored = _row(close=10.0, opdate=datetime(2026, 7, 14, 15, 11, 45))
-    stored["S_DQ_ADJCLOSE"] = Decimal("100.0")
-    resent = _wind_resend(stored)
-    resent["S_DQ_ADJCLOSE"] = Decimal("101.0")
-    resent["S_DQ_CLOSE"] = 10.1
-    store = FakeSrcStore(hashes={("oid-1",): "old"}, values={("oid-1",): stored})
-    with pytest.raises(ReplaceRequiredError, match="业务字段变了"):
-        write_wind_page(
-            spec=ASHAREEODPRICES,
-            rows=[resent],
-            settings=_settings(allow_db_write=True),
-            write_db=True,
-            store=store,
-        )
-    assert store.deleted == []
-    assert store.commit_calls == 0
+def test_opmode_2_dry_run_counts_delete_without_store() -> None:
+    result = write_wind_page(
+        spec=ASHAREEODPRICES,
+        rows=[_row(opmode="2")],
+        settings=_settings(allow_db_write=False),
+        write_db=False,
+        store=FakeSrcStore(),
+    )
+    assert (result.deleted, result.inserted, result.dml_count) == (1, 0, 0)
 
 
 @pytest.mark.unit
-def test_opmode_2_requires_replace_even_on_dry_run() -> None:
-    with pytest.raises(ReplaceRequiredError, match="OPMODE=2"):
-        write_wind_page(
-            spec=ASHAREEODPRICES,
-            rows=[_row(opmode="2")],
-            settings=_settings(allow_db_write=False),
-            write_db=False,
-            store=FakeSrcStore(),
-        )
-
-
-@pytest.mark.unit
-def test_opmode_2_deletes_without_insert() -> None:
+def test_opmode_2_deletes_existing_key_without_insert() -> None:
     row = _row(opmode="2")
     digest = row_hash({**row, "OPMODE": "0"}, ASHAREEODPRICES.native_columns)
     store = FakeSrcStore(hashes={("oid-1",): digest})
@@ -428,7 +363,6 @@ def test_opmode_2_deletes_without_insert() -> None:
         rows=[row],
         settings=_settings(allow_db_write=True),
         write_db=True,
-        replace_existing=True,
         store=store,
     )
     assert result.deleted == 1
@@ -436,6 +370,21 @@ def test_opmode_2_deletes_without_insert() -> None:
     assert store.deleted == [("oid-1",)]
     assert store.inserted == []
     assert ("oid-1",) not in store.hashes
+
+
+@pytest.mark.unit
+def test_opmode_2_for_missing_key_issues_no_delete() -> None:
+    store = FakeSrcStore()
+    result = write_wind_page(
+        spec=ASHAREEODPRICES,
+        rows=[_row(opmode="2")],
+        settings=_settings(allow_db_write=True),
+        write_db=True,
+        store=store,
+    )
+    assert result.deleted == 1
+    assert store.deleted == []
+    assert result.dml_count == 1
 
 
 @pytest.mark.unit

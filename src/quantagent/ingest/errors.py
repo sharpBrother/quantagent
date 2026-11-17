@@ -24,7 +24,7 @@ class ReadbackError(IngestError):
 
 
 class ReplaceRequiredError(IngestError):
-    """目标键已存在且内容变了，或源端 OPMODE=2。必须显式 --replace-existing。"""
+    """写入时撞上已有键，事务已回滚。"""
 
 
 class SourceFetchError(IngestError):

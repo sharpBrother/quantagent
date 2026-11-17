@@ -1,9 +1,9 @@
-"""Wind 一页写入。
+"""Wind 一页写入。源镜像跟随源端当前状态，全自动。
 
-默认 insert-only。目标键已有且业务字段变了，或源端 ``OPMODE=2``，必须显式
-``replace_existing``。相同内容跳过，不算覆盖；只有 Wind 系统列变了的修订也跳过，
-单独计数。变化只落在 ``AUTO_REPLACE_COLUMNS`` 声明列里的修订自动 DELETE+INSERT，
-单独计数。游标写在 ``_batch.source_cursor``，
+目标键已有：业务字段全部相等时跳过（只变系统列的计入 ``metadata_skipped``）；
+业务字段有变化时同一事务内 DELETE+INSERT，计入 ``replaced``。源端 ``OPMODE=2``
+按主键删除，计入 ``deleted``。不需要人工放开（见
+docs/adr/2026-11-17-src-mirror-follows-source.md）。游标写在 ``_batch.source_cursor``，
 提交成功才算推进——页内崩溃回滚后下次从同一复合键重读。
 """
 
@@ -44,32 +44,12 @@ OPMODE_INSERT: OpMode = 0
 OPMODE_UPDATE: OpMode = 1
 OPMODE_DELETE: OpMode = 2
 
-# Wind 的同步簿记列：变更时间、变更类型和 Wind 内部时间戳。Wind 会不定期对历史行
-# 重发 OPMODE=1，业务字段不变、只刷新这些列（2026-11-16 的 ASHAREEODPRICES 有 4,884 行）。
-# 这类修订按负责人 2026-11-17 裁定跳过不写：仍是 insert-only，库里该行的这些列会旧于源端，
-# 但游标存在 _batch 里，不受影响。业务字段真变了仍拒绝覆盖，必须显式 replace_existing。
+# Wind 的同步簿记列：变更时间、变更类型和 Wind 内部时间戳。Wind 会对历史行重发 OPMODE=1，
+# 业务字段不变、只刷新这些列。这类修订不写库，库里该行的这些列会旧于源端；游标存在 _batch，
+# 不受影响。比较业务字段时排除这些列。
 WIND_SYSTEM_COLUMNS: frozenset[str] = frozenset(
     {"OPDATE", "OPMODE", "gsUTime", "gsCTime", "mopdate"}
 )
-
-# 允许自动替换的业务列，按数据集写死。负责人 2026-11-17 裁定源镜像的这类修订全自动跟随源端，
-# 不再人工放开（见 docs/adr/2026-11-17-wind-revision-auto-replace.md）。
-# 复权列由 Wind 按复权因子重算，除权或因子更正会改写整段历史：2026-11-16 有 4,818 行
-# S_DQ_ADJCLOSE_BACKWARD 被改写；2014–2024 已见 000078.SZ 等复权收盘按常数比例整体变化。
-# 不复权的开高低收、成交量额、涨跌停等不在此列，变了仍拒绝覆盖，避免静默吞下源端异常。
-AUTO_REPLACE_COLUMNS: dict[str, frozenset[str]] = {
-    "src.wind.ashareeodprices": frozenset(
-        {
-            "S_DQ_ADJPRECLOSE",
-            "S_DQ_ADJOPEN",
-            "S_DQ_ADJHIGH",
-            "S_DQ_ADJLOW",
-            "S_DQ_ADJCLOSE",
-            "S_DQ_ADJFACTOR",
-            "S_DQ_ADJCLOSE_BACKWARD",
-        }
-    ),
-}
 
 
 @dataclass(frozen=True)
@@ -82,7 +62,6 @@ class WindPageWriteResult:
     deleted: int
     skipped: int
     metadata_skipped: int
-    auto_replaced: int
     payload_digest: str
     output_digest: str
     dml_count: int
@@ -97,7 +76,6 @@ def write_wind_page(
     rows: Sequence[Mapping[str, object]],
     settings: Settings,
     write_db: bool,
-    replace_existing: bool = False,
     store: SrcWriteStore | None = None,
     now: Callable[[], datetime] | None = None,
 ) -> WindPageWriteResult:
@@ -112,7 +90,7 @@ def write_wind_page(
         raise EmptyPayloadError(f"{spec.dataset} 页载荷为空")
     reject_duplicate_payload_keys(spec, native_rows)
     end_cursor = cursor_from_row(native_rows[-1])
-    plan = _plan_page(spec, native_rows, replace_existing=replace_existing)
+    plan = _plan_page(spec, native_rows)
     digest = payload_digest(native_rows, spec.native_columns)
     if not write_db:
         return _result(
@@ -130,15 +108,8 @@ def write_wind_page(
     if store is None:
         raise IngestError("write_db 为真时必须提供 SrcWriteStore")
     existing = store.existing_hashes(spec, [item.key for item in plan.items])
-    metadata_only, auto_replace = _classify_changed(spec, plan, existing, store)
-    plan = _apply_existing(
-        spec,
-        plan,
-        existing,
-        metadata_only=metadata_only,
-        auto_replace=auto_replace,
-        replace_existing=replace_existing,
-    )
+    metadata_only = _metadata_only_keys(spec, plan, existing, store)
+    plan = _apply_existing(plan, existing, metadata_only=metadata_only)
     clock = now or (lambda: datetime.now(UTC))
     started_at = clock()
     finished_at = clock()
@@ -243,14 +214,11 @@ class _PagePlan:
     deleted: int
     skipped: int
     metadata_skipped: int = 0
-    auto_replaced: int = 0
 
 
 def _plan_page(
     spec: SrcTableWriteSpec,
     rows: Sequence[dict[str, object]],
-    *,
-    replace_existing: bool,
 ) -> _PagePlan:
     items: list[_RowPlan] = []
     for row in rows:
@@ -260,9 +228,6 @@ def _plan_page(
             _RowPlan(key=key, row=row, digest=row_hash(row, spec.native_columns), opmode=opmode)
         )
     deletes = [item for item in items if item.opmode == OPMODE_DELETE]
-    if deletes and not replace_existing:
-        sample = ", ".join(repr(item.key) for item in deletes[:5])
-        raise ReplaceRequiredError(f"{spec.dataset} 含 OPMODE=2，需要 --replace-existing: {sample}")
     return _PagePlan(
         items=tuple(items),
         insert_rows=tuple(item.row for item in items if item.opmode != OPMODE_DELETE),
@@ -275,13 +240,13 @@ def _plan_page(
     )
 
 
-def _classify_changed(
+def _metadata_only_keys(
     spec: SrcTableWriteSpec,
     plan: _PagePlan,
     existing: dict[tuple[object, ...], str],
     store: SrcWriteStore,
-) -> tuple[set[tuple[object, ...]], set[tuple[object, ...]]]:
-    """把指纹变了的键分成两类：只变了系统列的；变化全落在可自动替换列里的。"""
+) -> set[tuple[object, ...]]:
+    """指纹变了、但业务字段与库里逐列相等的键。"""
     changed = {
         item.key: item
         for item in plan.items
@@ -290,40 +255,28 @@ def _classify_changed(
         and current != item.digest
     }
     if not changed:
-        return set(), set()
+        return set()
     business = tuple(
         name
         for name in spec.native_columns
         if name not in WIND_SYSTEM_COLUMNS and name not in spec.keys
     )
-    allowed = AUTO_REPLACE_COLUMNS.get(spec.dataset, frozenset())
     stored = store.existing_values(spec, list(changed), business)
-    metadata_only: set[tuple[object, ...]] = set()
-    auto_replace: set[tuple[object, ...]] = set()
-    for key, item in changed.items():
-        values = stored.get(key)
-        if values is None:
-            continue
-        # 逐列用 == 比较而不是重算指纹：库里 numeric 读回的 Decimal 标度可能与源端不同，
-        # == 按数值比较，不会把 10.5 与 10.5000 误判为变化。
-        diff = {
-            name for name, value in zip(business, values, strict=True) if item.row[name] != value
-        }
-        if not diff:
-            metadata_only.add(key)
-        elif diff <= allowed:
-            auto_replace.add(key)
-    return metadata_only, auto_replace
+    # 逐列用 == 比较而不是重算指纹：库里 numeric 读回的 Decimal 标度可能与源端不同，
+    # == 按数值比较，不会把 10.5 与 10.5000 误判为变化。
+    return {
+        key
+        for key, item in changed.items()
+        if (values := stored.get(key)) is not None
+        and all(item.row[name] == value for name, value in zip(business, values, strict=True))
+    }
 
 
 def _apply_existing(
-    spec: SrcTableWriteSpec,
     plan: _PagePlan,
     existing: dict[tuple[object, ...], str],
     *,
     metadata_only: set[tuple[object, ...]],
-    auto_replace: set[tuple[object, ...]],
-    replace_existing: bool,
 ) -> _PagePlan:
     insert_rows: list[dict[str, object]] = []
     insert_hashes: list[str] = []
@@ -333,8 +286,6 @@ def _apply_existing(
     deleted = 0
     skipped = 0
     metadata_skipped = 0
-    auto_replaced = 0
-    changed: list[tuple[object, ...]] = []
     for item in plan.items:
         current = existing.get(item.key)
         if item.opmode == OPMODE_DELETE:
@@ -353,22 +304,11 @@ def _apply_existing(
         if item.key in metadata_only:
             metadata_skipped += 1
             continue
-        if item.key in auto_replace:
-            delete_keys.append(item.key)
-            insert_rows.append(item.row)
-            insert_hashes.append(item.digest)
-            auto_replaced += 1
-            continue
-        changed.append(item.key)
-        if not replace_existing:
-            continue
+        # 业务字段变了：源镜像跟随源端，同一事务内删旧插新，写后回读照常校验。
         delete_keys.append(item.key)
         insert_rows.append(item.row)
         insert_hashes.append(item.digest)
         replaced += 1
-    if changed and not replace_existing:
-        sample = ", ".join(repr(key) for key in changed[:5])
-        raise ReplaceRequiredError(f"{spec.dataset} 目标键已存在且业务字段变了，拒绝覆盖: {sample}")
     return _PagePlan(
         items=plan.items,
         insert_rows=tuple(insert_rows),
@@ -379,7 +319,6 @@ def _apply_existing(
         deleted=deleted,
         skipped=skipped,
         metadata_skipped=metadata_skipped,
-        auto_replaced=auto_replaced,
     )
 
 
@@ -413,7 +352,6 @@ def _result(
         deleted=plan.deleted,
         skipped=plan.skipped,
         metadata_skipped=plan.metadata_skipped,
-        auto_replaced=plan.auto_replaced,
         payload_digest=digest,
         output_digest=output_digest,
         dml_count=dml_count,

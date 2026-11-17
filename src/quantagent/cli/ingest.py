@@ -103,12 +103,6 @@ def ingest_wind_table(
     ctx: typer.Context,
     *,
     write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
-    replace_existing: Annotated[
-        bool,
-        typer.Option(
-            "--replace-existing", help="允许 DELETE+INSERT 替换已有键，以及 OPMODE=2 删除"
-        ),
-    ] = False,
     page_size: Annotated[
         int, typer.Option("--page-size", help="每页行数，默认 1000")
     ] = DEFAULT_PAGE_SIZE,
@@ -132,7 +126,6 @@ def ingest_wind_table(
             paths=paths,
             table=table,
             write_db=write_db,
-            replace_existing=replace_existing,
             page_size=page_size,
             max_pages=max_pages,
             from_cursor=from_cursor,
@@ -158,7 +151,7 @@ def ingest_wind_table(
         f"{mode} dataset={result.dataset} table={result.table} pages={result.pages} "
         f"rows={result.row_count} inserted={result.inserted} replaced={result.replaced} "
         f"deleted={result.deleted} skipped={result.skipped} "
-        f"metadata_skipped={result.metadata_skipped} auto_replaced={result.auto_replaced} "
+        f"metadata_skipped={result.metadata_skipped} "
         f"dml={result.dml_count} "
         f"digest={result.payload_digest} cursor={result.source_cursor}"
     )
@@ -168,14 +161,6 @@ for _name in FIRST_BATCH_WIND_SYNC:
     wind_app.command(_name)(ingest_wind_table)
 
 
-_ReplaceOption = Annotated[
-    str | None,
-    typer.Option(
-        "--replace-existing",
-        metavar="TABLE",
-        help="只对这一张表允许 DELETE+INSERT 替换已有键与 OPMODE=2 删除；其余表仍拒绝覆盖",
-    ),
-]
 _MaxPagesOption = Annotated[
     int | None,
     typer.Option("--max-pages", help="每张表最多处理页数；干跑默认 1，真写默认不限制"),
@@ -190,7 +175,6 @@ _FromCursorOption = Annotated[
 def ingest_wind_large(
     *,
     write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
-    replace_existing: _ReplaceOption = None,
     page_size: Annotated[
         int,
         typer.Option(
@@ -205,7 +189,6 @@ def ingest_wind_large(
     _run_wind_sequence(
         LARGE_WIND_SYNC,
         write_db=write_db,
-        replace_existing=replace_existing,
         page_size=page_size,
         max_pages=max_pages,
         from_cursor=from_cursor,
@@ -216,7 +199,6 @@ def ingest_wind_large(
 def ingest_wind_first_batch(
     *,
     write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
-    replace_existing: _ReplaceOption = None,
     page_size: Annotated[
         int, typer.Option("--page-size", help="每页行数，默认 10000（分页上限）")
     ] = 10_000,
@@ -227,7 +209,6 @@ def ingest_wind_first_batch(
     _run_wind_sequence(
         FIRST_BATCH_WIND_SYNC,
         write_db=write_db,
-        replace_existing=replace_existing,
         page_size=page_size,
         max_pages=max_pages,
         from_cursor=from_cursor,
@@ -238,21 +219,12 @@ def _run_wind_sequence(
     tables: tuple[str, ...],
     *,
     write_db: bool,
-    replace_existing: str | None,
     page_size: int,
     max_pages: int | None,
     from_cursor: str | None,
 ) -> None:
     if from_cursor is not None:
         typer.secho("按顺序同步多张表时不能传 --from-cursor", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1)
-    # 替换必须指定范围（AGENTS.md §6.4）：一次只放开一张表，避免一个开关覆盖整批表。
-    if replace_existing is not None and replace_existing not in tables:
-        typer.secho(
-            f"--replace-existing 必须是 {', '.join(tables)} 之一: {replace_existing}",
-            fg=typer.colors.RED,
-            err=True,
-        )
         raise typer.Exit(code=1)
     settings = get_settings()
     paths = resolve_var_paths(settings, repo_root=detect_repo_root())
@@ -263,7 +235,6 @@ def _run_wind_sequence(
                 paths=paths,
                 table=table,
                 write_db=write_db,
-                replace_existing=table == replace_existing,
                 page_size=page_size,
                 max_pages=max_pages,
             )
@@ -286,7 +257,7 @@ def _run_wind_sequence(
             mode = "dry-run"
         typer.echo(
             f"{mode} dataset={result.dataset} table={result.table} pages={result.pages} "
-            f"rows={result.row_count} metadata_skipped={result.metadata_skipped} "
-            f"auto_replaced={result.auto_replaced} "
+            f"rows={result.row_count} replaced={result.replaced} deleted={result.deleted} "
+            f"metadata_skipped={result.metadata_skipped} "
             f"dml={result.dml_count} cursor={result.source_cursor}"
         )

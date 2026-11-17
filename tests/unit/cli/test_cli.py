@@ -218,7 +218,6 @@ def test_ingest_wind_ashareeodprices_help() -> None:
     text = _plain(result)
     assert result.exit_code == 0
     assert "--write-db" in text
-    assert "--replace-existing" in text
     assert "--page-size" in text
     assert "--from-cursor" in text
 
@@ -228,14 +227,14 @@ def test_ingest_wind_large_runs_largest_first(monkeypatch: pytest.MonkeyPatch) -
     calls = _fake_large_job(monkeypatch)
     result = runner.invoke(app, ["ingest", "wind", "large", "--max-pages", "1"])
     assert result.exit_code == 0, result.output
-    assert calls == [(name, 10_000, False) for name in LARGE_WIND_SYNC]
+    assert calls == [(name, 10_000) for name in LARGE_WIND_SYNC]
 
 
-def _fake_large_job(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, object, object]]:
-    calls: list[tuple[str, object, object]] = []
+def _fake_large_job(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, object]]:
+    calls: list[tuple[str, object]] = []
 
     def fake(**kwargs: object) -> object:
-        calls.append((str(kwargs["table"]), kwargs["page_size"], kwargs["replace_existing"]))
+        calls.append((str(kwargs["table"]), kwargs["page_size"]))
         return type(
             "Result",
             (),
@@ -245,8 +244,9 @@ def _fake_large_job(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, object, 
                 "table": kwargs["table"],
                 "pages": 1,
                 "row_count": 0,
+                "replaced": 0,
+                "deleted": 0,
                 "metadata_skipped": 0,
-                "auto_replaced": 0,
                 "dml_count": 0,
                 "source_cursor": "{}",
             },
@@ -257,29 +257,11 @@ def _fake_large_job(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, object, 
 
 
 @pytest.mark.unit
-def test_ingest_wind_large_replace_applies_to_one_table(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    calls = _fake_large_job(monkeypatch)
-    result = runner.invoke(
-        app,
-        ["ingest", "wind", "large", "--max-pages", "1", "--replace-existing", "ASHAREEODPRICES"],
-    )
-    assert result.exit_code == 0, result.output
-    assert [(name, flag) for name, _, flag in calls] == [
-        (name, name == "ASHAREEODPRICES") for name in LARGE_WIND_SYNC
-    ]
-
-
-@pytest.mark.unit
 def test_ingest_wind_first_batch_runs_in_order(monkeypatch: pytest.MonkeyPatch) -> None:
     calls = _fake_large_job(monkeypatch)
-    result = runner.invoke(
-        app,
-        ["ingest", "wind", "first-batch", "--replace-existing", "ASHAREDESCRIPTION"],
-    )
+    result = runner.invoke(app, ["ingest", "wind", "first-batch"])
     assert result.exit_code == 0, result.output
-    assert calls == [(name, 10_000, name == "ASHAREDESCRIPTION") for name in FIRST_BATCH_WIND_SYNC]
+    assert calls == [(name, 10_000) for name in FIRST_BATCH_WIND_SYNC]
 
 
 @pytest.mark.unit
@@ -291,16 +273,6 @@ def test_ingest_wind_single_first_batch_table_dispatches(
     result = runner.invoke(app, ["ingest", "wind", "SWINDEXMEMBERS", "--max-pages", "1"])
     assert result.exit_code == 0, result.output
     assert job.call_args.kwargs["table"] == "SWINDEXMEMBERS"
-
-
-@pytest.mark.unit
-def test_ingest_wind_large_rejects_replace_outside_large_list(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    calls = _fake_large_job(monkeypatch)
-    result = runner.invoke(app, ["ingest", "wind", "large", "--replace-existing", "ASHARECALENDAR"])
-    assert result.exit_code == 1
-    assert calls == []
 
 
 @pytest.mark.unit

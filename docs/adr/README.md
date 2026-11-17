@@ -48,7 +48,8 @@ applies_to:
 | 2026-09-17 | [因子配套派生数据集的层归属](2026-09-17-derived-dataset-boundaries.md) |
 | 2026-09-17 | [因子长表 Parquet 物理布局](2026-09-17-feature-value-parquet-layout.md) |
 | 2026-09-17 | [源数据不做批次 vintage 归档](2026-09-17-no-source-vintage-archive.md) |
-| 2026-11-17 | [Wind 源镜像修订自动跟随](2026-11-17-wind-revision-auto-replace.md) |
+| 2026-11-17 | [Wind 源镜像修订自动跟随](2026-11-17-wind-revision-auto-replace.md)（已被取代） |
+| 2026-11-17 | [Wind 源镜像全自动跟随源端](2026-11-17-src-mirror-follows-source.md) |
 | 2026-11-17 | [股票池按读取时计算，不物化](2026-11-17-universe-computed-on-read.md) |
 
 ## 研究口径决策

@@ -1,6 +1,6 @@
 ---
 title: Wind 源镜像修订自动跟随
-status: active
+status: superseded
 created: 2026-11-17
 updated: 2026-11-17
 applies_to:
@@ -8,7 +8,7 @@ applies_to:
   - src/quantagent/cli/ingest.py
   - AGENTS.md
 supersedes: null
-superseded_by: null
+superseded_by: adr/2026-11-17-src-mirror-follows-source.md
 ---
 # Wind 源镜像修订自动跟随
 ## 背景

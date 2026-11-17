@@ -2,7 +2,7 @@
 
 迁移运行器管结构（CREATE/COMMENT）。这里管 ingest 写入路径：默认只允许
 INSERT 与回读用的 SELECT。禁止 UPDATE/MERGE/TRUNCATE/DROP/ALTER 与 UPSERT。
-显式 ``--replace-existing`` 才走 ``assert_src_replace_sql``，额外允许
+Wind 分页写入替换已有键与 OPMODE=2 删除时走 ``assert_src_replace_sql``，额外允许
 按主键 DELETE，仍禁止 UPDATE/MERGE。
 """
 
@@ -38,7 +38,7 @@ def assert_src_dml_sql(statement: str) -> str:
 
 
 def assert_src_replace_sql(statement: str) -> str:
-    """仅供显式 --replace-existing：允许 DELETE + INSERT，仍禁止 UPDATE/MERGE。"""
+    """仅供 Wind 分页写入的替换与 OPMODE=2 删除：允许 DELETE + INSERT，仍禁止 UPDATE/MERGE。"""
     if not statement or not statement.strip():
         raise ForbiddenSqlError("空 SQL")
     if _LEADING_REPLACE.search(statement) is None:

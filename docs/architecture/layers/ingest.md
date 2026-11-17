@@ -50,7 +50,7 @@ applies_to:
 2. 目标表白名单写死在代码常量里，明确禁写的表要有显式拦截。
 3. SQL 动词白名单：禁止 `UPDATE` / `MERGE` / `TRUNCATE` / `DROP` / `ALTER`，
    默认 insert-only。
-4. 不覆盖既有行：遇到目标键已有行就报错退出，要替换必须显式传参指定范围。
+4. 不覆盖既有行：遇到目标键已有行就报错退出，要替换必须显式传参指定范围。Wind 源镜像例外，见下文。
 5. 写后回读：同一事务内回读比对行数与 digest，不一致立即回滚。
 6. 事务状态未知不重试：提交或回滚结果不确定时停下报告。
 
@@ -60,8 +60,8 @@ applies_to:
 `src.wind.ashareeodprices`。`src_*._batch` 与其余源表显式禁写。批次行与
 数据行在同一事务里一次完成（含 `finished_at`），禁止事后 UPDATE 批次
 状态。Wind 分页把检查点写在 `_batch.source_cursor`（`OPDATE+OBJECT_ID`），
-提交成功才推进；业务字段变化或 `OPMODE=2` 必须显式 `--replace-existing`。
-Wind 重发的修订若只改了系统列（`OPDATE`、`OPMODE`、`gsUTime`、`gsCTime`、`mopdate`），业务字段逐列相等，就跳过不写，计入 `metadata_skipped`；库里这些系统列会旧于源端。变化全部落在 `AUTO_REPLACE_COLUMNS` 声明列（日行情是七个复权列）里的修订自动替换，计入 `auto_replaced`。大表任务的 `--replace-existing TABLE` 一次只放开一张表。见 [Wind 源镜像修订自动跟随](../../adr/2026-11-17-wind-revision-auto-replace.md)。
+提交成功才推进。
+已有键只变系统列（`OPDATE`、`OPMODE`、`gsUTime`、`gsCTime`、`mopdate`）时跳过，计入 `metadata_skipped`；业务字段有变化时同一事务内按主键删旧插新，计入 `replaced`；`OPMODE=2` 按主键删除，计入 `deleted`。全自动，没有 `--replace-existing`。见 [Wind 源镜像全自动跟随源端](../../adr/2026-11-17-src-mirror-follows-source.md)。
 
 ### 每页查询的开销不能随表变大
 

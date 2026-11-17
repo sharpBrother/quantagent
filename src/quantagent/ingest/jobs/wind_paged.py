@@ -45,7 +45,6 @@ class _CommittedPages:
     deleted: int = 0
     skipped: int = 0
     metadata_skipped: int = 0
-    auto_replaced: int = 0
     dml_count: int = 0
     last_digest: str = ""
     last_output: str = ""
@@ -64,12 +63,10 @@ class WindPagedIngestResult:
     deleted: int
     skipped: int
     metadata_skipped: int
-    auto_replaced: int
     dml_count: int
     payload_digest: str
     output_digest: str
     source_cursor: str
-    replace_existing: bool
 
 
 def ingest_wind_paged(
@@ -78,7 +75,6 @@ def ingest_wind_paged(
     paths: VarPaths,
     table: str,
     write_db: bool = False,
-    replace_existing: bool = False,
     page_size: int = DEFAULT_PAGE_SIZE,
     max_pages: int | None = None,
     from_cursor: str | None = None,
@@ -113,7 +109,6 @@ def ingest_wind_paged(
             store=resolved_store,
             cursor=cursor,
             write_db=write_db,
-            replace_existing=replace_existing,
             page_size=page_size,
             max_pages=page_limit,
             now=now,
@@ -124,7 +119,6 @@ def ingest_wind_paged(
         partial = _partial_result(
             catalog=catalog,
             write_db=write_db,
-            replace_existing=replace_existing,
             committed=committed,
         )
         error = str(exc)
@@ -140,7 +134,6 @@ def ingest_wind_paged(
                 table=table,
                 dataset=catalog.spec.dataset,
                 write_db=write_db,
-                replace_existing=replace_existing,
                 page_size=page_size,
                 max_pages=page_limit,
                 from_cursor=from_cursor,
@@ -160,7 +153,6 @@ def ingest_wind_paged(
         table=table,
         dataset=catalog.spec.dataset,
         write_db=write_db,
-        replace_existing=replace_existing,
         page_size=page_size,
         max_pages=page_limit,
         from_cursor=from_cursor,
@@ -178,7 +170,6 @@ def _run_pages(
     store: SrcWriteStore | None,
     cursor: WindCursor,
     write_db: bool,
-    replace_existing: bool,
     page_size: int,
     max_pages: int | None,
     now: Callable[[], datetime] | None,
@@ -191,7 +182,6 @@ def _run_pages(
     deleted = 0
     skipped = 0
     metadata_skipped = 0
-    auto_replaced = 0
     dml_count = 0
     last_digest = digest_json([])
     last_output = last_digest
@@ -211,7 +201,6 @@ def _run_pages(
             rows=rows,
             settings=settings,
             write_db=write_db,
-            replace_existing=replace_existing,
             store=store,
             now=now,
         )
@@ -222,7 +211,6 @@ def _run_pages(
         deleted += page.deleted
         skipped += page.skipped
         metadata_skipped += page.metadata_skipped
-        auto_replaced += page.auto_replaced
         dml_count += page.dml_count
         last_digest = page.payload_digest
         last_output = page.output_digest
@@ -235,7 +223,6 @@ def _run_pages(
         committed.deleted = deleted
         committed.skipped = skipped
         committed.metadata_skipped = metadata_skipped
-        committed.auto_replaced = auto_replaced
         committed.dml_count = dml_count
         committed.last_digest = last_digest
         committed.last_output = last_output
@@ -250,7 +237,6 @@ def _run_pages(
             "deleted": deleted,
             "skipped": skipped,
             "metadata_skipped": metadata_skipped,
-            "auto_replaced": auto_replaced,
             "source_cursor": current.encode(),
             "last_page": last_output,
         }
@@ -266,12 +252,10 @@ def _run_pages(
         deleted=deleted,
         skipped=skipped,
         metadata_skipped=metadata_skipped,
-        auto_replaced=auto_replaced,
         dml_count=dml_count,
         payload_digest=last_digest,
         output_digest=output,
         source_cursor=current.encode(),
-        replace_existing=replace_existing,
     )
 
 
@@ -279,7 +263,6 @@ def _partial_result(
     *,
     catalog: WindPagedTable,
     write_db: bool,
-    replace_existing: bool,
     committed: _CommittedPages | None,
 ) -> WindPagedIngestResult | None:
     if committed is None or committed.pages == 0 or committed.cursor is None:
@@ -294,7 +277,6 @@ def _partial_result(
             "deleted": committed.deleted,
             "skipped": committed.skipped,
             "metadata_skipped": committed.metadata_skipped,
-            "auto_replaced": committed.auto_replaced,
             "source_cursor": committed.cursor.encode(),
             "last_page": committed.last_output,
         }
@@ -310,12 +292,10 @@ def _partial_result(
         deleted=committed.deleted,
         skipped=committed.skipped,
         metadata_skipped=committed.metadata_skipped,
-        auto_replaced=committed.auto_replaced,
         dml_count=committed.dml_count,
         payload_digest=committed.last_digest,
         output_digest=output,
         source_cursor=committed.cursor.encode(),
-        replace_existing=replace_existing,
     )
 
 
@@ -367,7 +347,6 @@ def _persist_run_log(
     table: str,
     dataset: str,
     write_db: bool,
-    replace_existing: bool,
     page_size: int,
     max_pages: int | None,
     from_cursor: str | None,
@@ -387,7 +366,6 @@ def _persist_run_log(
                 "dataset": dataset,
                 "table": table,
                 "write_db": write_db,
-                "replace_existing": replace_existing,
                 "page_size": page_size,
                 "max_pages": max_pages,
                 "from_cursor": from_cursor,
