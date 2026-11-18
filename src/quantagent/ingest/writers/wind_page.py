@@ -85,7 +85,7 @@ def write_wind_page(
     now: Callable[[], datetime] | None = None,
 ) -> WindPageWriteResult:
     """一页一行事务。``write_db`` 默认由调用方传 False。"""
-    assert_writable(spec)
+    assert_writable(spec, profile=settings.profile)
     if "OBJECT_ID" not in spec.native_columns or "OPDATE" not in spec.native_columns:
         raise SourceFetchError(f"{spec.dataset} 缺少 OBJECT_ID/OPDATE，不能走复合游标")
     if "OPMODE" not in spec.native_columns:

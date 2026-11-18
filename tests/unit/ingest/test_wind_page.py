@@ -132,7 +132,7 @@ class FakeSrcStore:
 
 
 def _settings(*, allow_db_write: bool) -> Settings:
-    return Settings(_env_file=None, allow_db_write=allow_db_write)
+    return Settings(_env_file=None, profile="office", allow_db_write=allow_db_write)
 
 
 def _row(

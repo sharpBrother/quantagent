@@ -199,7 +199,7 @@ def test_whitelist_rejects_other_tushare_table() -> None:
         keys=("ts_code", "trade_date"),
     )
     with pytest.raises(TargetNotAllowedError, match=r"禁写|白名单"):
-        assert_writable(spec)
+        assert_writable(spec, profile="local")
     with pytest.raises(TargetNotAllowedError):
         write_src_snapshot(
             spec=spec,
@@ -220,12 +220,21 @@ def test_forbidden_batch_table_is_explicit() -> None:
         keys=TRADE_CAL.keys,
     )
     with pytest.raises(TargetNotAllowedError, match=r"禁写|不一致"):
-        assert_writable(spec)
+        assert_writable(spec, profile="local")
 
 
 @pytest.mark.unit
 def test_ashareeodprices_is_writable() -> None:
-    assert_writable(ASHAREEODPRICES)
+    assert_writable(ASHAREEODPRICES, profile="office")
+
+
+@pytest.mark.unit
+def test_profile_limits_writable_schemas() -> None:
+    with pytest.raises(TargetNotAllowedError, match="profile=local"):
+        assert_writable(ASHAREEODPRICES, profile="local")
+    with pytest.raises(TargetNotAllowedError, match="profile=office"):
+        assert_writable(TRADE_CAL, profile="office")
+    assert_writable(TRADE_CAL, profile="local")
 
 
 @pytest.mark.unit

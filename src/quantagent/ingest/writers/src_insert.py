@@ -63,7 +63,7 @@ def write_src_snapshot(
     now: Callable[[], datetime] | None = None,
 ) -> SrcWriteResult:
     """``write_db`` 默认由调用方传 False。真写必须同时打开环境写闸。"""
-    assert_writable(spec)
+    assert_writable(spec, profile=settings.profile)
     native_rows = require_native_rows(spec, rows)
     if not native_rows:
         raise EmptyPayloadError(f"{spec.dataset} 载荷为空")

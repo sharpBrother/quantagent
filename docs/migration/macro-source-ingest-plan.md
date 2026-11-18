@@ -1,5 +1,5 @@
 ---
-title: 公开宏观源与 Tushare 采集方案（已评审，待裁定）
+title: 公开宏观源与 Tushare 采集方案（已评审）
 status: active
 created: 2026-11-18
 updated: 2026-11-18
@@ -11,7 +11,7 @@ applies_to:
 
 # 公开宏观源与 Tushare 采集方案
 
-**已评审，四项待负责人裁定（见文末）。** 为宏观、债券、黄金、美股择时及风格轮动补齐公开源和 Tushare
+**已评审，裁定结果见文末，FRED 版本表的 ADR 待确认。** 为宏观、债券、黄金、美股择时及风格轮动补齐公开源和 Tushare
 的存量采集与每日增量。债券四票的聚源和 Wind 数据仍走供应商同步链路。本方案覆盖数据接入，策略接线另行验证。
 
 ## 部署与写入
@@ -23,7 +23,7 @@ Tushare 日更，使用独立的 `DAGSTER_HOME`、SQLite 和队列。见
 **写入入口按 schema 划分，并在代码里强制。** 公司电脑只写 `src_wind`、`src_jydb`、`src_suntime`；
 Mac 只写 `src_tushare`、`src_macro`。两边各有自己的 `_batch`，游标互不相干。两台机器跑同一份代码，
 目标白名单分不出机器，所以按 `QUANTAGENT_PROFILE`（`office` / `local`）限定可写 schema，
-写入前在 `assert_writable` 里拒绝不属于本机的目标。只靠约定，迟早有一次手工命令写错机器。
+写入前在 `assert_writable` 里拒绝不属于本机的目标（已实现，`PROFILE_WRITABLE_SCHEMAS`）。
 
 Mac 直连本机 PG，不经过 ToDesk，前一轮的链路问题在这里不存在。但 PG 数据目录和 `var/` 都在外接盘
 `/Volumes/QuantDB` 上：Mac 的 daemon 要在外接盘挂载之后才启动，启动脚本先检查挂载点，未挂载即退出。
@@ -42,7 +42,7 @@ CLI 回填和 Dagster 日更调用同一个 `ingest` 作业，复用 PostgreSQL 
   修订按新版本追加，旧版本不动。这是源端发布的事实，不是我们自己的采集批次快照，与
   [不做批次 vintage 归档](../adr/2026-09-17-no-source-vintage-archive.md)不冲突。新增版本表要另写一份 ADR 说明这一区别，
   不能引用那份 ADR 作依据：它否决的正是“按采集批次留版本”。
-- **源端不给版本**（Tushare `shibor`、`us_tycr`）：原样重复跳过。已有键出现异值时怎么办，见裁定事项 2。
+- **源端不给版本**（Tushare `shibor`、`us_tycr`）：全自动跟随源端，业务字段变了就按主键删旧插新，不要人工介入（[ADR](../adr/2026-11-18-tushare-mirror-follows-source.md)）。
 
 | 数据源 | 目标表 | 存量 | 日更 |
 |---|---|---|---|
@@ -71,7 +71,7 @@ CLI 回填和 Dagster 日更调用同一个 `ingest` 作业，复用 PostgreSQL 
 |---|---|---|
 | Tushare `shibor`、`us_tycr` | `same_day_close`，`trade_date` | A |
 | FRED／ALFRED | `source_field`，首个 `realtime_start`，严格 `< as_of`（[pit-rules](../domain/pit-rules.md)） | A；ALFRED 有完整历史版本 |
-| 金十 ISM | `source_field`，`publish_date`，严格 `< as_of`（现行规则） | 见裁定事项 3 |
+| 金十 ISM | 带时区的发布时刻，按消费市场收盘判断（裁定 3） | 接入前扩展规则引擎；扩展前维持 `< as_of` |
 | GPR、WGC | 有可证实发布日期的版本用该日期 | 缺证据的历史段 `pit_recoverable: false` 并给 `pit_from`，等级不高于 C |
 
 `_ingested_at` 只作采集记录，不作可见日。
@@ -84,13 +84,10 @@ CLI 回填和 Dagster 日更调用同一个 `ingest` 作业，复用 PostgreSQL 
 4. 两台机器同时运行一次，验证队列独立、各自只写本机允许的 schema。
 5. 每次写库运行都落 run log；新增依赖（如解析 xlsx 需要 `openpyxl`）实施前单独确认，现有依赖只有 `requests` 与 `tushare`。
 
-## 待负责人裁定
+## 裁定结果（2026-11-18）
 
-1. **写入入口在代码里按 profile 强制。** 建议做，改动只在 `ingest/writers/tables.py` 与设置。
-2. **Tushare 已有键出现异值。** 按现行 §6.4 报错停下，还是像 Wind 一样自动跟随源端。Tushare 修订极少；
-   建议报错停下，真出现时人工看一眼，日更不会因此频繁卡住。
-3. **ISM 的 `< T` 与 `<= T` 不是口径冲突，是时区问题。** ISM 在美东 10:00 发布，即北京时间当晚 22:00 或 23:00：
-   对 A 股交易日 T 已收盘，应 `< T`；对美股交易日 T 尚未收盘，`<= T` 是对的。可见日只能更严、不能放宽，
-   单一日期规则必然让一方吃亏。建议源表保存带时区的发布时刻，可见性按消费市场的收盘时刻判断。这要扩展规则引擎，
-   需要裁定；不扩展的话，维持 `< T`，美股策略接受晚一天。
-4. **FRED 新增版本表的 ADR。** 确认“源端自带版本可以落表”这一区别后再写表结构。
+1. **写入入口按 profile 强制**：采纳，已实现。公司电脑须设 `QUANTAGENT_PROFILE=office`，否则写 Wind 会被拒绝。
+2. **Tushare 已有键异值**：全自动跟随源端，见 [ADR](../adr/2026-11-18-tushare-mirror-follows-source.md)。
+3. **ISM 可见性按时区**：采纳。源表保存带时区的发布时刻，可见性按消费市场的收盘时刻判断，接入金十前扩展规则引擎。
+   扩展前维持 `< T`。
+4. **FRED 版本表的 ADR**：待确认“源端自带版本可以落表、与采集批次 vintage 不同”这一区分。
