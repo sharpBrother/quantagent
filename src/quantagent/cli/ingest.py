@@ -16,6 +16,8 @@ from quantagent.adapters.postgres.src_progress import wind_progress
 from quantagent.adapters.postgres.wind_first_batch_columns import FIRST_BATCH_WIND_SYNC
 from quantagent.adapters.postgres.wind_large_columns import LARGE_WIND_SYNC
 from quantagent.ingest.errors import IngestError
+from quantagent.ingest.jobs.macro_fred import ingest_macro_fred
+from quantagent.ingest.jobs.macro_gpr import ingest_macro_gpr
 from quantagent.ingest.jobs.trade_cal import ingest_tushare_trade_cal
 from quantagent.ingest.jobs.tushare_shibor import ingest_tushare_shibor
 from quantagent.ingest.jobs.tushare_us_treasury_yield import ingest_tushare_us_treasury_yield
@@ -30,8 +32,10 @@ from quantagent.platform.storage import detect_repo_root, resolve_var_paths
 ingest_app = typer.Typer(help="外部源采集到 PG 研究数据面。默认不写库。", no_args_is_help=True)
 tushare_app = typer.Typer(help="Tushare 源。", no_args_is_help=True)
 wind_app = typer.Typer(help="Wind wind_db 源。历史回填与日更共用。", no_args_is_help=True)
+macro_app = typer.Typer(help="宏观公开数据源。", no_args_is_help=True)
 ingest_app.add_typer(tushare_app, name="tushare")
 ingest_app.add_typer(wind_app, name="wind")
+ingest_app.add_typer(macro_app, name="macro")
 
 _YMD_LEN = 8
 
@@ -180,6 +184,91 @@ def ingest_us_treasury_yield(
             f"dry-run dataset={result.dataset} segments={result.segments} "
             f"rows={result.row_count} empty_segments={empty} digest={result.payload_digest}"
         )
+
+
+@macro_app.command("fred")
+def ingest_macro_fred_command(
+    series: Annotated[
+        list[str] | None,
+        typer.Option("--series", help="序列号，可重复。默认 DFII10、T10YIE、CPIAUCSL 全部"),
+    ] = None,
+    write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
+) -> None:
+    """拉取 FRED／ALFRED 全部历史版本，写入 src_macro.fred_observation_vintage。默认干跑。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    try:
+        result = ingest_macro_fred(
+            settings=settings,
+            paths=paths,
+            write_db=write_db,
+            series_ids=series,
+        )
+    except (
+        IngestError,
+        WriteGateError,
+        ConfigError,
+        RunLogError,
+        ForbiddenSqlError,
+        TransactionUnknownError,
+        PostgresAdapterError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    for item in result.series:
+        write = item.write
+        if write.written:
+            typer.echo(
+                f"wrote dataset={result.dataset} series={item.series_id} pages={item.pages} "
+                f"rows={write.row_count} inserted={write.inserted} replaced={write.replaced} "
+                f"skipped={write.skipped} metadata_skipped={write.metadata_skipped} "
+                f"dml={write.dml_count} batch={write.batch_id} digest={write.output_digest}"
+            )
+        else:
+            typer.echo(
+                f"dry-run dataset={result.dataset} series={item.series_id} pages={item.pages} "
+                f"rows={write.row_count} digest={write.payload_digest}"
+            )
+
+
+@macro_app.command("gpr")
+def ingest_macro_gpr_command(
+    write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
+) -> None:
+    """下载 GPR 日频 dta，跟随源端写入 src_macro.gpr_daily。与库内最近一次文件相同则不写库。默认干跑。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    try:
+        result = ingest_macro_gpr(settings=settings, paths=paths, write_db=write_db)
+    except (
+        IngestError,
+        WriteGateError,
+        ConfigError,
+        RunLogError,
+        ForbiddenSqlError,
+        TransactionUnknownError,
+        PostgresAdapterError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    head = (
+        f"dataset={result.dataset} file_vintage={result.file_vintage:%Y%m%d} "
+        f"observed={result.observation_min:%Y%m%d}..{result.observation_max:%Y%m%d} "
+        f"file_sha256={result.file_sha256}"
+    )
+    series = " ".join(f"{series_id}={rows}" for series_id, rows in result.series_rows)
+    if result.unchanged:
+        typer.echo(f"无更新 {head} 未写库")
+    elif result.written:
+        typer.echo(
+            f"wrote {head} rows={result.row_count} inserted={result.inserted} "
+            f"replaced={result.replaced} skipped={result.skipped} "
+            f"metadata_skipped={result.metadata_skipped} dml={result.dml_count} "
+            f"batch={result.batch_id} digest={result.output_digest}"
+        )
+    else:
+        typer.echo(f"dry-run {head} rows={result.row_count} digest={result.payload_digest}")
+    typer.echo(f"series_rows: {series}")
 
 
 def _compact_ymd(raw: str, *, flag: str) -> str:

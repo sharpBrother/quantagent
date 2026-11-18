@@ -15,6 +15,7 @@ from quantagent.adapters.postgres.sql_types import quote_ident
 from quantagent.adapters.postgres.src_dml import assert_src_dml_sql
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from datetime import datetime
 
     import psycopg
@@ -53,6 +54,84 @@ GROUP BY b.dataset
 ORDER BY max(b.finished_at) DESC
 """
 )
+
+
+def latest_written_value(
+    conn: psycopg.Connection[Any],
+    *,
+    pg_schema: str,
+    table: str,
+    column: str,
+) -> str | None:
+    """按 ``_batch_id`` 倒序取表里最近写入的一行的 ``column``；表为空返回 None。只读。
+    GPR 用它取最近一次写入的 ``file_sha256``。同一次运行写入的所有行共享这个值，
+    所以取到的就是最近一次真正写过库的文件。不用批次表，因为写入器在没有任何值变化时
+    也会登记批次行，那行并不代表文件内容变过。
+    """
+    statement = assert_src_dml_sql(
+        f"SELECT {quote_ident(column)} FROM {quote_ident(pg_schema)}.{quote_ident(table)} "
+        f"ORDER BY {quote_ident('_batch_id')} DESC LIMIT 1"
+    )
+    with conn.cursor() as cur:
+        cur.execute(statement)
+        fetched = cur.fetchone()
+    if fetched is None or fetched[0] is None:
+        return None
+    return str(fetched[0])
+
+
+def latest_version_values(
+    conn: psycopg.Connection[Any],
+    *,
+    pg_schema: str,
+    table: str,
+    key_columns: Sequence[str],
+    version_column: str,
+    value_column: str,
+) -> dict[tuple[Any, ...], tuple[Any, Any]]:
+    """每个键取版本列最大的那一行，返回 ``键 -> (版本, 值)``；表为空返回空字典。只读。
+    GPR 用它取每个 ``(series_id, observation_date)`` 当前的 ``file_vintage`` 与 ``value``，
+    据此判断新文件里的值是否真的变了。与写入同一连接时，读到的是同一事务内的快照。
+    """
+    keys_sql = ", ".join(quote_ident(name) for name in key_columns)
+    statement = assert_src_dml_sql(
+        f"SELECT DISTINCT ON ({keys_sql}) {keys_sql}, "
+        f"{quote_ident(version_column)}, {quote_ident(value_column)} "
+        f"FROM {quote_ident(pg_schema)}.{quote_ident(table)} "
+        f"ORDER BY {keys_sql}, {quote_ident(version_column)} DESC"
+    )
+    width = len(key_columns)
+    found: dict[tuple[Any, ...], tuple[Any, Any]] = {}
+    with conn.cursor() as cur:
+        cur.execute(statement)
+        for row in cur.fetchall():
+            found[tuple(row[:width])] = (row[width], row[width + 1])
+    return found
+
+
+def values_at_version(
+    conn: psycopg.Connection[Any],
+    *,
+    pg_schema: str,
+    table: str,
+    key_columns: Sequence[str],
+    version_column: str,
+    version: object,
+    value_columns: Sequence[str],
+) -> dict[tuple[Any, ...], tuple[Any, ...]]:
+    """版本列等于 ``version`` 的行：返回 ``键 -> 指定值列``。只读。
+    用于判断某个 file_vintage 下已有的同键行是否与本次内容一致。
+    """
+    keys_sql = ", ".join(quote_ident(name) for name in key_columns)
+    values_sql = ", ".join(quote_ident(name) for name in value_columns)
+    statement = assert_src_dml_sql(
+        f"SELECT {keys_sql}, {values_sql} FROM {quote_ident(pg_schema)}.{quote_ident(table)} "
+        f"WHERE {quote_ident(version_column)} = %s"
+    )
+    width = len(key_columns)
+    with conn.cursor() as cur:
+        cur.execute(statement, (version,))
+        return {tuple(row[:width]): tuple(row[width:]) for row in cur.fetchall()}
 
 
 def latest_success_window_end(

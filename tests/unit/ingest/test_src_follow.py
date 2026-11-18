@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import copy
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from quantagent.adapters.postgres.errors import TransactionUnknownError
-from quantagent.adapters.postgres.src_targets import SHIBOR
+from quantagent.adapters.postgres.src_targets import GPR_DAILY, SHIBOR
 from quantagent.ingest.errors import (
     DuplicateKeyError,
     IngestError,
@@ -370,3 +370,149 @@ def test_ingested_at_must_match_writer_clock() -> None:
 def test_empty_payload_is_rejected() -> None:
     with pytest.raises(IngestError, match="载荷为空"):
         _write(FakeShiborStore(), [])
+
+
+class KeyedFakeStore:
+    """只实现 ``write_src_follow`` 用到的方法，键由 ``spec.keys`` 决定，不绑定具体表。"""
+
+    def __init__(self) -> None:
+        self.state: dict[tuple[object, ...], dict[str, Any]] = {}
+        self.ingested_seen: list[datetime] = []
+        self.commit_calls = 0
+
+    def existing_hashes(
+        self, spec: object, keys: Sequence[tuple[object, ...]]
+    ) -> dict[tuple[object, ...], str]:
+        return {key: self.state[key]["hash"] for key in keys if key in self.state}
+
+    def existing_values(
+        self,
+        spec: object,
+        keys: Sequence[tuple[object, ...]],
+        columns: Sequence[str],
+    ) -> dict[tuple[object, ...], tuple[object, ...]]:
+        return {
+            key: tuple(self.state[key]["values"][name] for name in columns)
+            for key in keys
+            if key in self.state
+        }
+
+    def insert_batch(self, **kwargs: Any) -> int:
+        return 1
+
+    def delete_keys(self, spec: Any, keys: Sequence[tuple[object, ...]]) -> None:
+        for key in keys:
+            self.state.pop(key, None)
+
+    def insert_rows(
+        self,
+        spec: Any,
+        rows: Sequence[Mapping[str, object]],
+        *,
+        hashes: Sequence[str],
+        batch_id: int,
+        ingested_at: datetime,
+    ) -> None:
+        self.ingested_seen.append(ingested_at)
+        for row, digest in zip(rows, hashes, strict=True):
+            key = tuple(row[name] for name in spec.keys)
+            self.state[key] = {"hash": digest, "values": dict(row), "batch": batch_id}
+
+    def readback_hashes(
+        self, spec: Any, batch_id: int, keys: Sequence[tuple[object, ...]]
+    ) -> list[str]:
+        return [
+            self.state[key]["hash"]
+            for key in keys
+            if key in self.state and self.state[key]["batch"] == batch_id
+        ]
+
+    def mismatched_rows(
+        self, spec: Any, batch_id: int, rows: Sequence[Mapping[str, object]]
+    ) -> list[tuple[object, ...]]:
+        bad: list[tuple[object, ...]] = []
+        for row in rows:
+            key = tuple(row[name] for name in spec.keys)
+            stored = self.state.get(key)
+            if stored is None or any(
+                stored["values"][name] != row[name] for name in spec.native_columns
+            ):
+                bad.append(key)
+        return bad
+
+    def commit(self) -> None:
+        self.commit_calls += 1
+
+    def rollback(self) -> None:
+        return None
+
+
+def _gpr_row(**overrides: object) -> dict[str, object]:
+    row: dict[str, object] = {
+        "series_id": "GPRD",
+        "observation_date": date(2024, 1, 1),
+        "file_vintage": date(2024, 1, 3),
+        "value": Decimal("1.00000000"),
+        "file_sha256": "a" * 64,
+        "source": "iacoviello.gpr_daily_recent",
+    }
+    row.update(overrides)
+    return row
+
+
+@pytest.mark.unit
+def test_spec_without_native_ingested_at_writes_with_writer_clock_only() -> None:
+    # gpr_daily 没有原生 ingested_at 列：行里不带它，采集时刻只经写入器的 _ingested_at 落库。
+    store = KeyedFakeStore()
+    result = write_src_follow(
+        spec=GPR_DAILY,
+        rows=[_gpr_row()],
+        settings=_settings(),
+        write_db=True,
+        store=store,  # type: ignore[arg-type]
+        now=lambda: _NOW,
+    )
+    assert result.written is True
+    assert result.inserted == 1
+    assert store.ingested_seen == [_NOW]
+    assert store.commit_calls == 1
+
+
+@pytest.mark.unit
+def test_spec_without_native_ingested_at_rejects_rows_that_carry_it() -> None:
+    # 行里多出的列会在 require_native_rows 被拒绝，不会悄悄被当作业务列。
+    with pytest.raises(IngestError, match="extra"):
+        write_src_follow(
+            spec=GPR_DAILY,
+            rows=[_gpr_row(ingested_at=_NAIVE_NOW)],
+            settings=_settings(),
+            write_db=False,
+            now=lambda: _NOW,
+        )
+
+
+@pytest.mark.unit
+def test_spec_without_native_ingested_at_does_not_check_row_clock() -> None:
+    # 没有该列时，行里不存在可核对的采集时刻，也就不会因为它与写入器时钟不同而报错。
+    result = write_src_follow(
+        spec=GPR_DAILY,
+        rows=[_gpr_row()],
+        settings=_settings(),
+        write_db=False,
+        now=lambda: _NOW,
+    )
+    assert result.row_count == 1
+
+
+@pytest.mark.unit
+def test_spec_with_native_ingested_at_still_checks_row_clock() -> None:
+    # SHIBOR 等仍有原生 ingested_at 列，行内值与写入器时钟不一致必须报错。
+    with pytest.raises(IngestError, match="ingested_at"):
+        write_src_follow(
+            spec=SHIBOR,
+            rows=[_row(ingested_at=_EARLIER)],
+            settings=_settings(),
+            write_db=True,
+            store=FakeShiborStore(),
+            now=lambda: _NOW,
+        )

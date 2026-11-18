@@ -34,7 +34,7 @@ columns:
   source:
     dtype: string
     nullable: false
-    description: 来源标记，固定为 fred.alfred
+    description: 来源标记，固定为 fred.series_observations
   _batch_id:
     dtype: int64
     nullable: false

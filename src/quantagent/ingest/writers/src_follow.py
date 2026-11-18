@@ -110,8 +110,8 @@ def write_src_follow(
 ) -> SrcFollowWriteResult:
     """``write_db`` 默认由调用方传 False。真写必须同时打开环境写闸。
 
-    ``now`` 必须返回带时区的 UTC 时刻。行里的 ``ingested_at`` 必须是同一时刻去掉时区后的值，
-    这样原生列与 ``_ingested_at`` 指向同一次采集。
+    ``now`` 必须返回带时区的 UTC 时刻。表有原生 ``ingested_at`` 列时，行里的值必须是同一时刻去掉时区后的值，
+    这样原生列与 ``_ingested_at`` 指向同一次采集。没有该列的表只靠 ``_ingested_at``。
     """
     assert_writable(spec, profile=settings.profile)
     native_rows = require_native_rows(spec, rows)
@@ -146,9 +146,12 @@ def write_src_follow(
     clock = now or (lambda: datetime.now(UTC))
     started_at = clock()
     finished_at = clock()
-    expected_ingested = finished_at.astimezone(UTC).replace(tzinfo=None)
-    if any(row["ingested_at"] != expected_ingested for row in native_rows):
-        raise IngestError(f"{spec.dataset} 行的 ingested_at 与本次采集时刻不一致")
+    # 只有表里真有原生 ingested_at 列时才核对行内值。0018 起的新表不再建冗余的原生 ingested_at 列，
+    # 这类表（GPR、FRED）的采集时刻只通过 _ingested_at 落库，行内不带它。
+    if "ingested_at" in spec.native_columns:
+        expected_ingested = finished_at.astimezone(UTC).replace(tzinfo=None)
+        if any(row["ingested_at"] != expected_ingested for row in native_rows):
+            raise IngestError(f"{spec.dataset} 行的 ingested_at 与本次采集时刻不一致")
 
     plan = _plan(spec, store, native_rows, keys, hashes)
     batch_id = store.insert_batch(

@@ -58,6 +58,43 @@ US_TREASURY_YIELD = SrcTableWriteSpec(
     native_columns=("trade_date", "maturity", "yield", "source", "ingested_at"),
     keys=("trade_date", "maturity"),
 )
+# FRED／ALFRED 带版本观测。主键含 realtime_start，一个 (序列, 观测日) 可有多行历史版本。
+# 同一版本的 realtime_end 在源端被新版本取代后会从 9999-12-31 改成具体日期，这是同键值变，
+# 由写入器按跟随源端规则替换（计入 replaced）。native_columns 顺序与 0018_macro_source_tables.sql 一致。
+# 0018 起的新表不再建原生 ingested_at 列，采集时刻只写 _ingested_at。
+FRED_OBSERVATION_VINTAGE = SrcTableWriteSpec(
+    dataset="src.macro.fred_observation_vintage",
+    pg_schema="src_macro",
+    pg_table="fred_observation_vintage",
+    native_columns=(
+        "series_id",
+        "observation_date",
+        "realtime_start",
+        "realtime_end",
+        "value",
+        "source",
+    ),
+    keys=("series_id", "observation_date", "realtime_start"),
+)
+
+# GPR 日频是长表：一行一个 (series_id, observation_date, file_vintage)。文件没有版本字段，
+# file_vintage 是文件内最大 DAY 的近似，所以版本身份由 file_vintage 与 file_sha256 共同表达。
+# 同一 file_vintage 被源端改写时，file_sha256 变化，按跟随源端规则整键替换。
+# native_columns 顺序与 0018_macro_source_tables.sql 的列序一致。
+GPR_DAILY = SrcTableWriteSpec(
+    dataset="src.macro.gpr_daily",
+    pg_schema="src_macro",
+    pg_table="gpr_daily",
+    native_columns=(
+        "series_id",
+        "observation_date",
+        "file_vintage",
+        "value",
+        "file_sha256",
+        "source",
+    ),
+    keys=("series_id", "observation_date", "file_vintage"),
+)
 ASHARECALENDAR = SrcTableWriteSpec(
     dataset="src.wind.asharecalendar",
     pg_schema="src_wind",

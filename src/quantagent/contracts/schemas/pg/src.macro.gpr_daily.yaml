@@ -34,7 +34,7 @@ columns:
   source:
     dtype: string
     nullable: false
-    description: 来源标记，固定为 gpr.daily
+    description: 来源标记，固定为 iacoviello.gpr_daily_recent
   _batch_id:
     dtype: int64
     nullable: false
