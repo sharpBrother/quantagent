@@ -9,17 +9,21 @@ from __future__ import annotations
 from dagster import Definitions, ScheduleDefinition
 
 from orchestration.assets.cutamp import feature_pf_single_cutamp
-from orchestration.assets.macro import src_macro_fred_observation_vintage, src_macro_gpr_daily
+from orchestration.assets.macro import (
+    src_macro_fred_observation_vintage,
+    src_macro_gpr_daily,
+    src_macro_wgc_gold_demand,
+)
 from orchestration.assets.tr_umr import feature_pf_single_tr_umr
 from orchestration.assets.tushare import src_tushare_shibor, src_tushare_us_treasury_yield
 from orchestration.assets.wind import WIND_SOURCE_ASSETS, std_trade_calendar
 from orchestration.jobs.cutamp import feature_cutamp
-from orchestration.jobs.macro import macro_daily
+from orchestration.jobs.macro import macro_daily, macro_wgc_weekly
 from orchestration.jobs.tr_umr import feature_tr_umr
 from orchestration.jobs.tushare import tushare_daily
 from orchestration.jobs.wind import wind_source_daily, wind_source_refresh
 from orchestration.resources.wind import TradeCalendarResource, WindIngestResource
-from orchestration.schedules.macro import macro_daily_morning
+from orchestration.schedules.macro import macro_daily_morning, macro_wgc_sunday
 from orchestration.schedules.tushare import tushare_daily_evening
 from orchestration.schedules.wind import wind_source_daily_close, wind_source_daily_morning
 from quantagent.platform.config import get_settings
@@ -42,7 +46,7 @@ def _resources() -> dict[str, WindIngestResource | TradeCalendarResource]:
 # ``tests/unit/orchestration/test_definitions_profile.py`` 会校验两者是否一致。
 PROFILE_SCHEDULES: dict[str, tuple[ScheduleDefinition, ...]] = {
     "office": (wind_source_daily_close, wind_source_daily_morning),
-    "local": (tushare_daily_evening, macro_daily_morning),
+    "local": (tushare_daily_evening, macro_daily_morning, macro_wgc_sunday),
 }
 
 
@@ -61,6 +65,7 @@ defs = Definitions(
         src_tushare_us_treasury_yield,
         src_macro_fred_observation_vintage,
         src_macro_gpr_daily,
+        src_macro_wgc_gold_demand,
         feature_pf_single_cutamp,
         feature_pf_single_tr_umr,
     ],
@@ -69,6 +74,7 @@ defs = Definitions(
         wind_source_daily,
         tushare_daily,
         macro_daily,
+        macro_wgc_weekly,
         feature_cutamp,
         feature_tr_umr,
     ],

@@ -95,6 +95,46 @@ GPR_DAILY = SrcTableWriteSpec(
     ),
     keys=("series_id", "observation_date", "file_vintage"),
 )
+
+# wx2 中的 record_hash 是源表主键；保留原有字段以便逐行对账。
+WGC_GOLD_DEMAND = SrcTableWriteSpec(
+    dataset="src.macro.macro_wgc_gold_demand",
+    pg_schema="src_macro",
+    pg_table="macro_wgc_gold_demand",
+    native_columns=(
+        "period_end",
+        "geography",
+        "category",
+        "value_tonnes",
+        "publish_date",
+        "source",
+        "file_sha256",
+        "record_hash",
+        "ingested_at",
+    ),
+    keys=("record_hash",),
+)
+
+# 源事件身份由金十指标、发布日期和事件 ID 共同确定，不能用采集时间代替版本。
+JIN10_ECONOMIC_CALENDAR = SrcTableWriteSpec(
+    dataset="src.macro.jin10_economic_calendar",
+    pg_schema="src_macro",
+    pg_table="jin10_economic_calendar",
+    native_columns=(
+        "indicator_id",
+        "publish_date",
+        "data_id",
+        "period_end",
+        "time_period",
+        "published_at",
+        "actual_value",
+        "forecast_value",
+        "previous_value",
+        "revised_value",
+        "source",
+    ),
+    keys=("indicator_id", "publish_date", "data_id"),
+)
 ASHARECALENDAR = SrcTableWriteSpec(
     dataset="src.wind.asharecalendar",
     pg_schema="src_wind",

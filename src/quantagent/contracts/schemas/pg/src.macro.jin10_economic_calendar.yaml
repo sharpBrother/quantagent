@@ -18,7 +18,7 @@ columns:
   publish_date:
     dtype: date
     nullable: false
-    description: 公布日期（源端只给日期，历史列表没有时刻）
+    description: 源日期；wx2 1970—2007 年占位日期并非已确认发布日期
   data_id:
     dtype: int64
     nullable: false
@@ -54,7 +54,7 @@ columns:
   source:
     dtype: string
     nullable: false
-    description: 来源标记，固定为 jin10.economic_calendar
+    description: 来源标记；jin10.wx2.legacy_unknown_release 表示日期为占位符
   _batch_id:
     dtype: int64
     nullable: false

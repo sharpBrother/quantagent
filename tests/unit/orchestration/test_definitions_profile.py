@@ -21,7 +21,7 @@ _LAKE_ASSETS = frozenset({"std_trade_calendar"})
 
 _EXPECTED_SCHEDULES = {
     "office": {"wind_source_daily_close", "wind_source_daily_morning"},
-    "local": {"tushare_daily_evening", "macro_daily_morning"},
+    "local": {"tushare_daily_evening", "macro_daily_morning", "macro_wgc_sunday"},
 }
 
 
@@ -61,6 +61,7 @@ def test_every_registered_schedule_belongs_to_some_profile() -> None:
         "wind_source_daily_morning",
         "tushare_daily_evening",
         "macro_daily_morning",
+        "macro_wgc_sunday",
     }
 
 

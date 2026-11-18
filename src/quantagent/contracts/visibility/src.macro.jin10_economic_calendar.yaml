@@ -8,7 +8,7 @@ visibility:
   rule: source_field
   field: publish_date
   strict: true
-  grade: B
-  rationale: 金十历史列表只有公布日期、没有时刻与统计期字段，统计期由公布日推上月（旧仓 data/jin10_period.py）；2025-10 起详情接口给出 UTC 发布时刻。可见性先按公布日严格早于 as_of（旧仓 gold_timing/signals.py:335），带时区按消费市场判断待规则引擎扩展。
+  grade: D
+  rationale: 沿用旧项目 ISM 的发布日期严格早于 as_of 规则；wx2 历史占位日期与数值可能无法还原首次发布事实，历史可信度低，带时区发布时间按消费市场收盘判断待规则引擎支持。
 pit_recoverable: false
 pit_from: '2025-10-01'

@@ -16,6 +16,11 @@ applies_to:
 
 ## 部署与写入
 
+**ISM 历史口径（负责人 2026-11-18 裁定）**：wx2 1970—2007 年月初日期是未知发布日期的占位符；
+数值字段保持与金十快照一致。已找到同期证据的月份只修正发布日期与可确认的统计期，证据注明在来源字段中。
+未知发布日期的记录以占位日期作为保守 PIT 日期，按旧项目的 `publish_date < as_of` 规则可见；历史值可能是金十后续修订值，
+整体 PIT 等级 D，`pit_from` 之前不可信。带时区的发布时间按消费市场收盘判断仍是后续规则引擎扩展项。
+
 公司电脑运行 Wind、聚源、朝阳永续源表同步，沿用该 Dagster 实例的全局串行。Mac mini 运行公开源和
 Tushare 日更，使用独立的 `DAGSTER_HOME`、SQLite 和队列。见
 [Dagster 本地运行存储](../adr/2026-11-17-dagster-local-run-storage.md)。
@@ -95,10 +100,16 @@ FRED 按 `series_id` 一张长表，SHIBOR 与美债按期限一张长表，GPR 
 |---|---|---|
 | Tushare `shibor`、`us_tycr` | `same_day_close`，`trade_date` | A |
 | FRED／ALFRED | `source_field`，首个 `realtime_start`，严格 `< as_of`（[pit-rules](../domain/pit-rules.md)） | A；ALFRED 有完整历史版本 |
-| 金十 ISM | 带时区的发布时刻，按消费市场收盘判断（裁定 3） | 接入前扩展规则引擎；扩展前维持 `< as_of` |
+| 金十 ISM | 当前按旧项目 `publish_date < as_of`；带时区发布时间按消费市场收盘判断待规则引擎扩展（裁定 3） | D；历史修订值不可完整恢复，`pit_from` 前不可信 |
 | GPR、WGC | 有可证实发布日期的版本用该日期 | 缺证据的历史段 `pit_recoverable: false` 并给 `pit_from`，等级不高于 C |
 
 `_ingested_at` 只作采集记录，不作可见日。
+
+负责人决定保留 wx2 WGC 历史值供研究使用，按旧策略的 `publish_date <= as_of` 切片。
+旧库把最新修订值与历史报告日期配对，历史版本不可恢复，可能引入前视；因此契约标 D，
+`pit_recoverable: false`。`pit_from` 为 2026-11-18 旧库快照核查日，此前结果不可当严格 PIT。
+WGC 官网条款禁止未经授权抓取；负责人选择沿用旧项目 HTML 增量，保留该条款限制的事实。
+每周日北京时间 12:00 检查主报告，按旧仓的报告期日期映射与记录身份追加。
 
 ## 实施与验收
 

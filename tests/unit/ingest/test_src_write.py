@@ -61,6 +61,7 @@ class FakeSrcStore:
         self.commit_calls = 0
         self.rollback_calls = 0
         self.hashes: list[str] = []
+        self.forced_mismatch: list[tuple[object, ...]] = []
         self.last_source_cursor: str | None = None
 
     def existing_keys(
@@ -270,6 +271,22 @@ def test_existing_keys_are_not_overwritten() -> None:
 def test_readback_mismatch_rolls_back() -> None:
     store = FakeSrcStore(readback=["deadbeef"])
     with pytest.raises(ReadbackError, match="回读不一致"):
+        write_src_snapshot(
+            spec=TRADE_CAL,
+            rows=ROWS,
+            settings=_settings(allow_db_write=True),
+            write_db=True,
+            store=store,
+        )
+    assert store.rollback_calls == 1
+    assert store.commit_calls == 0
+
+
+@pytest.mark.unit
+def test_matching_hash_but_corrupt_business_values_rolls_back() -> None:
+    store = FakeSrcStore()
+    store.forced_mismatch = [("SSE", "20260105")]
+    with pytest.raises(ReadbackError, match="业务列不一致"):
         write_src_snapshot(
             spec=TRADE_CAL,
             rows=ROWS,

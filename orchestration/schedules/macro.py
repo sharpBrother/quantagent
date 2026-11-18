@@ -17,8 +17,12 @@ from dagster import (
     SkipReason,
 )
 
-from orchestration.assets.macro import src_macro_fred_observation_vintage, src_macro_gpr_daily
-from orchestration.jobs.macro import macro_daily
+from orchestration.assets.macro import (
+    src_macro_fred_observation_vintage,
+    src_macro_gpr_daily,
+    src_macro_wgc_gold_demand,
+)
+from orchestration.jobs.macro import macro_daily, macro_wgc_weekly
 
 _TZ = "Asia/Shanghai"
 _SCHEDULE_NAME = "macro_daily_morning"
@@ -73,5 +77,29 @@ macro_daily_morning = ScheduleDefinition(
     execution_timezone=_TZ,
     execution_fn=_evaluate,
     # 全自动：daemon 一启动调度即生效，不需要在 UI 里手动打开。
+    default_status=DefaultScheduleStatus.RUNNING,
+)
+
+
+def _evaluate_wgc(context: ScheduleEvaluationContext) -> RunRequest | SkipReason:
+    if context.scheduled_execution_time is None:
+        raise ValueError("macro_wgc_weekly 缺少 scheduled_execution_time")
+    if context.instance.get_runs(
+        filters=RunsFilter(job_name=macro_wgc_weekly.name, statuses=_ACTIVE_STATUSES), limit=1
+    ):
+        return SkipReason("WGC 上一轮尚未结束")
+    today = context.scheduled_execution_time.astimezone(ZoneInfo(_TZ)).date()
+    return RunRequest(
+        run_key=f"macro_wgc_weekly:{today.isoformat()}",
+        run_config={"ops": {src_macro_wgc_gold_demand.op.name: {"config": {"write_db": True}}}},
+    )
+
+
+macro_wgc_sunday = ScheduleDefinition(
+    name="macro_wgc_sunday",
+    cron_schedule="0 12 * * 0",
+    job=macro_wgc_weekly,
+    execution_timezone=_TZ,
+    execution_fn=_evaluate_wgc,
     default_status=DefaultScheduleStatus.RUNNING,
 )

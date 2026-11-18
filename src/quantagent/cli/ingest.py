@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from pathlib import Path  # noqa: TC003 - Typer 在运行时解析类型
 from typing import Annotated
 
 import typer
@@ -16,8 +17,12 @@ from quantagent.adapters.postgres.src_progress import wind_progress
 from quantagent.adapters.postgres.wind_first_batch_columns import FIRST_BATCH_WIND_SYNC
 from quantagent.adapters.postgres.wind_large_columns import LARGE_WIND_SYNC
 from quantagent.ingest.errors import IngestError
+from quantagent.ingest.jobs.jin10_ism_details import ingest_jin10_ism_details
+from quantagent.ingest.jobs.jin10_ism_legacy import ingest_jin10_ism_legacy
 from quantagent.ingest.jobs.macro_fred import ingest_macro_fred
 from quantagent.ingest.jobs.macro_gpr import ingest_macro_gpr
+from quantagent.ingest.jobs.macro_wgc_html import ingest_wgc_html
+from quantagent.ingest.jobs.macro_wgc_legacy import ingest_wgc_legacy
 from quantagent.ingest.jobs.trade_cal import ingest_tushare_trade_cal
 from quantagent.ingest.jobs.tushare_shibor import ingest_tushare_shibor
 from quantagent.ingest.jobs.tushare_us_treasury_yield import ingest_tushare_us_treasury_yield
@@ -269,6 +274,128 @@ def ingest_macro_gpr_command(
     else:
         typer.echo(f"dry-run {head} rows={result.row_count} digest={result.payload_digest}")
     typer.echo(f"series_rows: {series}")
+
+
+@macro_app.command("wgc-legacy")
+def ingest_wgc_legacy_command(
+    write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
+) -> None:
+    """原样迁移 wx2 WGC 历史快照；默认干跑。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    try:
+        result = ingest_wgc_legacy(settings=settings, paths=paths, write_db=write_db)
+    except (
+        IngestError,
+        WriteGateError,
+        ConfigError,
+        RunLogError,
+        ForbiddenSqlError,
+        TransactionUnknownError,
+        PostgresAdapterError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    mode = "wrote" if result.written else "dry-run"
+    typer.echo(
+        f"{mode} dataset=src.macro.macro_wgc_gold_demand rows={result.row_count} "
+        f"dml={result.dml_count} digest={result.payload_digest}"
+    )
+
+
+@macro_app.command("wgc-html")
+def ingest_wgc_html_command(
+    write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
+) -> None:
+    """按旧口径从 WGC 主报告检查季度供需增量。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    try:
+        rows, new, sha = ingest_wgc_html(settings=settings, paths=paths, write_db=write_db)
+    except (
+        IngestError,
+        WriteGateError,
+        ConfigError,
+        RunLogError,
+        ForbiddenSqlError,
+        TransactionUnknownError,
+        PostgresAdapterError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"{'write' if write_db else 'dry-run'} rows={rows} new={new} sha256={sha}")
+
+
+@macro_app.command("jin10-ism-legacy")
+def ingest_jin10_ism_legacy_command(
+    snapshot: Annotated[Path, typer.Option("--snapshot", help="已保存的 wx2 快照 JSON")],
+    segment: Annotated[
+        str, typer.Option("--segment", help="历史分段：1970-2007 或 2008-2025")
+    ] = "1970-2007",
+    replace_original_date: Annotated[
+        str | None, typer.Option("--replace-original-date", help="显式指定要更正的原始日期")
+    ] = None,
+    write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
+) -> None:
+    """导入日期未知的 1970—2007 年 ISM 快照；默认干跑。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    try:
+        replacement = date.fromisoformat(replace_original_date) if replace_original_date else None
+        result = ingest_jin10_ism_legacy(
+            settings=settings,
+            paths=paths,
+            snapshot=snapshot,
+            write_db=write_db,
+            replace_original_date=replacement,
+            segment=segment,
+        )
+    except (
+        IngestError,
+        WriteGateError,
+        ConfigError,
+        RunLogError,
+        ForbiddenSqlError,
+        TransactionUnknownError,
+        PostgresAdapterError,
+        ValueError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    mode = "wrote" if result.written else "dry-run"
+    typer.echo(
+        f"{mode} rows={result.row_count} dml={result.dml_count} digest={result.payload_digest}"
+    )
+
+
+@macro_app.command("jin10-ism-details")
+def ingest_jin10_ism_details_command(
+    detail_id: Annotated[list[int], typer.Option("--detail-id", help="已确认的事件 ID，可重复")],
+    write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
+) -> None:
+    """采集已知金十 ISM 事件详情；默认干跑，不自动发现 ID。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    try:
+        result = ingest_jin10_ism_details(
+            settings=settings, paths=paths, event_ids=detail_id, write_db=write_db
+        )
+    except (
+        IngestError,
+        WriteGateError,
+        ConfigError,
+        RunLogError,
+        ForbiddenSqlError,
+        TransactionUnknownError,
+        PostgresAdapterError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    mode = "wrote" if result.written else "dry-run"
+    typer.echo(
+        f"{mode} dataset=src.macro.jin10_economic_calendar rows={result.row_count} "
+        f"dml={result.dml_count} digest={result.payload_digest}"
+    )
 
 
 def _compact_ymd(raw: str, *, flag: str) -> str:

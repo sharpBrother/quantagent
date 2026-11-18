@@ -1,0 +1,11 @@
+dataset: src.macro.macro_wgc_gold_demand
+doc_ref: docs/migration/macro-source-ingest-plan.md
+temporal_kind: period_with_revision
+period_fields: [period_end, geography, category]
+visibility:
+  rule: source_field
+  field: publish_date
+  grade: D
+  rationale: 按旧策略含当日读取，但旧库将后来的修订值匹配到早期报告发布日期，历史数值版本不可恢复，历史回测可能有前视偏差。
+pit_recoverable: false
+pit_from: '2026-11-18'

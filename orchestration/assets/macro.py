@@ -59,6 +59,33 @@ class MacroFredRunConfig(Config):
     write_db: bool = False
 
 
+class MacroWgcRunConfig(Config):
+    write_db: bool = False
+
+
+@asset(
+    name="src_macro_wgc_gold_demand",
+    group_name=_GROUP,
+    metadata={"pit_grade": _pit_grade("src.macro.macro_wgc_gold_demand")},
+)
+def src_macro_wgc_gold_demand(config: MacroWgcRunConfig) -> MaterializeResult[None]:
+    from quantagent.ingest.jobs.macro_wgc_html import ingest_wgc_html
+    from quantagent.platform.config import get_settings
+    from quantagent.platform.storage import detect_repo_root, resolve_var_paths
+
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    rows, new, sha = ingest_wgc_html(settings=settings, paths=paths, write_db=config.write_db)
+    return MaterializeResult(
+        metadata={
+            "rows": rows,
+            "new": new,
+            "file_sha256": sha,
+            "pit_grade": _pit_grade("src.macro.macro_wgc_gold_demand"),
+        }
+    )
+
+
 @asset(
     name="src_macro_fred_observation_vintage",
     group_name=_GROUP,

@@ -19,9 +19,11 @@ from quantagent.adapters.postgres.src_targets import (
     FIRST_BATCH_WIND_SPECS,
     FRED_OBSERVATION_VINTAGE,
     GPR_DAILY,
+    JIN10_ECONOMIC_CALENDAR,
     SHIBOR,
     TRADE_CAL,
     US_TREASURY_YIELD,
+    WGC_GOLD_DEMAND,
     SrcTableWriteSpec,
 )
 from quantagent.ingest.errors import TargetNotAllowedError
@@ -32,6 +34,8 @@ ALLOWED_SRC_WRITE_TARGETS: dict[str, SrcTableWriteSpec] = {
     US_TREASURY_YIELD.dataset: US_TREASURY_YIELD,
     FRED_OBSERVATION_VINTAGE.dataset: FRED_OBSERVATION_VINTAGE,
     GPR_DAILY.dataset: GPR_DAILY,
+    JIN10_ECONOMIC_CALENDAR.dataset: JIN10_ECONOMIC_CALENDAR,
+    WGC_GOLD_DEMAND.dataset: WGC_GOLD_DEMAND,
     ASHARECALENDAR.dataset: ASHARECALENDAR,
     ASHAREEODPRICES.dataset: ASHAREEODPRICES,
     AINDEXEODPRICES.dataset: AINDEXEODPRICES,
