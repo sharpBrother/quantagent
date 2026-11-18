@@ -34,6 +34,7 @@ from typing import Any, NamedTuple, Protocol
 import requests
 
 from quantagent.ingest.errors import SourceFetchError
+from quantagent.ingest.sources.http import get_with_retry
 
 FRED_OBSERVATIONS_URL = "https://api.stlouisfed.org/fred/series/observations"
 FRED_VINTAGE_DATES_URL = "https://api.stlouisfed.org/fred/series/vintagedates"
@@ -80,7 +81,8 @@ class FredHttp(Protocol):
 
 class RequestsFredHttp:
     """真实 HTTP 适配器，两次请求之间强制至少 ``MIN_REQUEST_INTERVAL_SECONDS`` 秒。
-    ``sleep`` 与 ``clock`` 可注入，便于测试间隔逻辑而不真等。
+    瞬时失败按 ``get_with_retry`` 重试，重试等待不计入上面的节流间隔。
+    ``sleep`` 与 ``clock`` 用于节流，``retry_sleep`` 用于重试等待，都可注入，便于测试而不真等。
     """
 
     def __init__(
@@ -88,9 +90,11 @@ class RequestsFredHttp:
         *,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
+        retry_sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         self._sleep = sleep
         self._clock = clock
+        self._retry_sleep = retry_sleep
         self._last_started: float | None = None
 
     def get(self, url: str, params: Mapping[str, str]) -> FredHttpResponse:
@@ -100,7 +104,14 @@ class RequestsFredHttp:
                 self._sleep(wait)
         self._last_started = self._clock()
         try:
-            response = requests.get(url, params=dict(params), timeout=REQUEST_TIMEOUT_SECONDS)
+            # get=requests.get 在调用时取值，测试 monkeypatch requests.get 才能生效。
+            response = get_with_retry(
+                url,
+                params=dict(params),
+                timeout=REQUEST_TIMEOUT_SECONDS,
+                sleep=self._retry_sleep,
+                get=requests.get,
+            )
         except requests.RequestException as exc:
             failure = type(exc).__name__
         else:

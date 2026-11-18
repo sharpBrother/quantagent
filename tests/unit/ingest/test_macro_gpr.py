@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, cast
 import numpy as np
 import pandas as pd
 import pytest
+import requests
 
 from quantagent.adapters.postgres.src_progress import latest_written_value
 from quantagent.adapters.postgres.src_targets import GPR_DAILY
@@ -20,10 +21,12 @@ from quantagent.ingest.jobs.macro_gpr import (
     ingest_macro_gpr,
     select_changed_points,
 )
+from quantagent.ingest.sources.http import get_with_retry
 from quantagent.ingest.sources.macro.gpr import (
     SOURCE_LABEL,
     GprPoint,
     _quantize,
+    fetch_gpr_daily_dta,
     parse_gpr_daily_dta,
 )
 from quantagent.ingest.writers.src_follow import fingerprint_columns
@@ -733,3 +736,66 @@ def test_rerun_with_recorded_sha_missing_writes_nothing(tmp_path: Path) -> None:
     assert result.batch_id is None
     assert store.calls == calls_before
     assert result.unchanged_points == 11
+
+
+class _FakeDownload:
+    """假的 requests 响应，只保留 fetch_gpr_daily_dta 用到的字段。"""
+
+    def __init__(self, status_code: int, content: bytes = b"") -> None:
+        self.status_code = status_code
+        self.content = content
+        self.ok = status_code < 400
+
+
+@pytest.mark.unit
+def test_download_returns_raw_bytes_and_sends_the_user_agent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: list[dict[str, Any]] = []
+
+    def _get(url: str, **kwargs: Any) -> _FakeDownload:
+        seen.append({"url": url, **kwargs})
+        return _FakeDownload(200, b"DTA-BYTES")
+
+    monkeypatch.setattr(requests, "get", _get)
+
+    assert fetch_gpr_daily_dta("https://example.org/gpr.dta") == b"DTA-BYTES"
+    assert seen[0]["headers"] == {"User-Agent": "QuantAgent gpr-daily ingest"}
+
+
+@pytest.mark.unit
+def test_download_non_2xx_is_reported_without_retry(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+
+    def _get(url: str, **_: Any) -> _FakeDownload:
+        calls.append(url)
+        return _FakeDownload(404)
+
+    monkeypatch.setattr(requests, "get", _get)
+
+    with pytest.raises(SourceFetchError, match="HTTP 404"):
+        fetch_gpr_daily_dta("https://example.org/gpr.dta")
+    assert len(calls) == 1
+
+
+@pytest.mark.unit
+def test_download_transient_failure_is_retried_then_succeeds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    responses: list[Any] = [requests.ConnectionError("reset"), _FakeDownload(200, b"OK")]
+
+    def _get(url: str, **_: Any) -> Any:
+        item = responses.pop(0)
+        if isinstance(item, BaseException):
+            raise item
+        return item
+
+    monkeypatch.setattr(requests, "get", _get)
+    # 去掉真实等待：把 get_with_retry 包一层，默认注入假的 sleep。
+    monkeypatch.setattr(
+        "quantagent.ingest.sources.macro.gpr.get_with_retry",
+        lambda url, **kwargs: get_with_retry(url, sleep=lambda _: None, **kwargs),
+    )
+
+    assert fetch_gpr_daily_dta("https://example.org/gpr.dta") == b"OK"
+    assert responses == []

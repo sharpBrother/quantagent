@@ -13,16 +13,17 @@ from __future__ import annotations
 
 import hashlib
 import io
-import urllib.error
-import urllib.request
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import ROUND_HALF_EVEN, Decimal, InvalidOperation
+from functools import partial
 from math import isnan
 
 import pandas as pd
+import requests
 
 from quantagent.ingest.errors import SourceFetchError
+from quantagent.ingest.sources.http import get_with_retry
 
 GPR_DAILY_RECENT_URL = "https://www.matteoiacoviello.com/gpr_files/data_gpr_daily_recent.dta"
 
@@ -63,13 +64,22 @@ class GprDailyFile:
 
 
 def fetch_gpr_daily_dta(url: str = GPR_DAILY_RECENT_URL) -> bytes:
-    """下载原始字节。哈希与解析都基于这份字节，所以这里不做任何转码。"""
-    request = urllib.request.Request(url, headers={"User-Agent": _HTTP_USER_AGENT})
+    """下载原始字节。哈希与解析都基于这份字节，所以这里不做任何转码。
+    瞬时失败按 ``get_with_retry`` 重试；非 2xx 的最终响应直接报错。
+    """
     try:
-        with urllib.request.urlopen(request, timeout=_HTTP_TIMEOUT_SECONDS) as response:
-            payload: bytes = response.read()
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise SourceFetchError(f"GPR 文件下载失败 {url}: {exc}") from exc
+        response = get_with_retry(
+            url,
+            timeout=_HTTP_TIMEOUT_SECONDS,
+            # 在调用时取 requests.get，测试 monkeypatch 才能生效。
+            get=partial(requests.get, headers={"User-Agent": _HTTP_USER_AGENT}),
+        )
+    except requests.RequestException as exc:
+        # 不链住原异常，只带异常类名。与 FRED 适配器的处理一致。
+        raise SourceFetchError(f"GPR 文件下载失败 {url}: {type(exc).__name__}") from None
+    if not response.ok:
+        raise SourceFetchError(f"GPR 文件下载失败 {url}: HTTP {response.status_code}")
+    payload: bytes = response.content
     if not payload:
         raise SourceFetchError(f"GPR 文件为空 {url}")
     return payload

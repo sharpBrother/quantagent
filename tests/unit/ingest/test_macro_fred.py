@@ -565,7 +565,9 @@ def test_transport_error_hides_url_with_key_and_does_not_chain(
     monkeypatch.setattr(requests, "get", _boom)
     with pytest.raises(SourceFetchError) as caught:
         fetch_observation_vintages(
-            "DFII10", api_key=_KEY, http=RequestsFredHttp(sleep=lambda _: None)
+            "DFII10",
+            api_key=_KEY,
+            http=RequestsFredHttp(sleep=lambda _: None, retry_sleep=lambda _: None),
         )
     assert "ConnectionError" in str(caught.value)
     assert _KEY not in str(caught.value)
