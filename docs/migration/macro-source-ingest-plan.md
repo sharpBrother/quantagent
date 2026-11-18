@@ -11,7 +11,7 @@ applies_to:
 
 # 公开宏观源与 Tushare 采集方案
 
-**已评审，裁定结果见文末，FRED 版本表的 ADR 待确认。** 为宏观、债券、黄金、美股择时及风格轮动补齐公开源和 Tushare
+**已评审，裁定结果见文末。分表原则待负责人确认。** 为宏观、债券、黄金、美股择时及风格轮动补齐公开源和 Tushare
 的存量采集与每日增量。债券四票的聚源和 Wind 数据仍走供应商同步链路。本方案覆盖数据接入，策略接线另行验证。
 
 ## 部署与写入
@@ -39,9 +39,8 @@ CLI 回填和 Dagster 日更调用同一个 `ingest` 作业，复用 PostgreSQL 
 **修订怎么处理，按源是否自带版本分两类：**
 
 - **源端给出版本身份**（ALFRED 的 `realtime_start`、WGC 报告期次、GPR 文件摘要、金十事件身份）：
-  修订按新版本追加，旧版本不动。这是源端发布的事实，不是我们自己的采集批次快照，与
-  [不做批次 vintage 归档](../adr/2026-09-17-no-source-vintage-archive.md)不冲突。新增版本表要另写一份 ADR 说明这一区别，
-  不能引用那份 ADR 作依据：它否决的正是“按采集批次留版本”。
+  修订按新版本追加，旧版本不动。这是源端发布的事实，不是我们自己的采集批次快照，见
+  [源端发布的版本可以落表](../adr/2026-11-18-source-published-versions.md)。
 - **源端不给版本**（Tushare `shibor`、`us_tycr`）：全自动跟随源端，业务字段变了就按主键删旧插新，不要人工介入（[ADR](../adr/2026-11-18-tushare-mirror-follows-source.md)）。
 
 | 数据源 | 目标表 | 存量 | 日更 |
@@ -62,6 +61,24 @@ CLI 回填和 Dagster 日更调用同一个 `ingest` 作业，复用 PostgreSQL 
   现表是否保留为“最新值”，实施时定；保留的话它只是派生，不作 PIT 依据。
 - **金十现表缺统计期。** 只有 `publish_date`，主键是 `record_hash`。补 `period_end` 要新建表（禁 ALTER），
   实施前先核对接口里统计期从哪个字段来。
+
+## 分表原则（待确认）
+
+旧仓口径不一：金十每个指标一张表（`macro_jin10_usa_ism_pmi`、`_china_cpi_yoy`、`_china_ppi_yoy`，列完全相同），
+FRED 按 `series_id` 一张长表，SHIBOR 与美债按期限一张长表，GPR 单指标单表。新仓源层统一为：
+
+1. **按源端数据产品分表，不按指标分表。** 一个接口或一类文件一张表：金十经济日历一张、FRED 观测一张加版本一张、
+   GPR 一张、WGC 一张、Tushare 每个接口一张。新增指标只加行，不加表、不改 DDL。
+2. **同一产品内，同质度量用长表。** 只差一个维度（指标、期限、地区）的数值，用“维度列 + 值”，维度列进主键：
+   `(indicator, period_end, 版本)`、`(trade_date, maturity)`。
+3. **异质字段保持源端列。** 一条记录里含义不同的字段（实际值、预期值、前值、单位）照源端分列，不压成键值对。
+4. **按指标的取用在 std / mart 层做。** 研究要“ISM 序列”就在 std 层按 `indicator` 筛，源层不为某个指标单独建表。
+5. **可见性按数据集配。** 同一张表里各指标发布时点不同（ISM 美东 10:00、中国 CPI 北京 09:30），
+   靠带时区的发布时刻统一判断（裁定 3），不再为可见性拆表。旧仓按指标拆表，部分正是因为日期规则只能整表一条。
+
+已建的空表里，`macro_jin10_usa_ism_pmi` 与 `macro_gpr_daily` 不符合第 1、2 条，`macro_fred_observation` 缺版本。
+建议新建 `jin10_economic_calendar`、`gpr_daily`（长表）与 `fred_observation_vintage`，旧空表按 0012–0016 的先例
+登记为历史删表；`shibor`、`us_treasury_yield`、`macro_wgc_gold_demand` 已符合，保留。
 
 ## PIT
 
@@ -90,4 +107,4 @@ CLI 回填和 Dagster 日更调用同一个 `ingest` 作业，复用 PostgreSQL 
 2. **Tushare 已有键异值**：全自动跟随源端，见 [ADR](../adr/2026-11-18-tushare-mirror-follows-source.md)。
 3. **ISM 可见性按时区**：采纳。源表保存带时区的发布时刻，可见性按消费市场的收盘时刻判断，接入金十前扩展规则引擎。
    扩展前维持 `< T`。
-4. **FRED 版本表的 ADR**：待确认“源端自带版本可以落表、与采集批次 vintage 不同”这一区分。
+4. **源端版本落表**：确认，见 [ADR](../adr/2026-11-18-source-published-versions.md)。

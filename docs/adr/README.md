@@ -54,6 +54,7 @@ applies_to:
 | 2026-11-17 | [ST 状态按左闭右开区间判断](2026-11-17-st-status-half-open.md) |
 | 2026-11-17 | [执行机上的 Dagster 运行存储改用本地 SQLite](2026-11-17-dagster-local-run-storage.md) |
 | 2026-11-18 | [Tushare 源镜像同样全自动跟随源端](2026-11-18-tushare-mirror-follows-source.md) |
+| 2026-11-18 | [源端发布的版本可以落表，与采集批次 vintage 不同](2026-11-18-source-published-versions.md) |
 
 ## 研究口径决策
 
