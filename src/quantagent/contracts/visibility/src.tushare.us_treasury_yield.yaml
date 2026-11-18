@@ -1,0 +1,11 @@
+dataset: src.tushare.us_treasury_yield
+doc_ref: docs/migration/macro-source-ingest-plan.md
+temporal_kind: point_event
+event_field: trade_date
+visibility:
+  rule: same_day_close
+  grade: A
+  rationale: >
+    美债收益率按美国交易日 trade_date 读取，旧仓下游 trade_date <= as_of（pit-rules 已钉死）。
+    美东收盘后公布，晚于北京时间同一交易日；跨时区消费的严格性由调用方 as_of 表达。
+pit_recoverable: true

@@ -48,6 +48,16 @@ SHIBOR = SrcTableWriteSpec(
     native_columns=("trade_date", "maturity", "rate", "source", "ingested_at"),
     keys=("trade_date", "maturity"),
 )
+
+# Tushare us_tycr 同为长表：一行一个 (trade_date, maturity)，源端不给版本身份，同样跟随源端。
+# native_columns 顺序与 0004_tushare.sql 的列序一致。
+US_TREASURY_YIELD = SrcTableWriteSpec(
+    dataset="src.tushare.us_treasury_yield",
+    pg_schema="src_tushare",
+    pg_table="us_treasury_yield",
+    native_columns=("trade_date", "maturity", "yield", "source", "ingested_at"),
+    keys=("trade_date", "maturity"),
+)
 ASHARECALENDAR = SrcTableWriteSpec(
     dataset="src.wind.asharecalendar",
     pg_schema="src_wind",

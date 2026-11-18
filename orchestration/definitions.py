@@ -10,7 +10,7 @@ from dagster import Definitions
 
 from orchestration.assets.cutamp import feature_pf_single_cutamp
 from orchestration.assets.tr_umr import feature_pf_single_tr_umr
-from orchestration.assets.tushare import src_tushare_shibor
+from orchestration.assets.tushare import src_tushare_shibor, src_tushare_us_treasury_yield
 from orchestration.assets.wind import WIND_SOURCE_ASSETS, std_trade_calendar
 from orchestration.jobs.cutamp import feature_cutamp
 from orchestration.jobs.tr_umr import feature_tr_umr
@@ -37,6 +37,7 @@ defs = Definitions(
         *WIND_SOURCE_ASSETS,
         std_trade_calendar,
         src_tushare_shibor,
+        src_tushare_us_treasury_yield,
         feature_pf_single_cutamp,
         feature_pf_single_tr_umr,
     ],

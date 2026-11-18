@@ -18,6 +18,7 @@ from quantagent.adapters.postgres.wind_large_columns import LARGE_WIND_SYNC
 from quantagent.ingest.errors import IngestError
 from quantagent.ingest.jobs.trade_cal import ingest_tushare_trade_cal
 from quantagent.ingest.jobs.tushare_shibor import ingest_tushare_shibor
+from quantagent.ingest.jobs.tushare_us_treasury_yield import ingest_tushare_us_treasury_yield
 from quantagent.ingest.jobs.wind_paged import DEFAULT_PAGE_SIZE, ingest_wind_paged
 from quantagent.ingest.jobs.wind_verify import verify_wind_table
 from quantagent.ingest.sources.tushare.trade_cal import DEFAULT_EXCHANGES
@@ -99,6 +100,55 @@ def ingest_shibor(
     end_date = _compact_ymd(end or datetime.now(UTC).strftime("%Y%m%d"), flag="--end")
     try:
         result = ingest_tushare_shibor(
+            settings=settings,
+            paths=paths,
+            write_db=write_db,
+            start_date=start_date,
+            end_date=end_date,
+        )
+    except (
+        IngestError,
+        WriteGateError,
+        ConfigError,
+        RunLogError,
+        ForbiddenSqlError,
+        TransactionUnknownError,
+        PostgresAdapterError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    empty = ",".join(result.empty_segments) or "无"
+    if result.written:
+        typer.echo(
+            f"wrote dataset={result.dataset} segments={result.segments} rows={result.row_count} "
+            f"inserted={result.inserted} replaced={result.replaced} skipped={result.skipped} "
+            f"metadata_skipped={result.metadata_skipped} dml={result.dml_count} "
+            f"batches={len(result.batch_ids)} empty_segments={empty} "
+            f"digest={result.output_digest}"
+        )
+    else:
+        typer.echo(
+            f"dry-run dataset={result.dataset} segments={result.segments} "
+            f"rows={result.row_count} empty_segments={empty} digest={result.payload_digest}"
+        )
+
+
+@tushare_app.command("us-treasury-yield")
+def ingest_us_treasury_yield(
+    start: Annotated[str, typer.Option("--start", help="起始日 YYYYMMDD 或 YYYY-MM-DD；必填")],
+    end: Annotated[
+        str | None,
+        typer.Option("--end", help="结束日 YYYYMMDD 或 YYYY-MM-DD；默认今天 UTC"),
+    ] = None,
+    write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
+) -> None:
+    """拉取 Tushare us_tycr，按自然月分段写入 src_tushare.us_treasury_yield。默认干跑。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    start_date = _compact_ymd(start, flag="--start")
+    end_date = _compact_ymd(end or datetime.now(UTC).strftime("%Y%m%d"), flag="--end")
+    try:
+        result = ingest_tushare_us_treasury_yield(
             settings=settings,
             paths=paths,
             write_db=write_db,

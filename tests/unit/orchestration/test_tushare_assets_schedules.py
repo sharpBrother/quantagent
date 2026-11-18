@@ -18,13 +18,14 @@ from dagster import (
 )
 from dagster._core.test_utils import create_run_for_test
 from orchestration.assets import tushare as tushare_assets
-from orchestration.assets.tushare import src_tushare_shibor
+from orchestration.assets.tushare import src_tushare_shibor, src_tushare_us_treasury_yield
 from orchestration.assets.wind import _pit_grade
 from orchestration.jobs.tushare import tushare_daily
 from orchestration.schedules import tushare as tushare_schedules
 from orchestration.schedules.tushare import tushare_daily_evening
 
 from quantagent.ingest.jobs.tushare_shibor import TushareShiborIngestResult
+from quantagent.ingest.jobs.tushare_us_treasury_yield import TushareUsTreasuryYieldIngestResult
 from quantagent.lake.materialize.trade_calendar import materialize_trade_calendar
 from quantagent.platform.config import Settings
 from quantagent.platform.storage.paths import VarPaths
@@ -68,6 +69,71 @@ def test_asset_is_a_grade_pit_source_and_defaults_to_dry_run() -> None:
     assert tushare_assets.TushareShiborRunConfig(as_of="2024-12-01").write_db is False
 
 
+def _us_result(*, written: bool) -> TushareUsTreasuryYieldIngestResult:
+    return TushareUsTreasuryYieldIngestResult(
+        dataset="src.tushare.us_treasury_yield",
+        written=written,
+        segments=1,
+        row_count=13,
+        inserted=13,
+        replaced=0,
+        skipped=0,
+        metadata_skipped=0,
+        dml_count=2,
+        empty_segments=(),
+        batch_ids=(1,),
+        payload_digest="a" * 64,
+        output_digest="b" * 64,
+    )
+
+
+@pytest.mark.unit
+def test_us_treasury_asset_is_a_grade_pit_source_and_runs_after_shibor() -> None:
+    assert src_tushare_us_treasury_yield.key.path[-1] == "src_tushare_us_treasury_yield"
+    metadata = src_tushare_us_treasury_yield.metadata_by_key[src_tushare_us_treasury_yield.key]
+    assert metadata["pit_grade"] == "A"
+    assert metadata["pit_grade"] == _pit_grade("src.tushare.us_treasury_yield")
+    # 与 SHIBOR 都写 src_tushare._batch，靠依赖边保证先 shibor 后美债，不并发。
+    assert src_tushare_shibor.key in src_tushare_us_treasury_yield.dependency_keys
+    assert tushare_assets.TushareUsTreasuryYieldRunConfig(as_of="2024-12-01").write_db is False
+
+
+@pytest.mark.unit
+def test_us_treasury_asset_takes_start_from_batch_watermark_and_passes_config(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    settings = Settings(_env_file=None, var_root=tmp_path / "var")
+    calls: dict[str, object] = {}
+
+    def _start(*, settings: Settings, end_date: str) -> str:
+        calls["resolve"] = end_date
+        return "20241031"
+
+    def _ingest(**kwargs: object) -> TushareUsTreasuryYieldIngestResult:
+        calls["ingest"] = kwargs
+        return _us_result(written=bool(kwargs["write_db"]))
+
+    monkeypatch.setattr("quantagent.platform.config.get_settings", lambda: settings)
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.tushare_us_treasury_yield.resolve_daily_start", _start
+    )
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.tushare_us_treasury_yield.ingest_tushare_us_treasury_yield",
+        _ingest,
+    )
+    result = materialize(
+        [src_tushare_us_treasury_yield],
+        run_config={"ops": {"src_tushare_us_treasury_yield": {"config": {"as_of": "2024-12-01"}}}},
+    )
+    assert result.success
+    assert calls["resolve"] == "20241201"
+    ingest_kwargs = calls["ingest"]
+    assert isinstance(ingest_kwargs, dict)
+    assert ingest_kwargs["start_date"] == "20241031"
+    assert ingest_kwargs["end_date"] == "20241201"
+    assert ingest_kwargs["write_db"] is False
+
+
 @pytest.mark.unit
 def test_asset_takes_start_from_batch_watermark_and_passes_config(
     tmp_path: Path, monkeypatch: MonkeyPatch
@@ -101,13 +167,15 @@ def test_asset_takes_start_from_batch_watermark_and_passes_config(
 
 
 @pytest.mark.unit
-def test_daily_job_contains_only_the_shibor_asset() -> None:
+def test_daily_job_contains_shibor_and_us_treasury_assets() -> None:
     assert tushare_daily.name == "tushare_daily"
-    resolved = Definitions(assets=[src_tushare_shibor], jobs=[tushare_daily]).get_job_def(
-        "tushare_daily"
-    )
+    resolved = Definitions(
+        assets=[src_tushare_shibor, src_tushare_us_treasury_yield],
+        jobs=[tushare_daily],
+    ).get_job_def("tushare_daily")
     assert {key.path[-1] for key in resolved.asset_layer.executable_asset_keys} == {
-        "src_tushare_shibor"
+        "src_tushare_shibor",
+        "src_tushare_us_treasury_yield",
     }
 
 
@@ -171,6 +239,11 @@ def test_open_day_requests_run_with_end_date_and_write_flag(
     request = _requests(tick)[0]
     assert request.run_key == "tushare_daily_evening:2026-01-05"
     assert request.run_config["ops"][src_tushare_shibor.op.name]["config"] == {
+        "as_of": "2026-01-05",
+        "write_db": True,
+    }
+    # 美债资产是必填 as_of 的 Config，调度必须同时给出，否则整个作业会因缺配置失败。
+    assert request.run_config["ops"][src_tushare_us_treasury_yield.op.name]["config"] == {
         "as_of": "2026-01-05",
         "write_db": True,
     }

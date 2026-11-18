@@ -18,7 +18,7 @@ from dagster import (
     SkipReason,
 )
 
-from orchestration.assets.tushare import src_tushare_shibor
+from orchestration.assets.tushare import src_tushare_shibor, src_tushare_us_treasury_yield
 from orchestration.jobs.tushare import tushare_daily
 from quantagent.platform.config import get_settings
 from quantagent.platform.storage import detect_repo_root, resolve_var_paths
@@ -67,7 +67,13 @@ def _evaluate(context: ScheduleEvaluationContext) -> RunRequest | SkipReason:
                         # 全自动写入。日更起点由 src_tushare._batch 决定，不由调度给出。
                         "write_db": True,
                     }
-                }
+                },
+                src_tushare_us_treasury_yield.op.name: {
+                    "config": {
+                        "as_of": today.isoformat(),
+                        "write_db": True,
+                    }
+                },
             }
         },
     )
