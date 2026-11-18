@@ -20,7 +20,7 @@ from dagster._core.test_utils import create_run_for_test
 from orchestration.assets import macro as macro_assets
 from orchestration.assets.macro import src_macro_fred_observation_vintage, src_macro_gpr_daily
 from orchestration.assets.wind import _pit_grade
-from orchestration.definitions import defs
+from orchestration.definitions import defs, schedules_for_profile
 from orchestration.jobs.macro import macro_daily
 from orchestration.schedules.macro import macro_daily_morning
 
@@ -95,7 +95,8 @@ def test_macro_daily_job_contains_the_fred_asset() -> None:
 @pytest.mark.unit
 def test_definitions_register_macro_job_and_schedule() -> None:
     assert defs.get_job_def("macro_daily").name == "macro_daily"
-    schedule = defs.get_schedule_def("macro_daily_morning")
+    # 调度按 profile 注册（Mac 才有 macro 调度），这里直接取 local 的调度，测试不依赖本机 profile。
+    schedule = next(s for s in schedules_for_profile("local") if s.name == "macro_daily_morning")
     assert schedule.cron_schedule == "0 8 * * *"
 
 

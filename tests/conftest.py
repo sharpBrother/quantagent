@@ -32,3 +32,15 @@ def docs_root(repo_root: Path) -> Path:
 def frozen_root(repo_root: Path) -> Path:
     """``frozen/`` 根目录，供冻结制品 digest 与行列合同校验使用。"""
     return repo_root / "frozen"
+
+
+@pytest.fixture(autouse=True)
+def _hermetic_quantagent_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """测试不受本机 shell 环境影响。
+
+    执行机设 ``QUANTAGENT_PROFILE=office``，launchd 只给 daemon 设写闸；这些环境变量会覆盖
+    ``Settings(_env_file=None)`` 的默认值，让同一套测试在两台机器上结果不同。仓库 ``.env``
+    不受影响，需要真实配置的集成测试照常读取。
+    """
+    for name in ("QUANTAGENT_PROFILE", "QUANTAGENT_ALLOW_DB_WRITE"):
+        monkeypatch.delenv(name, raising=False)
