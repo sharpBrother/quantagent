@@ -1,0 +1,10 @@
+dataset: src.tushare.shibor
+doc_ref: docs/migration/macro-source-ingest-plan.md
+temporal_kind: point_event
+event_field: trade_date
+visibility:
+  rule: same_day_close
+  grade: A
+  rationale: >
+    旧仓按 trade_date <= as_of 读取（pit-rules 已钉死）。SHIBOR 每日 11:00 前公布。
+pit_recoverable: true

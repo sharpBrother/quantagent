@@ -39,6 +39,15 @@ TRADE_CAL = SrcTableWriteSpec(
     keys=("exchange", "cal_date"),
 )
 
+# Tushare shibor 是长表：一行一个 (trade_date, maturity)。源端不给版本身份，按
+# ADR 2026-11-18 全自动跟随源端。native_columns 顺序与 0004_tushare.sql 的列序一致。
+SHIBOR = SrcTableWriteSpec(
+    dataset="src.tushare.shibor",
+    pg_schema="src_tushare",
+    pg_table="shibor",
+    native_columns=("trade_date", "maturity", "rate", "source", "ingested_at"),
+    keys=("trade_date", "maturity"),
+)
 ASHARECALENDAR = SrcTableWriteSpec(
     dataset="src.wind.asharecalendar",
     pg_schema="src_wind",

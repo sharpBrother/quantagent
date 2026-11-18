@@ -17,6 +17,7 @@ from quantagent.adapters.postgres.src_targets import (
     ASHAREINCOME,
     ASHAREMONEYFLOW,
     FIRST_BATCH_WIND_SPECS,
+    SHIBOR,
     TRADE_CAL,
     SrcTableWriteSpec,
 )
@@ -24,6 +25,7 @@ from quantagent.ingest.errors import TargetNotAllowedError
 
 ALLOWED_SRC_WRITE_TARGETS: dict[str, SrcTableWriteSpec] = {
     TRADE_CAL.dataset: TRADE_CAL,
+    SHIBOR.dataset: SHIBOR,
     ASHARECALENDAR.dataset: ASHARECALENDAR,
     ASHAREEODPRICES.dataset: ASHAREEODPRICES,
     AINDEXEODPRICES.dataset: AINDEXEODPRICES,

@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from psycopg.rows import dict_row
 
+from quantagent.adapters.postgres.sql_types import quote_ident
 from quantagent.adapters.postgres.src_dml import assert_src_dml_sql
 
 if TYPE_CHECKING:
@@ -52,6 +53,29 @@ GROUP BY b.dataset
 ORDER BY max(b.finished_at) DESC
 """
 )
+
+
+def latest_success_window_end(
+    conn: psycopg.Connection[Any],
+    *,
+    pg_schema: str,
+    dataset: str,
+) -> str | None:
+    """最近一次成功提交的批次的 ``window_end``；没有成功批次返回 None。只读。
+
+    日更起点由它推出。批次与数据同事务提交，所以这里看到的一定是已入库的区间。
+    """
+    statement = assert_src_dml_sql(
+        f"SELECT window_end FROM {quote_ident(pg_schema)}.{quote_ident('_batch')} "
+        "WHERE dataset = %s AND status = 'success' "
+        f"ORDER BY {quote_ident('_batch_id')} DESC LIMIT 1"
+    )
+    with conn.cursor() as cur:
+        cur.execute(statement, (dataset,))
+        fetched = cur.fetchone()
+    if fetched is None or fetched[0] is None:
+        return None
+    return str(fetched[0])
 
 
 def wind_progress(conn: psycopg.Connection[Any], *, window_minutes: int) -> list[TableProgress]:
