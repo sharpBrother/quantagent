@@ -12,6 +12,7 @@ from quantagent.adapters.postgres.errors import (
     PostgresAdapterError,
     TransactionUnknownError,
 )
+from quantagent.adapters.postgres.src_progress import wind_progress
 from quantagent.adapters.postgres.wind_first_batch_columns import FIRST_BATCH_WIND_SYNC
 from quantagent.adapters.postgres.wind_large_columns import LARGE_WIND_SYNC
 from quantagent.ingest.errors import IngestError
@@ -21,6 +22,7 @@ from quantagent.ingest.jobs.wind_verify import verify_wind_table
 from quantagent.ingest.sources.tushare.trade_cal import DEFAULT_EXCHANGES
 from quantagent.platform.config import get_settings
 from quantagent.platform.errors import ConfigError, RunLogError, WriteGateError
+from quantagent.platform.pg import connect
 from quantagent.platform.storage import detect_repo_root, resolve_var_paths
 
 ingest_app = typer.Typer(help="外部源采集到 PG 研究数据面。默认不写库。", no_args_is_help=True)
@@ -283,3 +285,37 @@ def ingest_wind_verify(
     )
     if result.mismatched:
         raise typer.Exit(code=1)
+
+
+@wind_app.command("progress")
+def ingest_wind_progress(
+    window: Annotated[int, typer.Option("--window", min=1, help="统计最近 N 分钟的页速")] = 60,
+    stale: Annotated[
+        int, typer.Option("--stale", min=1, help="距上次提交超过 N 分钟且近窗口有页时标 STALE")
+    ] = 15,
+) -> None:
+    """只读：按表汇总 src_wind._batch，查看回填进度与是否卡住。"""
+    settings = get_settings()
+    try:
+        with connect(settings, "src") as conn:
+            rows = wind_progress(conn, window_minutes=window)
+    except (ConfigError, PostgresAdapterError) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    now = datetime.now(UTC)
+    typer.echo(
+        f"{'dataset':38} {'pages':>7} {'rows':>12} {'last_commit':>19} {'idle_min':>8} "
+        f"{'s/page':>7}  flag"
+    )
+    for item in rows:
+        idle = (now - item.last_commit).total_seconds() / 60
+        # 只对“近窗口还在出页、但最近一段没动静”的表报警；早已追平的表闲着是正常的。
+        flag = "STALE" if item.recent_pages and idle > stale else ""
+        speed = (
+            "" if item.recent_seconds_per_page is None else f"{item.recent_seconds_per_page:.1f}"
+        )
+        typer.echo(
+            f"{item.dataset:38} {item.pages:7d} {item.rows:12,d} "
+            f"{item.last_commit.astimezone().strftime('%Y-%m-%d %H:%M:%S'):>19} "
+            f"{idle:8.1f} {speed:>7}  {flag}"
+        )

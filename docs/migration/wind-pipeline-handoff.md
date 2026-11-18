@@ -137,6 +137,9 @@ applies_to:
    指数估值 710,000、中信行业行情 30,000、四张成分表共 45,959 行，业务值不一致 0。
    `AINDEXMEMBERSCITICS2` 的 8,765 行只差在 `CUR_SIGN` 的表示：PG 建成 `integer`，源端是
    numeric，值相等。
+   **回填进度在 Mac 上看。** `quantagent ingest wind progress` 只读汇总 `src_wind._batch`：每表页数、行数、
+   最后提交时间、闲置分钟、最近 60 分钟每页秒数。近窗口有页但超过 15 分钟没动静标 `STALE`。
+   不走 ToDesk，执行机跑批时也能查。失败原因仍在执行机本地 run log 与 Dagster SQLite。
 4. **首个量价因子已对上一个小样本。** `pf_single_cutamp_1_mean_neg` 来自旧仓
    `CUTAMP`：20 个交易日的振幅，去掉收盘触及涨跌停的日子，按复权收盘价切 25%。
    Current-20 取相反数。2024-01-02 至 01-05 的 `000001.SZ` 与 `600000.SH`，
