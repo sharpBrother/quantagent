@@ -272,7 +272,7 @@ tables:
     scripts/run_growth_value_final_research.py, scripts/run_growth_value_style_rotation.py
     等5处
   dest: src_tushare.shibor（第一批已收录，本清单不启动迁入）
-  extra: 与 Wind SHIBORPRICES 不是同一张表。旧 wx2 表名 macro_shibor。visibility 已配：same_day_close / A（2026-11-18，按 pit-rules 已钉死口径；源端全量重拉，pit_recoverable: true）
+  extra: 与 Wind SHIBORPRICES 不是同一张表。旧 wx2 表名 macro_shibor。visibility 已配：same_day_close / A（2026-11-18，按 pit-rules 已钉死口径；源端全量重拉，pit_recoverable 为 true）
   src_batch1: true
   origin: src_tables_yaml
   pit_required: true
@@ -284,7 +284,7 @@ tables:
   reason: Tushare pro.us_tycr。第一批 src_tables.yaml；现役：macro_regime/pit.py, scripts/macro_regime_walk_forward_evaluation.py,
     macro_regime/config/indicator_registry.yaml 等5处
   dest: src_tushare.us_treasury_yield（第一批已收录，本清单不启动迁入）
-  extra: 旧 wx2 表名 macro_us_treasury_yield。visibility 已配：same_day_close / A（2026-11-18，按 pit-rules 已钉死口径；源端全量重拉，pit_recoverable: true）
+  extra: 旧 wx2 表名 macro_us_treasury_yield。visibility 已配：same_day_close / A（2026-11-18，按 pit-rules 已钉死口径；源端全量重拉，pit_recoverable 为 true）
   src_batch1: true
   origin: src_tables_yaml
   pit_required: true
