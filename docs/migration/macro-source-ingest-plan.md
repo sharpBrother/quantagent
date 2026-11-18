@@ -76,9 +76,16 @@ FRED 按 `series_id` 一张长表，SHIBOR 与美债按期限一张长表，GPR 
 5. **可见性按数据集配。** 同一张表里各指标发布时点不同（ISM 美东 10:00、中国 CPI 北京 09:30），
    靠带时区的发布时刻统一判断（裁定 3），不再为可见性拆表。旧仓按指标拆表，部分正是因为日期规则只能整表一条。
 
-已建的空表里，`macro_jin10_usa_ism_pmi` 与 `macro_gpr_daily` 不符合第 1、2 条，`macro_fred_observation` 缺版本。
-建议新建 `jin10_economic_calendar`、`gpr_daily`（长表）与 `fred_observation_vintage`，旧空表按 0012–0016 的先例
-登记为历史删表；`shibor`、`us_treasury_yield`、`macro_wgc_gold_demand` 已符合，保留。
+分表原则 2026-11-18 已确认。已建空表中 `shibor`、`us_treasury_yield`、`macro_wgc_gold_demand` 保留；
+另外三张按下面的设计新建，旧空表按 0012–0016 先例登记为历史删表。设计依据是旧仓采集代码与 wx2 实测（2026-11-18）。
+
+| 新表 | 主键 | 其余列 | 依据 |
+|---|---|---|---|
+| `src_macro.jin10_economic_calendar` | `(indicator_id, publish_date, data_id)` | `period_end`、`time_period`、`published_at timestamptz`、`actual_value`、`forecast_value`、`previous_value`、`revised_value`、`source` | `indicator_id` 用金十 `datanameId`（ISM 129）。详情接口给 `pub_time`（UTC）与 `dataId`；历史列表只有日期，`data_id` 记 0、`published_at` 为 NULL，可见性回退为严格 `< as_of` |
+| `src_macro.gpr_daily` | `(series_id, observation_date, file_vintage)` | `value`、`file_sha256`、`source` | 文件列 `GPRD`、`GPRD_ACT`、`GPRD_THREAT` 等按 `series_id` 成行。文件没有版本字段，`file_vintage` 取文件里最大的 `DAY`，与旧仓 `gold_timing/pit.py` 一致，等级不高于 C |
+| `src_macro.fred_observation_vintage` | `(series_id, observation_date, realtime_start)` | `realtime_end`、`value`、`source` | 用 ALFRED 的 `realtime_start/realtime_end` 取全部版本；源端 `"."` 记 NULL 并保留该行 |
+
+旧 `macro_fred_observation` 不再新写：当前值由版本表取 `realtime_end` 为最新的一版得到，在 std 层算。
 
 ## PIT
 
@@ -94,6 +101,10 @@ FRED 按 `series_id` 一张长表，SHIBOR 与美债按期限一张长表，GPR 
 `_ingested_at` 只作采集记录，不作可见日。
 
 ## 实施与验收
+
+**进度（2026-11-18）**：写入入口按 profile 强制已上线。SHIBOR 端到端完成：本机全量回填 2006-10-08 至 2026-11-17
+共 40,008 行，与 wx2 `macro_shibor` 键与值逐一相同；同窗重跑零新增；19:00 日更调度已注册（仅 Mac）。
+0018 已在本机执行，三张新表与契约就绪（金十 B、FRED A、GPR C，三者均严格早于 `as_of`）。下一步接美债。
 
 1. 先做写入入口按 profile 强制，以及 Mac daemon 的挂载检查。
 2. 用 SHIBOR 验证端到端：存量与 `wx2` 校对、同窗重跑新增零行、中断后从成功批次续跑、下一次真实发布自动追加并通过回读。

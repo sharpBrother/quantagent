@@ -1,0 +1,49 @@
+dataset: src.macro.gpr_daily
+layer: pg
+doc_ref: docs/migration/macro-source-ingest-plan.md
+temporal_kind: period_with_revision
+period_fields:
+  - series_id
+  - observation_date
+keys:
+  - series_id
+  - observation_date
+  - file_vintage
+reads: []
+columns:
+  series_id:
+    dtype: string
+    nullable: false
+    description: 文件列名，如 GPRD、GPRD_ACT、GPRD_THREAT
+  observation_date:
+    dtype: date
+    nullable: false
+    description: 观测日（文件里的 DAY）
+  file_vintage:
+    dtype: date
+    nullable: false
+    description: 文件版本日，取文件内最大 DAY，与旧仓 gold_timing/pit.py 一致；文件没有版本字段，属派生近似
+  value:
+    dtype: float64
+    nullable: true
+    description: 指数值，numeric(18,8)
+  file_sha256:
+    dtype: string
+    nullable: false
+    description: 下载文件的 sha256，用于判断文件是否变化
+  source:
+    dtype: string
+    nullable: false
+    description: 来源标记，固定为 gpr.daily
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次，指向 src_macro._batch
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间，不是 PIT 依据
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 主键与业务列的内容指纹

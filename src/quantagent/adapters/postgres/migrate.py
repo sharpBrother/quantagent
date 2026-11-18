@@ -49,6 +49,17 @@ _CREATE_TABLE = re.compile(
     re.IGNORECASE,
 )
 _FILENAME = re.compile(r"^(\d{4})_[a-z0-9_]+\.sql$")
+# 删表且不在同文件重建的历史例外，文件与表名写死。0018 按分表原则删除三张空的旧宏观表，
+# 必须位于文件开头。应用时 _refuse_nonempty_drop 仍会检查行数，非空则拒绝。
+_DROP_WITHOUT_REBUILD: dict[str, frozenset[str]] = {
+    "0018_macro_source_tables.sql": frozenset(
+        {
+            'src_macro."macro_jin10_usa_ism_pmi"',
+            'src_macro."macro_gpr_daily"',
+            'src_macro."macro_fred_observation"',
+        }
+    ),
+}
 
 CATALOG_SCHEMA_SQL = "CREATE SCHEMA IF NOT EXISTS qa_migrate"
 CATALOG_TABLE_SQL = """
@@ -154,19 +165,28 @@ def assert_migration_sql(sql: str, *, filename: str) -> tuple[str, ...]:
         for statement in statements
         if (match := _CREATE_TABLE.match(statement)) is not None
     }
+    exempt = _DROP_WITHOUT_REBUILD.get(filename, frozenset())
+    exempt_dropped: set[str] = set()
+    seen_non_drop = False
     for statement in statements:
         dropped = _DROP_TABLE.match(statement)
         if dropped is not None:
             # 已应用的迁移文件不能改。空表列与源端不一致时，只允许删掉这张表并在同一文件里建回。
             name = dropped.group(1)
-            if name not in created:
-                raise MigrationError(f"{filename} 删除的表没有在同一文件重建: {name}")
-            continue
+            if name in created:
+                continue
+            if name in exempt and not seen_non_drop:
+                exempt_dropped.add(name)
+                continue
+            raise MigrationError(f"{filename} 删除的表没有在同一文件重建: {name}")
+        seen_non_drop = True
         leading = _leading_keyword(statement)
         if leading not in ALLOWED_LEADING:
             raise MigrationError(f"{filename} 语句动词非法: {leading}")
         if _FORBIDDEN.search(_FK_ACTION.sub(" ", statement)):
             raise MigrationError(f"{filename} 含禁止动词: {statement[:80]}")
+    if exempt_dropped != exempt:
+        raise MigrationError(f"{filename} 的开头删表与白名单不一致")
     return statements
 
 

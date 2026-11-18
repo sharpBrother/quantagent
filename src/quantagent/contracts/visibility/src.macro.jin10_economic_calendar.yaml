@@ -1,0 +1,14 @@
+dataset: src.macro.jin10_economic_calendar
+doc_ref: docs/migration/macro-source-ingest-plan.md
+temporal_kind: period_with_revision
+period_fields:
+- indicator_id
+- period_end
+visibility:
+  rule: source_field
+  field: publish_date
+  strict: true
+  grade: B
+  rationale: 金十历史列表只有公布日期、没有时刻与统计期字段，统计期由公布日推上月（旧仓 data/jin10_period.py）；2025-10 起详情接口给出 UTC 发布时刻。可见性先按公布日严格早于 as_of（旧仓 gold_timing/signals.py:335），带时区按消费市场判断待规则引擎扩展。
+pit_recoverable: false
+pit_from: '2025-10-01'

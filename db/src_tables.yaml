@@ -121,10 +121,10 @@ tables:
   - source: suntime
     name: FIN_APPO_RELE_DATE
   - source: macro
-    name: macro_jin10_usa_ism_pmi
+    name: jin10_economic_calendar
   - source: macro
     name: macro_wgc_gold_demand
   - source: macro
-    name: macro_fred_observation
+    name: fred_observation_vintage
   - source: macro
-    name: macro_gpr_daily
+    name: gpr_daily

@@ -1,0 +1,49 @@
+dataset: src.macro.fred_observation_vintage
+layer: pg
+doc_ref: docs/migration/macro-source-ingest-plan.md
+temporal_kind: period_with_revision
+period_fields:
+  - series_id
+  - observation_date
+keys:
+  - series_id
+  - observation_date
+  - realtime_start
+reads: []
+columns:
+  series_id:
+    dtype: string
+    nullable: false
+    description: FRED 序列号，如 DFII10、T10YIE、CPIAUCSL
+  observation_date:
+    dtype: date
+    nullable: false
+    description: 观测期（FRED 的 date）
+  realtime_start:
+    dtype: date
+    nullable: false
+    description: ALFRED 版本起始日，即该版本的官方发布日；可见日依据
+  realtime_end:
+    dtype: date
+    nullable: false
+    description: ALFRED 版本结束日，按源端原值保存
+  value:
+    dtype: float64
+    nullable: true
+    description: 观测值，numeric(18,8)；源端 "." 记 NULL 并保留该行
+  source:
+    dtype: string
+    nullable: false
+    description: 来源标记，固定为 fred.alfred
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次，指向 src_macro._batch
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间，不是 PIT 依据
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 主键与业务列的内容指纹

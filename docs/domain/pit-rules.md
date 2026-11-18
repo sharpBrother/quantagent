@@ -142,7 +142,7 @@ visibility:
 ```
 
 `fallback` 的 `grade` 必须不高于主规则——推断出来的可见日不可能比原生
-字段更可信。
+字段更可信。`strict: true` 表示严格早于 `as_of`，截止日为 `as_of` 前一天，只允许 `source_field`，用于 FRED、金十 ISM、`FIN_APPO_RELE_DATE`。
 
 ### release_calendar
 

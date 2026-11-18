@@ -1,0 +1,14 @@
+dataset: src.macro.gpr_daily
+doc_ref: docs/migration/macro-source-ingest-plan.md
+temporal_kind: period_with_revision
+period_fields:
+- series_id
+- observation_date
+visibility:
+  rule: source_field
+  field: file_vintage
+  strict: true
+  grade: C
+  rationale: GPR 文件无版本与发布日期字段，file_vintage 取文件内最大 DAY，与旧仓 gold_timing/pit.py 一致（vintage < T）；属派生近似，标 C。
+pit_recoverable: false
+pit_from: '2026-09-08'
