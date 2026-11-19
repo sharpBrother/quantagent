@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from quantagent.domain.errors import PitUnsupportedError
@@ -51,9 +52,12 @@ def pit_cutoff(contract: VisibilityContract, *, as_of: date) -> PitCutoff:
             grade=grade,
         )
     if rule == "source_field":
+        # 严格截止：截止列是日期，``field < as_of`` 与 ``field <= as_of - 1 天`` 等价。
+        # 截止列若是时间戳，这个等价不成立，遇到时再扩展，现在不做。
+        on_or_before = as_of - timedelta(days=1) if contract.visibility.strict else as_of
         return PitCutoff(
             column=_source_field_column(contract),
-            on_or_before=as_of,
+            on_or_before=on_or_before,
             rule=rule,
             grade=grade,
         )

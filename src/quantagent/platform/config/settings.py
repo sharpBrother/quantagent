@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     pg_ops_password: SecretStr = SecretStr("")
 
     tushare_token: SecretStr = SecretStr("")
+    # FRED API key。只从环境变量 / .env 进入，不落任何文件、日志或错误信息。
+    fred_api_key: SecretStr = SecretStr("")
 
     wind_mssql_host: str = ""
     wind_mssql_port: int = Field(default=1433, ge=1, le=65535)

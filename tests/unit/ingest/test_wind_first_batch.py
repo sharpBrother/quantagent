@@ -41,7 +41,7 @@ def test_first_batch_tables_are_writable_and_paged() -> None:
         assert spec.keys == ("OBJECT_ID",)
         assert {"OBJECT_ID", "OPDATE", "OPMODE"} <= set(spec.native_columns)
         assert "GSUPDTIME" not in spec.native_columns
-        assert_writable(spec)
+        assert_writable(spec, profile="office")
         paged = resolve_wind_paged_table(name)
         assert paged.spec == spec
         assert paged.source_table == name

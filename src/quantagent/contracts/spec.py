@@ -47,12 +47,17 @@ class VisibilitySpec(BaseModel):
     calendar: str | None = None
     lag_n: int | None = Field(default=None, ge=0)
     lag_unit: Literal["trading_day", "calendar_day"] | None = None
+    # 严格早于 as_of：截止日为 as_of 前一天。用于源端按「早于当日才可见」发布的数据集。
+    strict: bool = False
     fallback: VisibilitySpec | None = None
 
     @model_validator(mode="after")
     def _rule_payload_and_fallback_grade(self) -> Self:
         if self.rule == "source_field" and not self.field:
             raise ValueError("source_field 必须指定 field")
+        if self.strict and self.rule != "source_field":
+            # 严格截止只对 source_field 有定义；其它规则各自的截止语义不同，不得混用。
+            raise ValueError("strict 只允许 source_field 规则")
         if self.rule == "release_calendar" and not self.calendar:
             raise ValueError("release_calendar 必须指定 calendar")
         if self.rule == "fixed_lag" and (self.lag_n is None or self.lag_unit is None):

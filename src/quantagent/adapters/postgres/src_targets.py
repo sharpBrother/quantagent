@@ -39,6 +39,102 @@ TRADE_CAL = SrcTableWriteSpec(
     keys=("exchange", "cal_date"),
 )
 
+# Tushare shibor 是长表：一行一个 (trade_date, maturity)。源端不给版本身份，按
+# ADR 2026-11-18 全自动跟随源端。native_columns 顺序与 0004_tushare.sql 的列序一致。
+SHIBOR = SrcTableWriteSpec(
+    dataset="src.tushare.shibor",
+    pg_schema="src_tushare",
+    pg_table="shibor",
+    native_columns=("trade_date", "maturity", "rate", "source", "ingested_at"),
+    keys=("trade_date", "maturity"),
+)
+
+# Tushare us_tycr 同为长表：一行一个 (trade_date, maturity)，源端不给版本身份，同样跟随源端。
+# native_columns 顺序与 0004_tushare.sql 的列序一致。
+US_TREASURY_YIELD = SrcTableWriteSpec(
+    dataset="src.tushare.us_treasury_yield",
+    pg_schema="src_tushare",
+    pg_table="us_treasury_yield",
+    native_columns=("trade_date", "maturity", "yield", "source", "ingested_at"),
+    keys=("trade_date", "maturity"),
+)
+# FRED／ALFRED 带版本观测。主键含 realtime_start，一个 (序列, 观测日) 可有多行历史版本。
+# 同一版本的 realtime_end 在源端被新版本取代后会从 9999-12-31 改成具体日期，这是同键值变，
+# 由写入器按跟随源端规则替换（计入 replaced）。native_columns 顺序与 0018_macro_source_tables.sql 一致。
+# 0018 起的新表不再建原生 ingested_at 列，采集时刻只写 _ingested_at。
+FRED_OBSERVATION_VINTAGE = SrcTableWriteSpec(
+    dataset="src.macro.fred_observation_vintage",
+    pg_schema="src_macro",
+    pg_table="fred_observation_vintage",
+    native_columns=(
+        "series_id",
+        "observation_date",
+        "realtime_start",
+        "realtime_end",
+        "value",
+        "source",
+    ),
+    keys=("series_id", "observation_date", "realtime_start"),
+)
+
+# GPR 日频是长表：一行一个 (series_id, observation_date, file_vintage)。文件没有版本字段，
+# file_vintage 是文件内最大 DAY 的近似，所以版本身份由 file_vintage 与 file_sha256 共同表达。
+# 同一 file_vintage 被源端改写时，file_sha256 变化，按跟随源端规则整键替换。
+# native_columns 顺序与 0018_macro_source_tables.sql 的列序一致。
+GPR_DAILY = SrcTableWriteSpec(
+    dataset="src.macro.gpr_daily",
+    pg_schema="src_macro",
+    pg_table="gpr_daily",
+    native_columns=(
+        "series_id",
+        "observation_date",
+        "file_vintage",
+        "value",
+        "file_sha256",
+        "source",
+    ),
+    keys=("series_id", "observation_date", "file_vintage"),
+)
+
+# wx2 中的 record_hash 是源表主键；保留原有字段以便逐行对账。
+WGC_GOLD_DEMAND = SrcTableWriteSpec(
+    dataset="src.macro.macro_wgc_gold_demand",
+    pg_schema="src_macro",
+    pg_table="macro_wgc_gold_demand",
+    native_columns=(
+        "period_end",
+        "geography",
+        "category",
+        "value_tonnes",
+        "publish_date",
+        "source",
+        "file_sha256",
+        "record_hash",
+        "ingested_at",
+    ),
+    keys=("record_hash",),
+)
+
+# 源事件身份由金十指标、发布日期和事件 ID 共同确定，不能用采集时间代替版本。
+JIN10_ECONOMIC_CALENDAR = SrcTableWriteSpec(
+    dataset="src.macro.jin10_economic_calendar",
+    pg_schema="src_macro",
+    pg_table="jin10_economic_calendar",
+    native_columns=(
+        "indicator_id",
+        "publish_date",
+        "data_id",
+        "period_end",
+        "time_period",
+        "published_at",
+        "actual_value",
+        "forecast_value",
+        "previous_value",
+        "revised_value",
+        "source",
+    ),
+    keys=("indicator_id", "publish_date", "data_id"),
+)
 ASHARECALENDAR = SrcTableWriteSpec(
     dataset="src.wind.asharecalendar",
     pg_schema="src_wind",

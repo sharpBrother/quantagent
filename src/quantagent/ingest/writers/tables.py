@@ -17,13 +17,25 @@ from quantagent.adapters.postgres.src_targets import (
     ASHAREINCOME,
     ASHAREMONEYFLOW,
     FIRST_BATCH_WIND_SPECS,
+    FRED_OBSERVATION_VINTAGE,
+    GPR_DAILY,
+    JIN10_ECONOMIC_CALENDAR,
+    SHIBOR,
     TRADE_CAL,
+    US_TREASURY_YIELD,
+    WGC_GOLD_DEMAND,
     SrcTableWriteSpec,
 )
 from quantagent.ingest.errors import TargetNotAllowedError
 
 ALLOWED_SRC_WRITE_TARGETS: dict[str, SrcTableWriteSpec] = {
     TRADE_CAL.dataset: TRADE_CAL,
+    SHIBOR.dataset: SHIBOR,
+    US_TREASURY_YIELD.dataset: US_TREASURY_YIELD,
+    FRED_OBSERVATION_VINTAGE.dataset: FRED_OBSERVATION_VINTAGE,
+    GPR_DAILY.dataset: GPR_DAILY,
+    JIN10_ECONOMIC_CALENDAR.dataset: JIN10_ECONOMIC_CALENDAR,
+    WGC_GOLD_DEMAND.dataset: WGC_GOLD_DEMAND,
     ASHARECALENDAR.dataset: ASHARECALENDAR,
     ASHAREEODPRICES.dataset: ASHAREEODPRICES,
     AINDEXEODPRICES.dataset: AINDEXEODPRICES,
@@ -53,7 +65,16 @@ FORBIDDEN_SRC_WRITE_TARGETS: frozenset[str] = frozenset(
 )
 
 
-def assert_writable(spec: SrcTableWriteSpec) -> None:
+# 每台机器只写自己负责的源 schema（负责人 2026-11-18 裁定）。两台机器跑同一份代码，
+# 目标白名单分不出机器，所以按 QUANTAGENT_PROFILE 再限一层：公司电脑（office）连 Wind、
+# 聚源、朝阳永续；Mac（local）跑公开源与 Tushare。各自有自己的 _batch，游标互不相干。
+PROFILE_WRITABLE_SCHEMAS: dict[str, frozenset[str]] = {
+    "office": frozenset({"src_wind", "src_jydb", "src_suntime"}),
+    "local": frozenset({"src_tushare", "src_macro"}),
+}
+
+
+def assert_writable(spec: SrcTableWriteSpec, *, profile: str) -> None:
     if spec.dataset in FORBIDDEN_SRC_WRITE_TARGETS:
         raise TargetNotAllowedError(f"目标数据集显式禁写: {spec.dataset}")
     if spec.qualified_table in FORBIDDEN_SRC_WRITE_TARGETS:
@@ -65,6 +86,11 @@ def assert_writable(spec: SrcTableWriteSpec) -> None:
         raise TargetNotAllowedError(
             f"写入规格与白名单不一致: {spec.dataset} -> {spec.qualified_table}"
         )
+    schemas = PROFILE_WRITABLE_SCHEMAS.get(profile)
+    if schemas is None or spec.pg_schema not in schemas:
+        raise TargetNotAllowedError(
+            f"本机 profile={profile} 不负责写 {spec.pg_schema}: {spec.dataset}"
+        )
 
 
 __all__ = [
@@ -73,6 +99,7 @@ __all__ = [
     "ASHARECALENDAR",
     "ASHAREEODPRICES",
     "FORBIDDEN_SRC_WRITE_TARGETS",
+    "PROFILE_WRITABLE_SCHEMAS",
     "TRADE_CAL",
     "SrcTableWriteSpec",
     "assert_writable",

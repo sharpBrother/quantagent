@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Dagster daemon 的 launchd 托管模板（用户级 LaunchAgent）。
+
+  占位符由安装步骤替换，仓库里不写死路径：
+    __REPO__     仓库根目录
+    __VAR_ROOT__ 外接盘上的 var 目录（QUANTAGENT_VAR_ROOT）
+    __HOME__     用户主目录（uv 的缓存与工具目录依赖 HOME）
+
+  安装方法见 docs/runbook/local-quantdb-postgres.md 的「Mac Dagster daemon（launchd）」一节。
+
+  写库闸：QUANTAGENT_ALLOW_DB_WRITE=true 只放在本文件的 EnvironmentVariables 里，不写进仓库
+  .env。交互会话读的是 .env，默认不写库；只有 launchd 启动的 daemon 进程才打开这道闸。
+  pydantic-settings 中环境变量优先于 .env，所以这里的值会覆盖 .env。
+
+  日志写在 ~/Library/Logs/quantagent：launchd 先打开日志文件再启动进程，放外接盘时未挂载就起不来。
+  KeepAlive 只在非 0 退出时重启。启动脚本等外接盘或 PG 超时会以 75 退出，launchd 按
+  ThrottleInterval 60 秒后重试。
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.quantagent.dagster-daemon</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>__VAR_ROOT__/run-dagster-daemon-mac.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__REPO__</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>DAGSTER_HOME</key>
+        <string>__VAR_ROOT__/dagster</string>
+        <key>QUANTAGENT_PROFILE</key>
+        <string>local</string>
+        <key>QUANTAGENT_ALLOW_DB_WRITE</key>
+        <string>true</string>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>__HOME__</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/Library/Logs/quantagent/dagster-daemon.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>__HOME__/Library/Logs/quantagent/dagster-daemon.err.log</string>
+</dict>
+</plist>

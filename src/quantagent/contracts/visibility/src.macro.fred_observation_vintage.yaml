@@ -1,0 +1,14 @@
+dataset: src.macro.fred_observation_vintage
+doc_ref: docs/migration/macro-source-ingest-plan.md
+temporal_kind: period_with_revision
+period_fields:
+  - series_id
+  - observation_date
+visibility:
+  rule: source_field
+  field: realtime_start
+  strict: true
+  grade: A
+  rationale: >
+    FRED／ALFRED 按首个 realtime_start 可见，严格早于 as_of（pit-rules 已钉死）。ALFRED 提供完整历史版本，可见日来自源端原生版本起始日。
+pit_recoverable: true

@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 def _paths(tmp_path: Path, *, allow_db_write: bool) -> tuple[Settings, VarPaths]:
     settings = Settings(
         _env_file=None,
+        profile="office",
         var_root=tmp_path / "var",
         allow_db_write=allow_db_write,
     )

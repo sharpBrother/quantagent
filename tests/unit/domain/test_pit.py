@@ -5,8 +5,9 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
+from pydantic import ValidationError
 
-from quantagent.contracts.spec import VisibilityContract
+from quantagent.contracts.spec import VisibilityContract, VisibilitySpec
 from quantagent.domain.errors import PitUnsupportedError
 from quantagent.domain.pit import (
     is_cutoff_visible,
@@ -44,6 +45,25 @@ def _source_field(*, field: str = "knowledge_dt") -> VisibilityContract:
                 "rule": "source_field",
                 "field": field,
                 "grade": "B",
+                "rationale": "单元测试用的可见性规则说明必须足够长",
+            },
+            "pit_recoverable": True,
+        }
+    )
+
+
+def _source_field_strict() -> VisibilityContract:
+    return VisibilityContract.model_validate(
+        {
+            "dataset": "src.macro.fred_observation_vintage",
+            "doc_ref": "docs/domain/pit-rules.md",
+            "temporal_kind": "point_event",
+            "event_field": "observation_date",
+            "visibility": {
+                "rule": "source_field",
+                "field": "realtime_start",
+                "strict": True,
+                "grade": "A",
                 "rationale": "单元测试用的可见性规则说明必须足够长",
             },
             "pit_recoverable": True,
@@ -97,6 +117,49 @@ def test_source_field_cuts_on_declared_field_not_event_dt() -> None:
     assert is_cutoff_visible(value=date(2024, 1, 10), cutoff=cutoff)
     assert is_cutoff_visible(value=date(2024, 1, 4), cutoff=cutoff)
     assert not is_cutoff_visible(value=date(2024, 1, 20), cutoff=cutoff)
+
+
+@pytest.mark.unit
+def test_source_field_strict_excludes_as_of_day() -> None:
+    contract = _source_field_strict()
+    as_of = date(2024, 1, 10)
+    cutoff = pit_cutoff(contract, as_of=as_of)
+    assert cutoff.column == "realtime_start"
+    assert cutoff.on_or_before == date(2024, 1, 9)
+    assert cutoff.rule == "source_field"
+    assert not is_cutoff_visible(value=date(2024, 1, 10), cutoff=cutoff)
+    assert is_cutoff_visible(value=date(2024, 1, 9), cutoff=cutoff)
+    assert is_cutoff_visible(value=date(2024, 1, 4), cutoff=cutoff)
+
+
+@pytest.mark.unit
+def test_source_field_default_is_not_strict() -> None:
+    contract = _source_field()
+    assert contract.visibility.strict is False
+    cutoff = pit_cutoff(contract, as_of=date(2024, 1, 10))
+    assert cutoff.on_or_before == date(2024, 1, 10)
+    assert is_cutoff_visible(value=date(2024, 1, 10), cutoff=cutoff)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("rule", "extra"),
+    [
+        ("same_day_close", {}),
+        ("release_calendar", {"calendar": "cn_nbs_release"}),
+        ("fixed_lag", {"lag_n": 15, "lag_unit": "calendar_day"}),
+    ],
+)
+def test_strict_is_rejected_for_non_source_field(rule: str, extra: dict[str, object]) -> None:
+    payload: dict[str, object] = {
+        "rule": rule,
+        "grade": "A",
+        "rationale": "单元测试用的可见性规则说明必须足够长",
+        "strict": True,
+        **extra,
+    }
+    with pytest.raises(ValidationError, match="strict 只允许 source_field"):
+        VisibilitySpec.model_validate(payload)
 
 
 @pytest.mark.unit

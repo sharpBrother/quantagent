@@ -82,7 +82,9 @@ def test_every_batch_id_column_is_indexed(repo_root: Path) -> None:
         )
         is not None
     }
-    assert len(with_batch) == 60
+    # 59 张清单表 + 0008 建的 ASHARECALENDAR（不在清单）+ 0007 建后被 0018 删除的三张旧宏观表。
+    # 0007 已应用不能改，所以旧表的 CREATE 仍在迁移文件里。
+    assert len(with_batch) == 63
     assert with_batch - indexed == set()
 
 
@@ -100,6 +102,17 @@ _HISTORICAL_DROP_REBUILD = {
 }
 
 
+# 0018 按分表原则删三张空的旧宏观表，不重建同名表。只放行文件开头这三条 DROP，
+# 顺序与文件一致；其余语句仍必须是 CREATE。
+_HISTORICAL_DROP_ONLY = {
+    "0018_macro_source_tables.sql": (
+        'src_macro."macro_jin10_usa_ism_pmi"',
+        'src_macro."macro_gpr_daily"',
+        'src_macro."macro_fred_observation"',
+    ),
+}
+
+
 @pytest.mark.unit
 def test_src_sql_has_no_drop_or_dml(repo_root: Path) -> None:
     files = list_migration_files(repo_root, "src")
@@ -111,6 +124,11 @@ def test_src_sql_has_no_drop_or_dml(repo_root: Path) -> None:
             assert file_statements[0] == f"DROP TABLE {rebuilt}", item.path.name
             assert file_statements[1].startswith(f"CREATE TABLE {rebuilt} ("), item.path.name
             file_statements = file_statements[1:]
+        drop_only = _HISTORICAL_DROP_ONLY.get(item.path.name)
+        if drop_only is not None:
+            head = file_statements[: len(drop_only)]
+            assert list(head) == [f"DROP TABLE {name}" for name in drop_only], item.path.name
+            file_statements = file_statements[len(drop_only) :]
         statements.extend(file_statements)
     assert statements
     assert all(stmt.split(None, 1)[0].upper() == "CREATE" for stmt in statements)

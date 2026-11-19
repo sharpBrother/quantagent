@@ -1,0 +1,56 @@
+dataset: src.macro.macro_wgc_gold_demand
+layer: pg
+doc_ref: docs/migration/macro-source-ingest-plan.md
+temporal_kind: period_with_revision
+period_fields: [period_end, geography, category]
+keys: [record_hash]
+reads: []
+columns:
+  period_end:
+    dtype: string
+    nullable: false
+    description: 季度末 YYYYMMDD
+  geography:
+    dtype: string
+    nullable: false
+    description: 地区，旧库为 WORLD
+  category:
+    dtype: string
+    nullable: false
+    description: WGC 供需类别
+  value_tonnes:
+    dtype: float64
+    nullable: false
+    description: 吨数，源表 numeric(18,8)
+  publish_date:
+    dtype: string
+    nullable: false
+    description: 旧库记录的发布日期 YYYYMMDD，历史修订值可能早于真实可见时点
+  source:
+    dtype: string
+    nullable: false
+    description: 旧库来源标签
+  file_sha256:
+    dtype: string
+    nullable: false
+    description: 旧库记录的源文件摘要
+  record_hash:
+    dtype: string
+    nullable: false
+    description: 旧库原生记录身份
+  ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 旧库采集时间，不是发布时间
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 新库采集批次
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 新库采集时间，不是发布时间
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 业务列摘要

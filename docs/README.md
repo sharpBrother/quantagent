@@ -2,7 +2,7 @@
 title: 文档导航
 status: active
 created: 2026-09-16
-updated: 2026-11-15
+updated: 2026-11-18
 applies_to:
   - docs/
 ---
@@ -61,6 +61,7 @@ superseded` 的保留正文供追溯。
 | 文档 | 内容 |
 |---|---|
 | [migration/roadmap.md](migration/roadmap.md) | P0–P6 阶段、验收标准、回滚点 |
+| [migration/macro-source-ingest-plan.md](migration/macro-source-ingest-plan.md) | 公开宏观源与 Tushare 的存量回填、每日增量和双机调度（已评审） |
 | [migration/wind-asharecalendar-ingest.md](migration/wind-asharecalendar-ingest.md) | Wind 日历源镜像与同步入口 |
 | [migration/wind-pipeline-handoff.md](migration/wind-pipeline-handoff.md) | Wind 数据链路进度、Dagster 接入与研究切换交接 |
 | [migration/wx2-disposition.md](migration/wx2-disposition.md) | 旧 SQL Server `wx2` 逐表处置标准 |

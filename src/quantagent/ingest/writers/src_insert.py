@@ -63,7 +63,7 @@ def write_src_snapshot(
     now: Callable[[], datetime] | None = None,
 ) -> SrcWriteResult:
     """``write_db`` 默认由调用方传 False。真写必须同时打开环境写闸。"""
-    assert_writable(spec)
+    assert_writable(spec, profile=settings.profile)
     native_rows = require_native_rows(spec, rows)
     if not native_rows:
         raise EmptyPayloadError(f"{spec.dataset} 载荷为空")
@@ -117,6 +117,11 @@ def write_src_snapshot(
     if len(readback) != len(hashes) or sorted(readback) != sorted(hashes):
         _rollback_or_unknown(store)
         raise ReadbackError(f"{spec.dataset} 回读不一致：wrote={len(hashes)} read={len(readback)}")
+    # 指纹由客户端写入，必须另外验证实际业务值未在传输或类型转换中改变。
+    mismatched = store.mismatched_rows(spec, batch_id, native_rows)
+    if mismatched:
+        _rollback_or_unknown(store)
+        raise ReadbackError(f"{spec.dataset} 回读业务列不一致，已回滚: {mismatched[:5]!r}")
     try:
         store.commit()
     except TransactionUnknownError:

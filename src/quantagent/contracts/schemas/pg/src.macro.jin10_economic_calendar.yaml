@@ -1,0 +1,69 @@
+dataset: src.macro.jin10_economic_calendar
+layer: pg
+doc_ref: docs/migration/macro-source-ingest-plan.md
+temporal_kind: period_with_revision
+period_fields:
+  - indicator_id
+  - period_end
+keys:
+  - indicator_id
+  - publish_date
+  - data_id
+reads: []
+columns:
+  indicator_id:
+    dtype: int64
+    nullable: false
+    description: 金十 datanameId，ISM 为 129；不是指标名，指标名由 std 层映射
+  publish_date:
+    dtype: date
+    nullable: false
+    description: 源日期；wx2 1970—2007 年占位日期并非已确认发布日期
+  data_id:
+    dtype: int64
+    nullable: false
+    description: 金十事件身份 dataId；历史列表没有该字段时记 0
+  period_end:
+    dtype: date
+    nullable: true
+    description: 统计期末。历史列表无此字段，由公布日推算（旧仓 data/jin10_period.py）；无法推算则为 NULL
+  time_period:
+    dtype: string
+    nullable: true
+    description: 源端统计期文本，原样保存
+  published_at:
+    dtype: datetime
+    nullable: true
+    description: 带时区的发布时刻（详情接口 pub_time，UTC）；历史列表没有时刻，记 NULL，不推测填充
+  actual_value:
+    dtype: float64
+    nullable: true
+    description: 实际值，numeric(18,8)
+  forecast_value:
+    dtype: float64
+    nullable: true
+    description: 预期值，numeric(18,8)
+  previous_value:
+    dtype: float64
+    nullable: true
+    description: 前值，numeric(18,8)
+  revised_value:
+    dtype: float64
+    nullable: true
+    description: 修正值，numeric(18,8)
+  source:
+    dtype: string
+    nullable: false
+    description: 来源标记；jin10.wx2.legacy_unknown_release 表示日期为占位符
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次，指向 src_macro._batch
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间，不是 PIT 依据
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 主键与业务列的内容指纹

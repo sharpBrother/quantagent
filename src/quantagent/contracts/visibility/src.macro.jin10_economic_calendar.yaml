@@ -1,0 +1,14 @@
+dataset: src.macro.jin10_economic_calendar
+doc_ref: docs/migration/macro-source-ingest-plan.md
+temporal_kind: period_with_revision
+period_fields:
+- indicator_id
+- period_end
+visibility:
+  rule: source_field
+  field: publish_date
+  strict: true
+  grade: D
+  rationale: 沿用旧项目 ISM 的发布日期严格早于 as_of 规则；wx2 历史占位日期与数值可能无法还原首次发布事实，历史可信度低，带时区发布时间按消费市场收盘判断待规则引擎支持。
+pit_recoverable: false
+pit_from: '2025-10-01'

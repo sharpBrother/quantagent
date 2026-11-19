@@ -61,6 +61,7 @@ class FakeSrcStore:
         self.commit_calls = 0
         self.rollback_calls = 0
         self.hashes: list[str] = []
+        self.forced_mismatch: list[tuple[object, ...]] = []
         self.last_source_cursor: str | None = None
 
     def existing_keys(
@@ -199,7 +200,7 @@ def test_whitelist_rejects_other_tushare_table() -> None:
         keys=("ts_code", "trade_date"),
     )
     with pytest.raises(TargetNotAllowedError, match=r"禁写|白名单"):
-        assert_writable(spec)
+        assert_writable(spec, profile="local")
     with pytest.raises(TargetNotAllowedError):
         write_src_snapshot(
             spec=spec,
@@ -220,12 +221,21 @@ def test_forbidden_batch_table_is_explicit() -> None:
         keys=TRADE_CAL.keys,
     )
     with pytest.raises(TargetNotAllowedError, match=r"禁写|不一致"):
-        assert_writable(spec)
+        assert_writable(spec, profile="local")
 
 
 @pytest.mark.unit
 def test_ashareeodprices_is_writable() -> None:
-    assert_writable(ASHAREEODPRICES)
+    assert_writable(ASHAREEODPRICES, profile="office")
+
+
+@pytest.mark.unit
+def test_profile_limits_writable_schemas() -> None:
+    with pytest.raises(TargetNotAllowedError, match="profile=local"):
+        assert_writable(ASHAREEODPRICES, profile="local")
+    with pytest.raises(TargetNotAllowedError, match="profile=office"):
+        assert_writable(TRADE_CAL, profile="office")
+    assert_writable(TRADE_CAL, profile="local")
 
 
 @pytest.mark.unit
@@ -261,6 +271,22 @@ def test_existing_keys_are_not_overwritten() -> None:
 def test_readback_mismatch_rolls_back() -> None:
     store = FakeSrcStore(readback=["deadbeef"])
     with pytest.raises(ReadbackError, match="回读不一致"):
+        write_src_snapshot(
+            spec=TRADE_CAL,
+            rows=ROWS,
+            settings=_settings(allow_db_write=True),
+            write_db=True,
+            store=store,
+        )
+    assert store.rollback_calls == 1
+    assert store.commit_calls == 0
+
+
+@pytest.mark.unit
+def test_matching_hash_but_corrupt_business_values_rolls_back() -> None:
+    store = FakeSrcStore()
+    store.forced_mismatch = [("SSE", "20260105")]
+    with pytest.raises(ReadbackError, match="业务列不一致"):
         write_src_snapshot(
             spec=TRADE_CAL,
             rows=ROWS,

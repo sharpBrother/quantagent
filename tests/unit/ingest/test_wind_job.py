@@ -141,7 +141,9 @@ class FakeSrcStore:
 
 
 def _paths(tmp_path: Path) -> tuple[Settings, VarPaths]:
-    settings = Settings(_env_file=None, var_root=tmp_path / "var", allow_db_write=True)
+    settings = Settings(
+        _env_file=None, profile="office", var_root=tmp_path / "var", allow_db_write=True
+    )
     return settings, resolve_var_paths(settings, repo_root=tmp_path)
 
 

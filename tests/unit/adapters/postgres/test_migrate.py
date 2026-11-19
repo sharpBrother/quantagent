@@ -56,6 +56,30 @@ def test_empty_table_rebuild_must_create_the_same_table() -> None:
         )
 
 
+_MACRO_DROPS = """
+DROP TABLE src_macro."macro_jin10_usa_ism_pmi";
+DROP TABLE src_macro."macro_gpr_daily";
+DROP TABLE src_macro."macro_fred_observation";
+CREATE TABLE src_macro."gpr_daily" (id integer PRIMARY KEY);
+"""
+
+
+@pytest.mark.unit
+def test_macro_drop_exemption_only_for_0018_leading_drops() -> None:
+    assert_migration_sql(_MACRO_DROPS, filename="0018_macro_source_tables.sql")
+    with pytest.raises(MigrationError, match="没有在同一文件重建"):
+        assert_migration_sql(_MACRO_DROPS, filename="0019_other.sql")
+    late = 'CREATE TABLE src_macro."gpr_daily" (id integer PRIMARY KEY);\n' + _MACRO_DROPS
+    with pytest.raises(MigrationError, match="没有在同一文件重建"):
+        assert_migration_sql(late, filename="0018_macro_source_tables.sql")
+    partial = (
+        'DROP TABLE src_macro."macro_gpr_daily";\n'
+        'CREATE TABLE src_macro."gpr_daily" (id integer PRIMARY KEY);'
+    )
+    with pytest.raises(MigrationError, match="开头删表与白名单不一致"):
+        assert_migration_sql(partial, filename="0018_macro_source_tables.sql")
+
+
 def test_assert_migration_sql_rejects_drop() -> None:
     with pytest.raises(MigrationError, match="动词非法"):
         assert_migration_sql("DROP TABLE src_wind.x;", filename="x.sql")
@@ -97,6 +121,7 @@ def test_list_migration_files_on_repo(repo_root: Path) -> None:
         "0015_aindexindustrieseodcitics_source_columns.sql",
         "0016_asharedividend_source_columns.sql",
         "0017_rebuilt_tables_batch_id_indexes.sql",
+        "0018_macro_source_tables.sql",
     ]
     assert [item.filename for item in ops] == [
         "0001_schema.sql",

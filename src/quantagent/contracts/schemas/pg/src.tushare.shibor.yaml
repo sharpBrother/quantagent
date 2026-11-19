@@ -1,0 +1,42 @@
+dataset: src.tushare.shibor
+layer: pg
+doc_ref: docs/migration/macro-source-ingest-plan.md
+temporal_kind: point_event
+event_field: trade_date
+keys:
+  - trade_date
+  - maturity
+reads: []
+columns:
+  trade_date:
+    dtype: string
+    nullable: false
+    description: 业务日 YYYYMMDD，源端字符串；也是 PIT 的事件日
+  maturity:
+    dtype: string
+    nullable: false
+    description: 期限，取值与旧仓 macro_shibor 一致：on、1w、2w、1m、3m、6m、9m、1y
+  rate:
+    dtype: float64
+    nullable: false
+    description: 利率（%），numeric(18,4)；源端超过 4 位小数即拒收，不截断
+  source:
+    dtype: string
+    nullable: false
+    description: 来源标记，固定为 tushare.shibor
+  ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本次采集时刻（naive UTC），与 _ingested_at 同一时刻；不是 PIT 依据
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次，指向 src_tushare._batch
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间，不是 PIT 依据
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 主键与业务列（rate）的内容指纹，不含 source 与 ingested_at
