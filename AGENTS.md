@@ -25,7 +25,8 @@
 1. [`PROJECT.md`](PROJECT.md)（项目目标与技术约束）
 2. 本文件
 3. [`docs/README.md`](docs/README.md)（唯一文档入口）
-4. 与当前任务直接相关的代码、测试和 `docs/` 下的既有结论
+4. [`docs/migration/roadmap.md`](docs/migration/roadmap.md) 的“当前进度”一节（唯一进度入口，完成一项就更新）
+5. 与当前任务直接相关的代码、测试和 `docs/` 下的既有结论
 
 涉及数据读取时（数据库、行情、交易日历、因子），**新增模块前必须先检索
 `domain/ports/` 下已有的 Protocol 与 `adapters/` 的实现**。已有能力直接

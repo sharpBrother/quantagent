@@ -2,7 +2,7 @@
 title: 迁移路线 P0–P6
 status: active
 created: 2026-09-16
-updated: 2026-11-17
+updated: 2026-11-19
 applies_to:
   - src/quantagent/
   - orchestration/
@@ -33,10 +33,96 @@ applies_to:
 | P5 | 发布与前端 | 冻结制品迁入、publish 契约、apps/web |
 | P6 | 旧仓封存 | pycharm_workspace 转只读归档 |
 
-## 当前进度 · 2026-11-17
+## 当前进度 · 2026-11-19
 
-| 阶段 | 状态 |
+**本节是项目唯一的进度入口（pipeline）。** 每完成一项就改这里：勾掉、补日期与提交号，新出现的阻塞写进
+“阻塞与待裁定”。细节与证据放在下面链接的专题文档里，本节只写结论。各表实时行数用
+`uv run quantagent ingest wind progress` 看（目前只汇总 `src_wind`）。
+
+### 阶段总状态
+
+| 阶段 | 状态 | 一句话 |
+|---|---|---|
+| P0 骨架 | ✅ 完成 | 门禁 ruff / mypy / import-linter / pytest 全绿 |
+| P1 存储底座 | ✅ 完成 | 两面迁移、DuckDB 会话、缺规则 fail-closed、因子布局 ADR |
+| P2 处置与入湖 | 🔄 进行中 | Wind 回填中；Tushare 两表与宏观两源已日更；JYDB、朝阳永续未接 |
+| P3 口径与因子 | 🔄 提前起步 | 股票池与 ST 读取已实现并对拍 wx2；等数据进库做真实库验收 |
+| P4–P6 | ⏳ 未开始 | |
+
+### 运行环境
+
+| 机器 | profile | 只写 | 调度 | 托管 | 状态 |
+|---|---|---|---|---|---|
+| 公司电脑（执行机） | `office` | `src_wind`、`src_jydb`、`src_suntime` | Wind 16:30、06:00 | Windows 计划任务（ONLOGON，不可注销） | 运行，经 ToDesk 连 PG |
+| Mac mini | `local` | `src_tushare`、`src_macro` | Tushare 19:00、宏观 08:00 | launchd `com.quantagent.dagster-daemon` | 2026-11-18 起运行 |
+
+Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-local-run-storage.md)）。
+采集在子进程里跑，600 秒无新页即终止重试。
+
+### P2 数据入湖明细
+
+**Wind（第一批 30 张，24 张已接，执行机回填，按优先级）**
+
+| 优先级 | 表 | 状态 |
+|---|---|---|
+| 1 | `ASHAREST` | ⏳ 未回填（约 3,400 行） |
+| 2 | `ASHAREEODDERIVATIVEINDICATOR` | 🔄 回填中（11-19 约 244 万行） |
+| 3 | `ASHAREDESCRIPTION`、`ASHAREEODPRICES`、`ASHARECALENDAR`、`AINDEXEODPRICES` | ✅ 已追平。描述表 8,621 行对 wx2 8,635 行，差 14 行待核 |
+| 3 | `AINDEXMEMBERS`、中信一二三级成分 | ✅；`SWINDEXMEMBERS` 🔄 |
+| 4 | 利润表、资产负债表、现金流量表、财务指标、业绩预告 | ⏳ 未回填 |
+| 4 | `ASHAREDIVIDEND` | 🔄 约 15.7 万 / wx2 16 万 |
+| 5 | 指数估值、中信行业行情、两融明细、两融汇总、停牌 | 🔄 部分；两融明细仅 5 万行 |
+| 6 | `ASHAREMONEYFLOW` | 🔄 461 万 / 1,328 万，无新仓消费者 |
+| 6 | `CHINAMUTUALFUNDSTOCKPORTFOLIO` | 🔄 1,984 万行，旧仓仅一处读取 |
+| — | 5 张无主键表、`AINDEXINDUSTRIESCITICS`、`CBONDCURVECNBD` | ⛔ 未接，待逐个裁定 |
+
+已入库数据在 11-17 用 `ingest wind verify` 重算指纹核对，业务值不一致 0。
+
+**公开源与 Tushare（Mac）**：详见[宏观采集方案](macro-source-ingest-plan.md)
+
+| 源 | 状态 |
 |---|---|
+| Tushare `shibor` | ✅ 40,008 行，与 wx2 逐值一致，19:00 日更 |
+| Tushare `us_tycr` | ✅ 99,656 行，与 wx2 逐值一致，19:00 日更 |
+| GPR 日频 | ✅ 91,770 行，08:00 日更，只存变化版本（C 级） |
+| FRED/ALFRED | ✅ 15,824 个版本行，08:00 日更，分片取数（A 级） |
+| 金十 ISM、WGC | ⏸ 暂缓到 P4，交给 Codex 调研取数方式 |
+
+**其他**：JYDB 12 张、朝阳永续 7 张、Tushare 其余接口 ⏳ 未接（JYDB、朝阳在公司电脑上）；第四类运维表 ⏳ 未动。
+
+### P3 口径与因子
+
+| 项 | 状态 | 前提 |
+|---|---|---|
+| `all_a` 股票池（读取时计算） | ✅ 实现；wx2 对拍 2,138/2,145 天一致 | 真实库验收等衍生指标回填完 |
+| 指数 / 行业成分池 | ✅ 实现；4 宽基 × 85 月末一致 | 真实库验收等申万回填完 |
+| ST 状态 | ✅ 实现；202 个月末一致 | 真实库验收等 `ASHAREST` |
+| cutamp、tr_umr | 🔄 小样本入长表，与 wx2 一致 | 2024-01-05 全截面 golden 等 `all_a` 真实库验收 |
+| 其余网关 golden、`pit_grade` 木桶测试 | ⏳ | 不依赖数据，可随时做 |
+| `alpha_factory` 因子批量移植 | ⏳ | 量价等全截面 golden；基本面等四张财报表 |
+
+### 下一步（按顺序）
+
+1. `ASHAREST`、衍生指标回填完 → 真实库跑 `all_a`、成分池、ST 集成测试。
+2. 2024-01-05 全截面固化 cutamp、tr_umr 对 wx2 的 golden。
+3. P3 其余 golden 与 `pit_grade` 木桶测试（可与 1 并行）。
+4. 量价因子批量移植；财报表回填后移植基本面因子。
+
+### 阻塞与待裁定
+
+| 事项 | 等谁 |
+|---|---|
+| Wind 日更作业按上表优先级排序（现为默认顺序，低优先级大表先跑） | 负责人确认 |
+| 7 张未接的 Wind 表逐个定方案 | 负责人 |
+| ISM、美债等跨时区数据的可见性：按消费市场收盘时刻判断，需扩展规则引擎 | 已裁定，待实现 |
+| ToDesk 链路会吞连接：回填靠看门狗与逐列回读兜底，未根治 | 观察 |
+| daemon 连 PG 用超级用户 `leo`，应改 `quantagent_ingest` | 负责人放密码 |
+| `ingest wind progress` 扩展到 Tushare 与宏观 | 可随时做 |
+
+专题文档：[Wind 交接](wind-pipeline-handoff.md)、[宏观采集方案](macro-source-ingest-plan.md)、
+[wx2 清单](wx2-table-list.md)、[ADR 索引](../adr/README.md)。
+
+---|---|
 | P0 | 完成。门禁 ruff、mypy、import-linter、pytest 全绿 |
 | P1 | 完成。两面迁移可独立 migrate/status，DuckDB 会话、缺规则 fail-closed 测试、因子布局 ADR 均已落地 |
 | P2 | 进行中。两份清单完成。第一批 59 张源表 DDL 已建；Wind 30 张里 25 张已接分页采集，有数据的 4 张（日历、A 股日行情、指数日行情全量，资金流 9 万行）。剩 5 张无主键表、`AINDEXINDUSTRIESCITICS`、`CBONDCURVECNBD` 待定。Tushare 除日历外、JYDB、朝阳永续、宏观未接。源表 visibility 只写了 4 张。第四类运维表未动 |
@@ -278,5 +364,5 @@ PG schema 可整体 drop 重建（此时无真实数据）。`var/lake/` 可整�
 
 ## 进度维护
 
-本文档是活文档。阶段完成后在这里标注，不另建进度台账。阶段内容需要调整时
+本文档是活文档，“当前进度”一节是唯一的进度入口，不另建进度台账。每次完成一项或出现新阻塞就更新它。阶段内容需要调整时
 直接改本文档；如果调整涉及设计取舍，在 `docs/adr/` 记一份。
