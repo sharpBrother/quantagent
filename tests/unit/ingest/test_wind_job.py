@@ -4,14 +4,21 @@ from __future__ import annotations
 
 import json
 import logging
+import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
 import pytest
+from dagster import DagsterInstance, DagsterRunStatus
+from orchestration.resources.wind import WindIngestResource, _ingest_child, _PageProgress
+from typer.testing import CliRunner
 
 from quantagent.adapters.postgres.errors import TransactionUnknownError
 from quantagent.adapters.postgres.src_targets import AINDEXVALUATION
-from quantagent.ingest.errors import SourceFetchError
+from quantagent.cli.app import app
+from quantagent.ingest.errors import IngestStoppedError, SourceFetchError
 from quantagent.ingest.jobs import wind_paged
 from quantagent.ingest.jobs.wind_paged import ingest_wind_paged
 from quantagent.ingest.sources.wind.cursor import decode_cursor, initial_cursor
@@ -21,6 +28,7 @@ from quantagent.platform.storage.paths import resolve_var_paths
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
+    from multiprocessing.connection import Connection
     from pathlib import Path
 
     from quantagent.adapters.postgres.src_targets import SrcTableWriteSpec
@@ -162,6 +170,109 @@ def _row(object_id: str, opdate: datetime) -> dict[str, object]:
     return payload
 
 
+def _isolated_stop_child(
+    *,
+    settings: Settings,
+    paths: VarPaths,
+    table: str,
+    write_db: bool,
+    page_size: int,
+    max_pages: int | None,
+    progress_path: Path,
+    conn: Connection,
+    stop_path: Path,
+) -> None:
+    # 子进程使用真实分页和停止代码，仅将外部源与数据库换为隔离假对象。
+    class BlockingSource(FakeWindSource):
+        def fetch_page(self, **kwargs: object) -> list[dict[str, object]]:
+            (paths.root / "fetching").touch()
+            deadline = time.monotonic() + 30
+            while not stop_path.exists():
+                if time.monotonic() > deadline:
+                    raise TimeoutError("未收到测试停止请求")
+                time.sleep(0.02)
+            return super().fetch_page(**kwargs)  # type: ignore[arg-type]
+
+    class CommittedStore(FakeSrcStore):
+        def commit(self) -> None:
+            assert self.cursor is not None
+            (paths.root / "committed_cursor").write_text(self.cursor, encoding="utf-8")
+
+    source = BlockingSource([[_row("a", datetime(2024, 1, 2, 10))], []])
+    store = CommittedStore()
+    original = wind_paged.ingest_wind_paged
+
+    def fake_connections(**kwargs: object) -> object:
+        return original(source=source, store=store, **kwargs)  # type: ignore[arg-type]
+
+    wind_paged.ingest_wind_paged = fake_connections  # type: ignore[assignment]
+    _ingest_child(
+        settings=settings,
+        paths=paths,
+        table=table,
+        write_db=write_db,
+        page_size=page_size,
+        max_pages=max_pages,
+        progress_path=progress_path,
+        conn=conn,
+        stop_path=stop_path,
+    )
+
+
+@pytest.mark.unit
+def test_safe_stop_command_through_spawned_ingest_and_resume(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_id = "b0e4bc1a-df9f-4df4-a78b-26d378837f03"
+    settings, paths = _paths(tmp_path)
+    resource = WindIngestResource(settings=settings, paths=paths, stall_seconds=40)
+    monkeypatch.setattr("quantagent.cli.ingest.get_settings", lambda: settings)
+    monkeypatch.setattr("quantagent.cli.ingest.detect_repo_root", lambda: tmp_path)
+    run = SimpleNamespace(job_name="wind_initial_backfill", status=DagsterRunStatus.STARTED)
+    monkeypatch.setattr(
+        DagsterInstance, "get", lambda: SimpleNamespace(get_run_by_id=lambda _: run)
+    )
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(
+            resource._run_watched,
+            "ASHAREEODPRICES",
+            write_db=True,
+            page_size=1000,
+            max_pages=None,
+            stop_run_id=run_id,
+            child_target=_isolated_stop_child,
+            poll_seconds=0.1,
+        )
+        deadline = time.monotonic() + 30
+        while not (paths.root / "fetching").exists():
+            if future.done():
+                future.result()
+                pytest.fail("采集子进程未进入源查询")
+            if time.monotonic() > deadline:
+                pytest.fail("等待采集子进程超时")
+            time.sleep(0.02)
+        result = CliRunner().invoke(app, ["ingest", "wind", "stop-after-page", "--run-id", run_id])
+        assert result.exit_code == 0, result.output
+        with pytest.raises(IngestStoppedError, match="已提交 1 页"):
+            future.result(timeout=30)
+    cursor = (paths.root / "committed_cursor").read_text(encoding="utf-8")
+    assert decode_cursor(cursor).object_id == "a"
+    log = _failure_log(paths)
+    assert log["row_count"] == 1
+    assert "按请求停止" in str(log["error"])
+    resumed_source = FakeWindSource([[_row("b", datetime(2024, 1, 2, 11))], []])
+    resumed = ingest_wind_paged(
+        settings=settings,
+        paths=paths,
+        table="ASHAREEODPRICES",
+        write_db=True,
+        source=resumed_source,
+        store=FakeSrcStore(cursor=cursor),
+    )
+    assert resumed_source.seen[0] == decode_cursor(cursor)
+    assert decode_cursor(resumed.source_cursor).object_id == "b"
+
+
 @pytest.mark.unit
 def test_dry_run_defaults_to_one_page(tmp_path: Path) -> None:
     settings, paths = _paths(tmp_path)
@@ -212,6 +323,89 @@ class _FixedClock:
     @staticmethod
     def monotonic() -> float:
         return 100.0
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("request_phase", ["source_fetch", "commit"])
+def test_stop_after_commit_and_resume_from_committed_cursor(
+    tmp_path: Path, request_phase: str
+) -> None:
+    settings, paths = _paths(tmp_path)
+    marker = tmp_path / "stop"
+    first = _row("a", datetime(2024, 1, 2, 10))
+    second = _row("b", datetime(2024, 1, 2, 11))
+
+    class RequestDuringFetch(FakeWindSource):
+        def fetch_page(self, **kwargs: object) -> list[dict[str, object]]:
+            rows = super().fetch_page(**kwargs)  # type: ignore[arg-type]
+            if request_phase == "source_fetch":
+                marker.touch()
+            return rows
+
+    source = RequestDuringFetch([[first], [second], []])
+
+    class RequestDuringCommit(FakeSrcStore):
+        def commit(self) -> None:
+            super().commit()
+            if request_phase == "commit":
+                marker.touch()
+
+    store = RequestDuringCommit()
+    progress = _PageProgress(tmp_path / "progress", marker)
+    with pytest.raises(IngestStoppedError, match="已提交 1 页"):
+        ingest_wind_paged(
+            settings=settings,
+            paths=paths,
+            table="ASHAREEODPRICES",
+            write_db=True,
+            source=source,
+            store=store,
+            on_page=progress,
+        )
+    assert len(source.seen) == 1
+    assert decode_cursor(store.cursor).object_id == "a"
+    assert (tmp_path / "progress").read_text() == "1"
+    log = _failure_log(paths)
+    assert log["status"] == "failure"
+    assert log["row_count"] == 1
+    assert "按请求停止" in str(log["error"])
+    assert decode_cursor(str(log["error"]).split("source_cursor=", 1)[1]).object_id == "a"
+    marker.unlink()
+    result = ingest_wind_paged(
+        settings=settings,
+        paths=paths,
+        table="ASHAREEODPRICES",
+        write_db=True,
+        source=source,
+        store=store,
+    )
+    assert result.pages == 1
+    assert source.seen[1].object_id == "a"
+    assert decode_cursor(store.cursor).object_id == "b"
+
+
+@pytest.mark.unit
+def test_stop_request_does_not_mask_unknown_commit(tmp_path: Path) -> None:
+    settings, paths = _paths(tmp_path)
+    marker = tmp_path / "stop"
+    marker.touch()
+
+    class UnknownCommit(FakeSrcStore):
+        def commit(self) -> None:
+            raise TransactionUnknownError("commit uncertain")
+
+    progress = _PageProgress(tmp_path / "progress", marker)
+    with pytest.raises(TransactionUnknownError, match="commit uncertain"):
+        ingest_wind_paged(
+            settings=settings,
+            paths=paths,
+            table="ASHAREEODPRICES",
+            write_db=True,
+            source=FakeWindSource([[_row("a", datetime(2024, 1, 2, 10))]]),
+            store=UnknownCommit(),
+            on_page=progress,
+        )
+    assert not (tmp_path / "progress").exists()
 
 
 @pytest.mark.unit

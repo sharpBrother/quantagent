@@ -8,6 +8,7 @@ from orchestration.jobs.wind_initial import (
     wind_initial_backfill,
 )
 
+from quantagent.ingest.errors import IngestStoppedError
 from quantagent.ingest.jobs.wind_paged import WindPagedIngestResult
 from quantagent.ingest.sources.wind.tables import WIND_PAGED_TABLES
 
@@ -18,8 +19,15 @@ class _Recorder:
         self.fail = fail
 
     def ingest(
-        self, table: str, *, write_db: bool, page_size: int, max_pages: int | None
+        self,
+        table: str,
+        *,
+        write_db: bool,
+        page_size: int,
+        max_pages: int | None,
+        stop_run_id: str | None = None,
     ) -> WindPagedIngestResult:
+        assert stop_run_id is not None
         self.calls.append((table, write_db, page_size, max_pages))
         if table == self.fail:
             raise RuntimeError("failed")
@@ -68,3 +76,38 @@ def test_initial_job_stops_after_first_failed_table() -> None:
     )
     assert not result.success
     assert [call[0] for call in recorder.calls] == list(INITIAL_BACKFILL_ORDER[:2])
+
+
+@pytest.mark.unit
+def test_initial_job_does_not_continue_after_requested_stop() -> None:
+    class StoppedRecorder(_Recorder):
+        def ingest(
+            self,
+            table: str,
+            *,
+            write_db: bool,
+            page_size: int,
+            max_pages: int | None,
+            stop_run_id: str | None = None,
+        ) -> WindPagedIngestResult:
+            if table == "ASHAREEODDERIVATIVEINDICATOR":
+                self.calls.append((table, write_db, page_size, max_pages))
+                raise IngestStoppedError("按请求停止，已提交 1 页")
+            return super().ingest(
+                table,
+                write_db=write_db,
+                page_size=page_size,
+                max_pages=max_pages,
+                stop_run_id=stop_run_id,
+            )
+
+    recorder = StoppedRecorder()
+    result = wind_initial_backfill.execute_in_process(
+        resources={"wind_ingest": recorder},
+        run_config=initial_run_config("2026-11-19"),
+        raise_on_error=False,
+    )
+    assert not result.success
+    assert [call[0] for call in recorder.calls] == list(INITIAL_BACKFILL_ORDER[:2])
+    failures = [event for event in result.all_events if event.is_step_failure]
+    assert "按请求停止" in str(failures[0].event_specific_data)

@@ -148,6 +148,13 @@ quantagent feature matrix --start 2024-01-01 --end 2024-01-31 --as-of 2024-02-01
 真写、不限页、页大小 1000（降低源库大表单页查询压力）。初始化回填使用独立作业 `wind_initial_backfill`，按负责人指定的优先级串行；它写入同一组资产物化事件，但不在日更资产间增加虚构血缘。初始化与日更任一运行未结束时，日更触发跳过。SSE 非交易日跳过；上一轮未结束则跳过，避免全量回填叠跑。
 默认处于运行状态，daemon 启动即生效；是否真写仍取决于执行机的 `QUANTAGENT_ALLOW_DB_WRITE`。
 实例使用 `QueuedRunCoordinator`（`max_concurrent_runs: 1`）：run 由 daemon 启动，不挂在提交命令下。
+
+初始化回填可用 `quantagent ingest wind stop-after-page --run-id <运行ID>` 请求安全停止；
+CLI 必须使用该 daemon 的 `DAGSTER_HOME` 和相同的 `QUANTAGENT_VAR_ROOT`。只有启动时已支持
+此功能的运行才接受请求。请求在页写入、回读与提交成功后生效；启动下一张表前也会检查。
+Dagster 将作业标为失败并显示“按请求停止”，因此后续表不会执行；run log 保留已提交页与
+游标。重新启动初始化作业时从数据库的已提交游标续跑。若页提交或回滚结果不明，仍须先
+核实事务，不得自动重试。
 运行存储是 `DAGSTER_HOME` 下的本地 SQLite，不连 PG 控制库（[ADR](../adr/2026-11-17-dagster-local-run-storage.md)）。每张表的采集在子进程里跑，600 秒无新页提交即终止。阶段状态单独覆盖写入 `var/logs/wind_ingest_progress/*.stage.json`，记录页起止游标；异常时保留提交页数、阶段和游标快照，供事务核对，提交或回滚结果不确定时不得自动重试。源查询或写入回读超过 30 秒时记录一条慢阶段日志，阶段记录不刷新提交计时。
 手动立即跑一轮与调度同样的配置：
 ```

@@ -69,7 +69,13 @@ def _make_initial_op(table: str, *, first: bool) -> OpDefinition:
         context: OpExecutionContext, config: IngestRunConfig
     ) -> Iterator[AssetMaterialization | Output[None]]:
         resource: WindIngestResource = context.resources.wind_ingest
-        result = _ingest(table, pit_grade=pit_grade, config=config, wind_ingest=resource)
+        result = _ingest(
+            table,
+            pit_grade=pit_grade,
+            config=config,
+            wind_ingest=resource,
+            stop_run_id=context.run_id,
+        )
         yield AssetMaterialization(
             asset_key=AssetKey(f"src_wind_{table.lower()}"), metadata=result.metadata
         )

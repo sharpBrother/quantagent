@@ -88,14 +88,24 @@ def _ingest(
     pit_grade: str,
     config: IngestRunConfig,
     wind_ingest: WindIngestResource,
+    stop_run_id: str | None = None,
 ) -> MaterializeResult[None]:
     parsed = _as_of(config.as_of)
-    result = wind_ingest.ingest(
-        table,
-        write_db=config.write_db,
-        page_size=config.page_size,
-        max_pages=config.max_pages,
-    )
+    if stop_run_id is None:
+        result = wind_ingest.ingest(
+            table,
+            write_db=config.write_db,
+            page_size=config.page_size,
+            max_pages=config.max_pages,
+        )
+    else:
+        result = wind_ingest.ingest(
+            table,
+            write_db=config.write_db,
+            page_size=config.page_size,
+            max_pages=config.max_pages,
+            stop_run_id=stop_run_id,
+        )
     return MaterializeResult(
         metadata={
             "row_count": result.row_count,

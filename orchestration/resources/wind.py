@@ -51,6 +51,7 @@ class WindIngestResource:
         write_db: bool,
         page_size: int,
         max_pages: int | None,
+        stop_run_id: str | None = None,
     ) -> WindPagedIngestResult:
         from quantagent.ingest.jobs.wind_paged import (
             ingest_wind_paged,
@@ -73,15 +74,17 @@ class WindIngestResource:
             write_db=write_db,
             page_size=page_size,
             max_pages=max_pages,
+            stop_run_id=stop_run_id,
         )
 
-    def _run_watched(
+    def _run_watched(  # noqa: PLR0915 - 看门狗生命周期需在同一处处理
         self,
         table: str,
         *,
         write_db: bool,
         page_size: int,
         max_pages: int | None,
+        stop_run_id: str | None = None,
         child_target: Callable[..., None] | None = None,
         poll_seconds: float = 5.0,
     ) -> WindPagedIngestResult:
@@ -90,12 +93,12 @@ class WindIngestResource:
         为什么用子进程：执行机经 ToDesk 端口转发连 PG，转发会吞掉连接。被吞的连接上，
         psycopg 调用永不返回，同一线程里无法中断，只能由别的进程终止它。
         为什么按“无进展”而不是总时长：全量回填一张表可达数小时，总时长上限会误杀正常作业。
-        终止的安全性：每页一个事务，页在 write_wind_page 返回后才记为已提交；
-        被终止时未提交的页由 PG 回滚，或随连接消失而丢弃，下次从游标续跑。
+        终止时可能恰逢提交；父进程记录阶段并报错，事务状态核实前不可重试。
 
         ``child_target`` 与 ``poll_seconds`` 仅供测试替换子进程函数和缩短轮询间隔。
         """
-        from quantagent.ingest.errors import IngestError, IngestStalledError
+        from quantagent.ingest.errors import IngestError, IngestStalledError, IngestStoppedError
+        from quantagent.ingest.jobs.wind_control import wind_stop_path
 
         target = child_target if child_target is not None else _ingest_child
         ctx = multiprocessing.get_context("spawn")
@@ -104,18 +107,24 @@ class WindIngestResource:
         progress_path = progress_dir / f"{table}.{os.getpid()}.progress"
         stage_path = progress_path.with_suffix(".stage.json")
         recv_conn, send_conn = ctx.Pipe(duplex=False)
+        child_kwargs = {
+            "settings": self._settings,
+            "paths": self._paths,
+            "table": table,
+            "write_db": write_db,
+            "page_size": page_size,
+            "max_pages": max_pages,
+            "progress_path": progress_path,
+            "conn": send_conn,
+        }
+        if stop_run_id is not None:
+            stop_path = wind_stop_path(self._paths, stop_run_id)
+            # 留存运行级能力标记，避免向仍使用旧代码的 run 发出无效停止请求。
+            stop_path.with_suffix(".ready").touch(exist_ok=True)
+            child_kwargs["stop_path"] = stop_path
         proc = ctx.Process(
             target=target,
-            kwargs={
-                "settings": self._settings,
-                "paths": self._paths,
-                "table": table,
-                "write_db": write_db,
-                "page_size": page_size,
-                "max_pages": max_pages,
-                "progress_path": progress_path,
-                "conn": send_conn,
-            },
+            kwargs=child_kwargs,
             name=f"wind-ingest-{table}",
         )
         started_wall = time.time()
@@ -137,7 +146,7 @@ class WindIngestResource:
                         stage = "未知"
                     raise IngestStalledError(
                         f"{table} 超过 {self._stall_seconds:.0f} 秒没有新页提交，"
-                        f"已终止子进程；已提交页不受影响，下次从游标续跑；阶段={stage}"
+                        f"已终止子进程；须核实事务状态后再决定是否续跑；阶段={stage}"
                     )
             try:
                 kind, payload = recv_conn.recv()
@@ -146,7 +155,11 @@ class WindIngestResource:
             if kind == "ok":
                 result: WindPagedIngestResult = payload
                 return result
+            if kind == "stopped":
+                raise IngestStoppedError(str(payload))
             raise IngestError(str(payload))
+        except IngestStoppedError:
+            raise
         except BaseException as exc:
             # 子进程异常退出时保留阶段与已提交页，供中断后核对事务；不能只依赖临时心跳。
             with suppress(OSError):
@@ -191,12 +204,18 @@ def _save_failure(progress_path: Path, stage_path: Path, error_type: str) -> Non
 class _PageProgress:
     """阶段文件供诊断，提交计数文件单独维护看门狗时钟。"""
 
-    def __init__(self, progress_path: Path) -> None:
+    def __init__(self, progress_path: Path, stop_path: Path | None = None) -> None:
         self.progress_path = progress_path
         self.stage_path = progress_path.with_suffix(".stage.json")
+        self.stop_path = stop_path
 
     def __call__(self, pages: int) -> None:
         self.progress_path.write_text(str(pages), encoding="utf-8")
+        # 只在页事务返回之后响应；第 0 次调用则在打开数据连接之前检查。
+        if self.stop_path is not None and self.stop_path.exists():
+            from quantagent.ingest.errors import IngestStoppedError
+
+            raise IngestStoppedError(f"按请求停止，已提交 {pages} 页；下次从已提交游标续跑")
 
     def mark_phase(
         self,
@@ -229,14 +248,16 @@ def _ingest_child(
     max_pages: int | None,
     progress_path: Path,
     conn: Connection,
+    stop_path: Path | None = None,
 ) -> None:
     """子进程入口。必须是模块顶层函数，spawn 方式才能按名字导入它。"""
+    from quantagent.ingest.errors import IngestStoppedError
     from quantagent.ingest.jobs.wind_paged import ingest_wind_paged
 
-    progress = _PageProgress(progress_path)
-    progress(0)
-    progress.mark_phase("initializing", 1)
+    progress = _PageProgress(progress_path, stop_path)
     try:
+        progress(0)
+        progress.mark_phase("initializing", 1)
         result = ingest_wind_paged(
             settings=settings,
             paths=paths,
@@ -246,6 +267,8 @@ def _ingest_child(
             max_pages=max_pages,
             on_page=progress,
         )
+    except IngestStoppedError as exc:
+        conn.send(("stopped", str(exc)))
     except Exception as exc:
         conn.send(("error", f"{type(exc).__name__}: {exc}"))
     else:

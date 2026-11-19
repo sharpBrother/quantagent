@@ -45,6 +45,36 @@ ingest_app.add_typer(macro_app, name="macro")
 _YMD_LEN = 8
 
 
+@wind_app.command("stop-after-page")
+def wind_stop_after_page(
+    run_id: Annotated[str, typer.Option("--run-id", help="运行中的 Wind 初始化作业 ID")],
+) -> None:
+    """请求初始化回填在提交当前页后停止；必须使用同一 DAGSTER_HOME 和 var_root。"""
+    from dagster import DagsterInstance, DagsterRunStatus  # noqa: PLC0415
+
+    from quantagent.ingest.jobs.wind_control import wind_stop_path  # noqa: PLC0415
+
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    try:
+        stop_path = wind_stop_path(paths, run_id)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc), param_hint="--run-id") from exc
+    instance = DagsterInstance.get()
+    run = instance.get_run_by_id(run_id)
+    if run is None or run.job_name != "wind_initial_backfill":
+        raise typer.BadParameter("找不到对应的 Wind 初始化作业", param_hint="--run-id")
+    if run.status not in (DagsterRunStatus.STARTING, DagsterRunStatus.STARTED):
+        raise typer.BadParameter(f"作业未运行：{run.status.value}", param_hint="--run-id")
+    if not stop_path.with_suffix(".ready").is_file():
+        raise typer.BadParameter(
+            "该运行尚未启用页后安全停止，可能仍在使用旧代码", param_hint="--run-id"
+        )
+    stop_path.parent.mkdir(parents=True, exist_ok=True)
+    stop_path.touch(exist_ok=True)
+    typer.echo(f"已请求 {run_id} 提交当前页后停止；请在 Dagster 中确认作业结束。")
+
+
 @tushare_app.command("trade-cal")
 def ingest_trade_cal(
     start: Annotated[

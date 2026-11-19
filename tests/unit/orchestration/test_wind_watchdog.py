@@ -12,9 +12,14 @@ import time
 from typing import TYPE_CHECKING
 
 import pytest
-from orchestration.resources.wind import WindIngestResource, _last_progress_time, _PageProgress
+from orchestration.resources.wind import (
+    WindIngestResource,
+    _ingest_child,
+    _last_progress_time,
+    _PageProgress,
+)
 
-from quantagent.ingest.errors import IngestError, IngestStalledError
+from quantagent.ingest.errors import IngestError, IngestStalledError, IngestStoppedError
 from quantagent.platform.config import Settings
 from quantagent.platform.storage.paths import resolve_var_paths
 
@@ -59,6 +64,23 @@ def _ok_with_progress(
     conn.close()
 
 
+def _child_stopped(
+    *,
+    settings: Settings,
+    paths: VarPaths,
+    table: str,
+    write_db: bool,
+    page_size: int,
+    max_pages: int | None,
+    progress_path: Path,
+    conn: Connection,
+    stop_path: Path,
+) -> None:
+    assert stop_path.with_suffix(".ready").exists()
+    conn.send(("stopped", "按请求停止，已提交 1 页"))
+    conn.close()
+
+
 def _child_error(
     *,
     settings: Settings,
@@ -86,6 +108,50 @@ def _resource(tmp_path: Path, *, stall_seconds: float) -> tuple[WindIngestResour
 
 def _progress_dir(paths: VarPaths) -> Path:
     return paths.logs / "wind_ingest_progress"
+
+
+@pytest.mark.unit
+def test_request_before_first_page_opens_no_connections(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    resource, paths = _resource(tmp_path, stall_seconds=30)
+    marker = tmp_path / "stop"
+    marker.touch()
+    messages: list[object] = []
+
+    class Pipe:
+        def send(self, value: object) -> None:
+            messages.append(value)
+
+        def close(self) -> None:
+            pass
+
+    def unexpected(**kwargs: object) -> None:
+        pytest.fail("stop must be checked before opening data connections")
+
+    monkeypatch.setattr("quantagent.ingest.jobs.wind_paged.ingest_wind_paged", unexpected)
+    _ingest_child(
+        settings=resource._settings,
+        paths=paths,
+        table="ASHAREEODPRICES",
+        write_db=True,
+        page_size=1000,
+        max_pages=None,
+        progress_path=tmp_path / "progress",
+        conn=Pipe(),  # type: ignore[arg-type]
+        stop_path=marker,
+    )
+    assert messages == [("stopped", "按请求停止，已提交 0 页；下次从已提交游标续跑")]
+
+
+@pytest.mark.unit
+def test_stop_progress_raises_only_after_recording_commit(tmp_path: Path) -> None:
+    marker = tmp_path / "stop"
+    marker.touch()
+    progress = _PageProgress(tmp_path / "progress", marker)
+    with pytest.raises(IngestStoppedError, match="已提交 2 页"):
+        progress(2)
+    assert (tmp_path / "progress").read_text() == "2"
 
 
 @pytest.mark.unit
@@ -137,6 +203,24 @@ def test_ok_result_is_returned(tmp_path: Path) -> None:
     )
     assert result == {"pages": 3, "table": "ASHAREEODPRICES"}
     assert list(_progress_dir(paths).iterdir()) == []
+
+
+@pytest.mark.unit
+def test_watched_child_reports_requested_stop(tmp_path: Path) -> None:
+    resource, paths = _resource(tmp_path, stall_seconds=30)
+    run_id = "b0e4bc1a-df9f-4df4-a78b-26d378837f03"
+    with pytest.raises(IngestStoppedError, match="按请求停止"):
+        resource._run_watched(
+            "ASHAREEODPRICES",
+            write_db=True,
+            page_size=1000,
+            max_pages=None,
+            stop_run_id=run_id,
+            child_target=_child_stopped,
+            poll_seconds=0.2,
+        )
+    assert (_progress_dir(paths) / f"{run_id}.ready").exists()
+    assert list(_progress_dir(paths).glob("*.failure.json")) == []
 
 
 @pytest.mark.unit
