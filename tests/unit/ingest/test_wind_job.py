@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -207,11 +208,19 @@ def test_write_walks_pages_and_resumes_from_batch_cursor(tmp_path: Path) -> None
     assert source.seen[2].object_id == "b"
 
 
+class _FixedClock:
+    @staticmethod
+    def monotonic() -> float:
+        return 100.0
+
+
 @pytest.mark.unit
 def test_slow_stage_logs_only_when_threshold_exceeded(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
-    monkeypatch.setattr(wind_paged.time, "monotonic", lambda: 100.0)
+    # configure_logging 会把 quantagent 的 propagate 设为 False；别的测试先跑过它时，caplog 收不到。
+    monkeypatch.setattr(logging.getLogger("quantagent"), "propagate", True)
+    monkeypatch.setattr(wind_paged, "time", _FixedClock())
     wind_paged._log_slow_stage("ASHAREEODPRICES", 1, "source_fetch", 71.0)
     assert not caplog.records
     wind_paged._log_slow_stage("ASHAREEODPRICES", 2, "pg_write_and_verify", 69.0)

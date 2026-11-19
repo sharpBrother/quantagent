@@ -51,7 +51,10 @@ def test_initial_job_serializes_all_tables_without_changing_daily_lineage() -> N
     )
     assert result.success
     assert recorder.calls == [(table, True, 1000, None) for table in INITIAL_BACKFILL_ORDER]
-    materialized = [event.asset_key.path[-1] for event in result.get_asset_materialization_events()]
+    materialized = []
+    for event in result.get_asset_materialization_events():
+        assert event.asset_key is not None
+        materialized.append(event.asset_key.path[-1])
     assert materialized == [f"src_wind_{table.lower()}" for table in INITIAL_BACKFILL_ORDER]
 
 
