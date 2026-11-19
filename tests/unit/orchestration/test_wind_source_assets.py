@@ -135,6 +135,12 @@ def test_source_assets_cover_every_paged_table_with_stable_names() -> None:
 
 
 @pytest.mark.unit
+def test_source_assets_have_no_synthetic_ordering_dependencies() -> None:
+    # 源表之间不存在数据依赖；初始化回填的优先级不能改变日更血缘。
+    assert all(not asset.dependency_keys for asset in WIND_SOURCE_ASSETS)
+
+
+@pytest.mark.unit
 def test_pit_grade_metadata_for_tables_without_a_contract() -> None:
     assert NOT_PIT_WIND_TABLES.isdisjoint(UNCONFIGURED_WIND_TABLES)
     for table in NOT_PIT_WIND_TABLES:

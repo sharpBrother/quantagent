@@ -22,6 +22,7 @@ from orchestration.jobs.macro import macro_daily, macro_wgc_weekly
 from orchestration.jobs.tr_umr import feature_tr_umr
 from orchestration.jobs.tushare import tushare_daily
 from orchestration.jobs.wind import wind_source_daily, wind_source_refresh
+from orchestration.jobs.wind_initial import wind_initial_backfill
 from orchestration.resources.wind import TradeCalendarResource, WindIngestResource
 from orchestration.schedules.macro import macro_daily_morning, macro_wgc_sunday
 from orchestration.schedules.tushare import tushare_daily_evening
@@ -72,6 +73,7 @@ defs = Definitions(
     jobs=[
         wind_source_refresh,
         wind_source_daily,
+        wind_initial_backfill,
         tushare_daily,
         macro_daily,
         macro_wgc_weekly,

@@ -5,13 +5,14 @@
 
 from __future__ import annotations
 
+import json
 import multiprocessing
 import os
 import time
 from typing import TYPE_CHECKING
 
 import pytest
-from orchestration.resources.wind import WindIngestResource
+from orchestration.resources.wind import WindIngestResource, _last_progress_time, _PageProgress
 
 from quantagent.ingest.errors import IngestError, IngestStalledError
 from quantagent.platform.config import Settings
@@ -35,7 +36,8 @@ def _hang_forever(
     progress_path: Path,
     conn: Connection,
 ) -> None:
-    # 模拟被吞掉的连接：永远不写进度，也不返回。
+    # 阶段更新不应掩盖长时间没有新页提交。
+    _PageProgress(progress_path).mark_phase("source_fetch", 1)
     time.sleep(3600)
 
 
@@ -68,6 +70,9 @@ def _child_error(
     progress_path: Path,
     conn: Connection,
 ) -> None:
+    progress = _PageProgress(progress_path)
+    progress(2)
+    progress.mark_phase("pg_write_and_verify", 3, "cursor-2", "cursor-3")
     conn.send(("error", "X: boom"))
     conn.close()
 
@@ -84,10 +89,22 @@ def _progress_dir(paths: VarPaths) -> Path:
 
 
 @pytest.mark.unit
+def test_stage_does_not_refresh_commit_clock(tmp_path: Path) -> None:
+    progress_path = tmp_path / "table.progress"
+    progress = _PageProgress(progress_path)
+    progress(3)
+    before = _last_progress_time(progress_path, 0)
+    progress.mark_phase("source_fetch", 4)
+    assert _last_progress_time(progress_path, 0) == before
+    assert '"phase": "source_fetch"' in progress.stage_path.read_text(encoding="utf-8")
+    assert '"page": 4' in progress.stage_path.read_text(encoding="utf-8")
+
+
+@pytest.mark.unit
 def test_stalled_child_is_killed_and_raises(tmp_path: Path) -> None:
-    resource, paths = _resource(tmp_path, stall_seconds=1)
+    resource, paths = _resource(tmp_path, stall_seconds=10)
     started = time.monotonic()
-    with pytest.raises(IngestStalledError, match="没有新页提交"):
+    with pytest.raises(IngestStalledError, match="source_fetch"):
         resource._run_watched(
             "ASHAREEODPRICES",
             write_db=False,
@@ -96,10 +113,15 @@ def test_stalled_child_is_killed_and_raises(tmp_path: Path) -> None:
             child_target=_hang_forever,
             poll_seconds=0.2,
         )
-    assert time.monotonic() - started < 20
+    assert time.monotonic() - started < 35
     assert multiprocessing.active_children() == []
     progress_path = _progress_dir(paths) / f"ASHAREEODPRICES.{os.getpid()}.progress"
     assert not progress_path.exists()
+    assert not progress_path.with_suffix(".stage.json").exists()
+    failure = next(_progress_dir(paths).glob("*.failure.json"))
+    assert json.loads(json.loads(failure.read_text(encoding="utf-8"))["stage"])["phase"] == (
+        "source_fetch"
+    )
 
 
 @pytest.mark.unit
@@ -129,4 +151,11 @@ def test_child_error_is_raised_as_ingest_error(tmp_path: Path) -> None:
             child_target=_child_error,
             poll_seconds=0.2,
         )
-    assert list(_progress_dir(paths).iterdir()) == []
+    failure = next(_progress_dir(paths).glob("*.failure.json"))
+    record = json.loads(failure.read_text(encoding="utf-8"))
+    assert record["error_type"] == "IngestError"
+    assert record["committed_pages"] == "2"
+    stage = json.loads(record["stage"])
+    assert stage["phase"] == "pg_write_and_verify"
+    assert stage["start_cursor"] == "cursor-2"
+    assert stage["end_cursor"] == "cursor-3"
