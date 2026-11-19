@@ -18,6 +18,7 @@ from dagster import (
 
 from orchestration.assets.wind import WIND_SOURCE_ASSETS, std_trade_calendar
 from orchestration.jobs.wind import wind_source_daily
+from orchestration.jobs.wind_initial import wind_initial_backfill
 from quantagent.platform.config import get_settings
 from quantagent.platform.storage import detect_repo_root, resolve_var_paths
 
@@ -28,15 +29,18 @@ _ACTIVE_STATUSES = [
     DagsterRunStatus.NOT_STARTED,
     DagsterRunStatus.STARTING,
     DagsterRunStatus.STARTED,
+    DagsterRunStatus.CANCELING,
 ]
 
 
 def _has_active_run(context: ScheduleEvaluationContext) -> bool:
-    runs = context.instance.get_runs(
-        filters=RunsFilter(job_name=wind_source_daily.name, statuses=_ACTIVE_STATUSES),
-        limit=1,
+    return any(
+        context.instance.get_runs(
+            filters=RunsFilter(job_name=job_name, statuses=_ACTIVE_STATUSES),
+            limit=1,
+        )
+        for job_name in (wind_source_daily.name, wind_initial_backfill.name)
     )
-    return bool(runs)
 
 
 def _run_config(today: str) -> dict[str, object]:
@@ -53,7 +57,7 @@ def _run_config(today: str) -> dict[str, object]:
                 # 仍由执行机环境决定，环境变量为 false 时写入会被拒绝。
                 "write_db": True,
                 "max_pages": None,
-                "page_size": 10000,
+                "page_size": 1000,
             }
         }
     ops[std_trade_calendar.op.name] = {

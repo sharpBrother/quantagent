@@ -11,6 +11,7 @@ import pytest
 from quantagent.adapters.postgres.errors import TransactionUnknownError
 from quantagent.adapters.postgres.src_targets import AINDEXVALUATION
 from quantagent.ingest.errors import SourceFetchError
+from quantagent.ingest.jobs import wind_paged
 from quantagent.ingest.jobs.wind_paged import ingest_wind_paged
 from quantagent.ingest.sources.wind.cursor import decode_cursor, initial_cursor
 from quantagent.ingest.writers.tables import ASHARECALENDAR, ASHAREEODPRICES
@@ -202,6 +203,50 @@ def test_write_walks_pages_and_resumes_from_batch_cursor(tmp_path: Path) -> None
     assert source.seen[0] == initial_cursor()
     assert source.seen[1].object_id == "a"
     assert source.seen[2].object_id == "b"
+
+
+@pytest.mark.unit
+def test_slow_stage_logs_only_when_threshold_exceeded(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    monkeypatch.setattr(wind_paged.time, "monotonic", lambda: 100.0)
+    wind_paged._log_slow_stage("ASHAREEODPRICES", 1, "source_fetch", 71.0)
+    assert not caplog.records
+    wind_paged._log_slow_stage("ASHAREEODPRICES", 2, "pg_write_and_verify", 69.0)
+    assert "page=2 pg_write_and_verify=31.0s" in caplog.text
+
+
+@pytest.mark.unit
+def test_page_phase_and_commit_order(tmp_path: Path) -> None:
+    settings, paths = _paths(tmp_path)
+    events: list[tuple[str, int]] = []
+
+    class Progress:
+        def mark_phase(
+            self, phase: str, page: int, start_cursor: str, end_cursor: str | None = None
+        ) -> None:
+            assert start_cursor
+            assert (end_cursor is not None) == (phase == "pg_write_and_verify")
+            events.append((phase, page))
+
+        def __call__(self, pages: int) -> None:
+            events.append(("committed", pages))
+
+    ingest_wind_paged(
+        settings=settings,
+        paths=paths,
+        table="ASHAREEODPRICES",
+        write_db=True,
+        source=FakeWindSource([[_row("a", datetime(2024, 1, 2, 10))], []]),
+        store=FakeSrcStore(),
+        on_page=Progress(),
+    )
+    assert events == [
+        ("source_fetch", 1),
+        ("pg_write_and_verify", 1),
+        ("committed", 1),
+        ("source_fetch", 2),
+    ]
 
 
 @pytest.mark.unit

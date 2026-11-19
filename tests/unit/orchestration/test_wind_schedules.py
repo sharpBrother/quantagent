@@ -105,7 +105,7 @@ def test_open_day_returns_run_request_with_pinned_config(
             # 负责人裁定的全自动写入，见 schedules/wind.py 中的注释。
             "write_db": True,
             "max_pages": None,
-            "page_size": 10000,
+            "page_size": 1000,
         }
     calendar_cfg = ops[std_trade_calendar.op.name]["config"]
     assert calendar_cfg == {
@@ -156,6 +156,16 @@ def test_active_run_blocks_new_tick(calendar_env: Settings, instance: DagsterIns
     assert _requests(tick) == []
     assert tick.skip_message is not None
     assert "尚未结束" in tick.skip_message
+
+
+@pytest.mark.unit
+def test_initial_backfill_blocks_daily_schedule(
+    calendar_env: Settings, instance: DagsterInstance
+) -> None:
+    create_run_for_test(instance, job_name="wind_initial_backfill", status=DagsterRunStatus.STARTED)
+    tick = _tick(wind_source_daily_morning, datetime(2026, 1, 5, 22, 0, tzinfo=UTC), instance)
+    assert _requests(tick) == []
+    assert tick.skip_message is not None
 
 
 @pytest.mark.unit

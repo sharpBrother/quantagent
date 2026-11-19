@@ -14,6 +14,7 @@ from orchestration.assets.wind import WIND_SOURCE_ASSETS, std_trade_calendar
 from orchestration.jobs.cutamp import feature_cutamp
 from orchestration.jobs.tr_umr import feature_tr_umr
 from orchestration.jobs.wind import wind_source_daily, wind_source_refresh
+from orchestration.jobs.wind_initial import wind_initial_backfill
 from orchestration.resources.wind import TradeCalendarResource, WindIngestResource
 from orchestration.schedules.wind import wind_source_daily_close, wind_source_daily_morning
 from quantagent.platform.config import get_settings
@@ -36,7 +37,13 @@ defs = Definitions(
         feature_pf_single_cutamp,
         feature_pf_single_tr_umr,
     ],
-    jobs=[wind_source_refresh, wind_source_daily, feature_cutamp, feature_tr_umr],
+    jobs=[
+        wind_source_refresh,
+        wind_source_daily,
+        wind_initial_backfill,
+        feature_cutamp,
+        feature_tr_umr,
+    ],
     schedules=[wind_source_daily_close, wind_source_daily_morning],
     resources=_resources(),
 )

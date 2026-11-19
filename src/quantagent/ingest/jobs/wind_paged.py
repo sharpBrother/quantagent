@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+import time
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -10,7 +12,7 @@ from typing import TYPE_CHECKING, Literal
 from quantagent.adapters.postgres.src_write import PostgresSrcStore
 from quantagent.ingest.errors import SourceFetchError
 from quantagent.ingest.sources.wind.client import open_wind_connection
-from quantagent.ingest.sources.wind.cursor import decode_cursor, initial_cursor
+from quantagent.ingest.sources.wind.cursor import cursor_from_row, decode_cursor, initial_cursor
 from quantagent.ingest.sources.wind.paged import PymssqlWindPageSource
 from quantagent.ingest.sources.wind.tables import resolve_wind_paged_table
 from quantagent.ingest.writers.wind_page import write_wind_page
@@ -32,6 +34,8 @@ if TYPE_CHECKING:
 
 ACTION = "ingest.wind.paged"
 DEFAULT_PAGE_SIZE = 1000
+_SLOW_STAGE_SECONDS = 30.0
+_LOG = logging.getLogger(__name__)
 
 
 @dataclass
@@ -196,6 +200,9 @@ def _run_pages(
     last_output = last_digest
     current = cursor
     while max_pages is None or pages < max_pages:
+        # 阶段状态独立于已提交页的心跳，不能让慢查询掩盖看门狗超时。
+        _mark_phase(on_page, "source_fetch", pages + 1, current.encode())
+        stage_started = time.monotonic()
         rows = source.fetch_page(
             table=catalog.source_table,
             columns=catalog.spec.native_columns,
@@ -203,8 +210,17 @@ def _run_pages(
             limit=page_size,
             chi_fields=catalog.chi_fields,
         )
+        _log_slow_stage(catalog.source_table, pages + 1, "source_fetch", stage_started)
         if not rows:
             break
+        _mark_phase(
+            on_page,
+            "pg_write_and_verify" if write_db else "dry_run",
+            pages + 1,
+            current.encode(),
+            cursor_from_row(rows[-1]).encode(),
+        )
+        stage_started = time.monotonic()
         page = write_wind_page(
             spec=catalog.spec,
             rows=rows,
@@ -212,6 +228,12 @@ def _run_pages(
             write_db=write_db,
             store=store,
             now=now,
+        )
+        _log_slow_stage(
+            catalog.source_table,
+            pages + 1,
+            "pg_write_and_verify" if write_db else "dry_run",
+            stage_started,
         )
         pages += 1
         row_count += page.row_count
@@ -269,6 +291,24 @@ def _run_pages(
         output_digest=output,
         source_cursor=current.encode(),
     )
+
+
+def _mark_phase(
+    on_page: Callable[[int], None] | None,
+    phase: str,
+    page: int,
+    start_cursor: str,
+    end_cursor: str | None = None,
+) -> None:
+    marker = getattr(on_page, "mark_phase", None)
+    if callable(marker):
+        marker(phase, page, start_cursor, end_cursor)
+
+
+def _log_slow_stage(table: str, page: int, phase: str, started: float) -> None:
+    elapsed = time.monotonic() - started
+    if elapsed >= _SLOW_STAGE_SECONDS:
+        _LOG.warning("Wind %s page=%d %s=%.1fs", table, page, phase, elapsed)
 
 
 def _partial_result(

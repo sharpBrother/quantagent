@@ -145,10 +145,10 @@ quantagent feature matrix --start 2024-01-01 --end 2024-01-31 --as-of 2024-02-01
 现役调度（`orchestration/schedules/wind.py`）：`wind_source_daily_close` 16:30、
 `wind_source_daily_morning` 06:00（Asia/Shanghai），对应旧仓 `wind_to_sql_2` 与
 `wind_to_sql_am`。都跑 `wind_source_daily`：标准日历加全部已接入 Wind 源表，资产串行执行（ToDesk 转发在并发下出现过结果截断），
-真写、不限页、页大小 10000。SSE 非交易日跳过；上一轮未结束则跳过，避免全量回填叠跑。
+真写、不限页、页大小 1000（降低源库大表单页查询压力）。初始化回填使用独立作业 `wind_initial_backfill`，按负责人指定的优先级串行；它写入同一组资产物化事件，但不在日更资产间增加虚构血缘。初始化与日更任一运行未结束时，日更触发跳过。SSE 非交易日跳过；上一轮未结束则跳过，避免全量回填叠跑。
 默认处于运行状态，daemon 启动即生效；是否真写仍取决于执行机的 `QUANTAGENT_ALLOW_DB_WRITE`。
 实例使用 `QueuedRunCoordinator`（`max_concurrent_runs: 1`）：run 由 daemon 启动，不挂在提交命令下。
-运行存储是 `DAGSTER_HOME` 下的本地 SQLite，不连 PG 控制库（[ADR](../adr/2026-11-17-dagster-local-run-storage.md)）。每张表的采集在子进程里跑，600 秒无新页提交即终止，下一轮从游标续跑。
+运行存储是 `DAGSTER_HOME` 下的本地 SQLite，不连 PG 控制库（[ADR](../adr/2026-11-17-dagster-local-run-storage.md)）。每张表的采集在子进程里跑，600 秒无新页提交即终止。阶段状态单独覆盖写入 `var/logs/wind_ingest_progress/*.stage.json`，记录页起止游标；异常时保留提交页数、阶段和游标快照，供事务核对，提交或回滚结果不确定时不得自动重试。源查询或写入回读超过 30 秒时记录一条慢阶段日志，阶段记录不刷新提交计时。
 手动立即跑一轮与调度同样的配置：
 ```
 uv run python -c "import json, datetime as d; from orchestration.schedules.wind import _run_config; print(json.dumps(_run_config(d.date.today().isoformat())))" > var/dagster/run_now.json
