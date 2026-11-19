@@ -33,11 +33,11 @@ applies_to:
 | P5 | 发布与前端 | 冻结制品迁入、publish 契约、apps/web |
 | P6 | 旧仓封存 | pycharm_workspace 转只读归档 |
 
-## 当前进度 · 2026-11-19
+## 当前进度 · 2026-11-19（晚）
 
 **本节是项目唯一的进度入口（pipeline）。** 每完成一项就改这里：勾掉、补日期与提交号，新出现的阻塞写进
 “阻塞与待裁定”。细节与证据放在下面链接的专题文档里，本节只写结论。各表实时行数用
-`uv run quantagent ingest wind progress` 看（目前只汇总 `src_wind`）。
+`uv run quantagent ingest progress` 看（全部源 schema）。
 
 ### 阶段总状态
 
@@ -65,8 +65,8 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 
 | 优先级 | 表 | 状态 |
 |---|---|---|
-| 1 | `ASHAREST` | ⏳ 未回填（约 3,400 行） |
-| 2 | `ASHAREEODDERIVATIVEINDICATOR` | 🔄 回填中（11-19 约 244 万行） |
+| 1 | `ASHAREST` | ✅ 3,358 行，与 wx2 一致（11-19） |
+| 2 | `ASHAREEODDERIVATIVEINDICATOR` | 🔄 回填中（11-19 17:36 约 291 万行，每页约 13 秒） |
 | 3 | `ASHAREDESCRIPTION`、`ASHAREEODPRICES`、`ASHARECALENDAR`、`AINDEXEODPRICES` | ✅ 已追平。描述表 8,621 行对 wx2 8,635 行，差 14 行待核 |
 | 3 | `AINDEXMEMBERS`、中信一二三级成分 | ✅；`SWINDEXMEMBERS` 🔄 |
 | 4 | 利润表、资产负债表、现金流量表、财务指标、业绩预告 | ⏳ 未回填 |
@@ -74,7 +74,8 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 | 5 | 指数估值、中信行业行情、两融明细、两融汇总、停牌 | 🔄 部分；两融明细仅 5 万行 |
 | 6 | `ASHAREMONEYFLOW` | 🔄 461 万 / 1,328 万，无新仓消费者 |
 | 6 | `CHINAMUTUALFUNDSTOCKPORTFOLIO` | 🔄 1,984 万行，旧仓仅一处读取 |
-| — | 5 张无主键表、`AINDEXINDUSTRIESCITICS`、`CBONDCURVECNBD` | ⛔ 未接，待逐个裁定 |
+| 5 | `CBONDCURVECNBD`（只同步曲线 1232 的 10 个期限）、`CBONDCURVECSI`（只同步 0901、02502）、`FXEODPRICES`、`CBONDREPO`、`CBONDPRICESREPO`、`CBONDREPOANDIBLEODPRICES` | 🔧 已接采集与契约；迁移 0019 补主键、去 `GSUPDTIME`，**待执行机停写后执行**；过滤条件在 wx2 上覆盖旧表全部行 |
+| — | `AINDEXINDUSTRIESCITICS` | ⏳ 改为镜像 `AINDEXDESCRIPTION` + 视图，等执行机给出 wind_db 列清单 |
 
 已入库数据在 11-17 用 `ingest wind verify` 重算指纹核对，业务值不一致 0。
 
@@ -112,11 +113,11 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 
 | 事项 | 等谁 |
 |---|---|
-| 7 张未接的 Wind 表逐个定方案 | 负责人 |
+| 0019 执行：需要执行机先 `ingest wind stop` 停写（DROP 要锁 `_batch`） | 执行机 |
+| `AINDEXDESCRIPTION` 的 wind_db 列与类型、行数 | 执行机 |
 | ISM、美债等跨时区数据的可见性：按消费市场收盘时刻判断，需扩展规则引擎 | 已裁定，待实现 |
 | ToDesk 链路会吞连接：回填靠看门狗与逐列回读兜底，未根治 | 观察 |
 | daemon 连 PG 用超级用户 `leo`，应改 `quantagent_ingest` | 负责人放密码 |
-| `ingest wind progress` 扩展到 Tushare 与宏观 | 可随时做 |
 
 专题文档：[Wind 交接](wind-pipeline-handoff.md)、[宏观采集方案](macro-source-ingest-plan.md)、
 [wx2 清单](wx2-table-list.md)、[ADR 索引](../adr/README.md)。

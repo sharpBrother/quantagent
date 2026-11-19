@@ -55,6 +55,7 @@ class FakeWindSource:
         cursor: WindCursor,
         limit: int,
         chi_fields: tuple[str, ...] = (),
+        source_filter: tuple[tuple[str, tuple[object, ...]], ...] = (),
     ) -> list[dict[str, object]]:
         self.seen.append(cursor)
         assert table == self.spec.pg_table
@@ -522,6 +523,7 @@ class _SecondFetchFails(FakeWindSource):
         cursor: WindCursor,
         limit: int,
         chi_fields: tuple[str, ...] = (),
+        source_filter: tuple[tuple[str, tuple[object, ...]], ...] = (),
     ) -> list[dict[str, object]]:
         if self.seen:
             self.seen.append(cursor)
@@ -532,6 +534,7 @@ class _SecondFetchFails(FakeWindSource):
             cursor=cursor,
             limit=limit,
             chi_fields=chi_fields,
+            source_filter=source_filter,
         )
 
 

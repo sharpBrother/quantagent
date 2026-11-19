@@ -64,6 +64,39 @@ CREATE TABLE src_macro."gpr_daily" (id integer PRIMARY KEY);
 """
 
 
+_BOND_FX_TABLES = (
+    'src_wind."CBONDCURVECNBD"',
+    'src_wind."CBONDCURVECSI"',
+    'src_wind."CBONDREPOANDIBLEODPRICES"',
+    'src_wind."CBONDPRICESREPO"',
+    'src_wind."CBONDREPO"',
+    'src_wind."FXEODPRICES"',
+)
+
+
+@pytest.mark.unit
+def test_bond_fx_rebuild_requires_each_drop_followed_by_same_create() -> None:
+    adjacent = "\n".join(
+        f"DROP TABLE {name};\nCREATE TABLE {name} (id integer PRIMARY KEY);"
+        for name in _BOND_FX_TABLES
+    )
+    assert_migration_sql(adjacent, filename="0019_bond_fx_wind_tables.sql")
+    # 一条 CREATE INDEX 夹在 DROP 与 CREATE 之间，就不再是紧跟，必须拒绝。
+    separated = adjacent.replace(
+        f"DROP TABLE {_BOND_FX_TABLES[0]};\n",
+        f'DROP TABLE {_BOND_FX_TABLES[0]};\nCREATE INDEX "x" ON src_wind.y (_batch_id);\n',
+    )
+    with pytest.raises(MigrationError, match="紧跟同名 CREATE"):
+        assert_migration_sql(separated, filename="0019_bond_fx_wind_tables.sql")
+    # 白名单之外的表不能借这个文件删除。
+    with pytest.raises(MigrationError, match="白名单"):
+        assert_migration_sql(
+            'DROP TABLE src_wind."AINDEXEODPRICES";\n'
+            'CREATE TABLE src_wind."AINDEXEODPRICES" (id integer PRIMARY KEY);',
+            filename="0019_bond_fx_wind_tables.sql",
+        )
+
+
 @pytest.mark.unit
 def test_macro_drop_exemption_only_for_0018_leading_drops() -> None:
     assert_migration_sql(_MACRO_DROPS, filename="0018_macro_source_tables.sql")
@@ -122,6 +155,7 @@ def test_list_migration_files_on_repo(repo_root: Path) -> None:
         "0016_asharedividend_source_columns.sql",
         "0017_rebuilt_tables_batch_id_indexes.sql",
         "0018_macro_source_tables.sql",
+        "0019_bond_fx_wind_tables.sql",
     ]
     assert [item.filename for item in ops] == [
         "0001_schema.sql",

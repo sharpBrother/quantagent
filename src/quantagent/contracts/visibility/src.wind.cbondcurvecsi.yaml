@@ -1,0 +1,10 @@
+dataset: src.wind.cbondcurvecsi
+doc_ref: docs/migration/wind-pipeline-handoff.md
+temporal_kind: point_event
+event_field: TRADE_DT
+visibility:
+  rule: same_day_close
+  grade: A
+  rationale: >
+    交易日收盘后公布的日频数据。旧仓现役下游按 TRADE_DT 区间或点查读取（core/market_data_service.py 的曲线、汇率、回购读取函数），调用方保证 end<=as_of。
+pit_recoverable: true

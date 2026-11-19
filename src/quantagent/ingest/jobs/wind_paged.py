@@ -209,6 +209,7 @@ def _run_pages(
             cursor=current,
             limit=page_size,
             chi_fields=catalog.chi_fields,
+            source_filter=catalog.source_filter,
         )
         _log_slow_stage(catalog.source_table, pages + 1, "source_fetch", stage_started)
         if not rows:

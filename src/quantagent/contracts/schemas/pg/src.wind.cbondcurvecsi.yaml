@@ -1,0 +1,57 @@
+dataset: src.wind.cbondcurvecsi
+layer: pg
+doc_ref: docs/migration/wind-pipeline-handoff.md
+temporal_kind: point_event
+keys:
+  - OBJECT_ID
+reads: []
+event_field: TRADE_DT
+columns:
+  OBJECT_ID:
+    dtype: string
+    nullable: false
+    description: "Wind 行对象主键；子集镜像，范围见采集规格 source_filter：曲线 0901、02502"
+  TRADE_DT:
+    dtype: string
+    nullable: true
+    description: "交易日 YYYYMMDD，PIT 可见日依据"
+  B_ANAL_CURVENUMBER:
+    dtype: string
+    nullable: true
+    description: ""
+  B_ANAL_CURVENAME:
+    dtype: string
+    nullable: true
+    description: ""
+  B_ANAL_CURVETYPE:
+    dtype: string
+    nullable: true
+    description: ""
+  B_ANAL_CURVETERM:
+    dtype: float64
+    nullable: true
+    description: ""
+  B_ANAL_YIELD:
+    dtype: float64
+    nullable: true
+    description: ""
+  OPDATE:
+    dtype: datetime
+    nullable: true
+    description: "Wind 运维时间，用于采集游标"
+  OPMODE:
+    dtype: string
+    nullable: true
+    description: "Wind 操作类型"
+  gsUTime:
+    dtype: datetime
+    nullable: true
+    description: "Wind 更新时间"
+  mopdate:
+    dtype: datetime
+    nullable: true
+    description: "Wind 维护时间"
+  gsCTime:
+    dtype: datetime
+    nullable: true
+    description: "Wind 创建时间"

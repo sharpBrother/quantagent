@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from quantagent.adapters.postgres import wind_bond_fx_columns as _bond_fx
 from quantagent.adapters.postgres import wind_first_batch_columns as _first_batch
+from quantagent.adapters.postgres.wind_bond_fx_columns import BOND_FX_WIND_SYNC
 from quantagent.adapters.postgres.wind_first_batch_columns import (
     FIRST_BATCH_WIND_SYNC,
 )
@@ -248,4 +250,9 @@ AINDEXVALUATION = _wind_table("AINDEXVALUATION", AINDEXVALUATION_COLUMNS)
 FIRST_BATCH_WIND_SPECS: dict[str, SrcTableWriteSpec] = {
     name: _wind_table(name, getattr(_first_batch, f"{name}_COLUMNS"))
     for name in FIRST_BATCH_WIND_SYNC
+}
+# 债券曲线、债券回购与外汇。曲线表只是源表的子集镜像，过滤条件在 ingest 的分页白名单里，
+# 不在这里：写入规格只描述列与主键。
+BOND_FX_WIND_SPECS: dict[str, SrcTableWriteSpec] = {
+    name: _wind_table(name, getattr(_bond_fx, f"{name}_COLUMNS")) for name in BOND_FX_WIND_SYNC
 }

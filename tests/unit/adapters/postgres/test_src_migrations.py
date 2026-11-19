@@ -113,12 +113,34 @@ _HISTORICAL_DROP_ONLY = {
 }
 
 
+# 0019 删表重建六张债券曲线、回购与外汇表（0 行）。每条 DROP 紧跟同名 CREATE，
+# 表集合与 migrate.py 的 _REBUILD_PAIRS 一致。
+_BOND_FX_REBUILD = (
+    'src_wind."CBONDCURVECNBD"',
+    'src_wind."CBONDCURVECSI"',
+    'src_wind."CBONDREPOANDIBLEODPRICES"',
+    'src_wind."CBONDPRICESREPO"',
+    'src_wind."CBONDREPO"',
+    'src_wind."FXEODPRICES"',
+)
+_PAIR_REBUILD = {"0019_bond_fx_wind_tables.sql": _BOND_FX_REBUILD}
+
+
 @pytest.mark.unit
 def test_src_sql_has_no_drop_or_dml(repo_root: Path) -> None:
     files = list_migration_files(repo_root, "src")
     statements: list[str] = []
     for item in files:
         file_statements = split_sql_statements(item.path.read_text(encoding="utf-8"))
+        pair_names = _PAIR_REBUILD.get(item.path.name)
+        if pair_names is not None:
+            drops = [s for s in file_statements if s.startswith("DROP TABLE")]
+            assert drops == [f"DROP TABLE {name}" for name in pair_names], item.path.name
+            for pos, stmt in enumerate(file_statements):
+                if stmt.startswith("DROP TABLE"):
+                    name = stmt.removeprefix("DROP TABLE ")
+                    assert file_statements[pos + 1].startswith(f"CREATE TABLE {name} ("), name
+            file_statements = tuple(s for s in file_statements if not s.startswith("DROP TABLE"))
         rebuilt = _HISTORICAL_DROP_REBUILD.get(item.path.name)
         if rebuilt is not None:
             assert file_statements[0] == f"DROP TABLE {rebuilt}", item.path.name

@@ -14,6 +14,7 @@ from quantagent.adapters.postgres.errors import (
     TransactionUnknownError,
 )
 from quantagent.adapters.postgres.src_progress import SRC_SCHEMAS, src_progress
+from quantagent.adapters.postgres.wind_bond_fx_columns import BOND_FX_WIND_SYNC
 from quantagent.adapters.postgres.wind_first_batch_columns import FIRST_BATCH_WIND_SYNC
 from quantagent.adapters.postgres.wind_large_columns import LARGE_WIND_SYNC
 from quantagent.ingest.errors import IngestError
@@ -448,6 +449,12 @@ def _compact_ymd(raw: str, *, flag: str) -> str:
 @wind_app.command("ASHAREINCOME")
 @wind_app.command("ASHAREBALANCESHEET")
 @wind_app.command("AINDEXVALUATION")
+@wind_app.command("CBONDCURVECNBD")
+@wind_app.command("CBONDCURVECSI")
+@wind_app.command("CBONDREPOANDIBLEODPRICES")
+@wind_app.command("CBONDPRICESREPO")
+@wind_app.command("CBONDREPO")
+@wind_app.command("FXEODPRICES")
 def ingest_wind_table(
     ctx: typer.Context,
     *,
@@ -507,6 +514,8 @@ def ingest_wind_table(
 
 
 for _name in FIRST_BATCH_WIND_SYNC:
+    wind_app.command(_name)(ingest_wind_table)
+for _name in BOND_FX_WIND_SYNC:
     wind_app.command(_name)(ingest_wind_table)
 
 

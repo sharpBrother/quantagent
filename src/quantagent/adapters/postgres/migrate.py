@@ -61,6 +61,21 @@ _DROP_WITHOUT_REBUILD: dict[str, frozenset[str]] = {
     ),
 }
 
+# 空表删表重建白名单：文件名 -> 允许重建的表。与 _DROP_WITHOUT_REBUILD 不同，这里要求
+# 每条 DROP 紧跟同名 CREATE，且表集合与白名单完全一致，防止在别的语句之后夹带删表。
+# 只登记已确认 0 行的迁移；其他文件仍按上面的同文件重建规则。
+_REBUILD_PAIRS: dict[str, frozenset[str]] = {
+    "0019_bond_fx_wind_tables.sql": frozenset(
+        {
+            'src_wind."CBONDCURVECNBD"',
+            'src_wind."CBONDCURVECSI"',
+            'src_wind."CBONDREPOANDIBLEODPRICES"',
+            'src_wind."CBONDPRICESREPO"',
+            'src_wind."CBONDREPO"',
+            'src_wind."FXEODPRICES"',
+        }
+    ),
+}
 CATALOG_SCHEMA_SQL = "CREATE SCHEMA IF NOT EXISTS qa_migrate"
 CATALOG_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS qa_migrate.applied (
@@ -166,13 +181,24 @@ def assert_migration_sql(sql: str, *, filename: str) -> tuple[str, ...]:
         if (match := _CREATE_TABLE.match(statement)) is not None
     }
     exempt = _DROP_WITHOUT_REBUILD.get(filename, frozenset())
+    rebuild_allowed = _REBUILD_PAIRS.get(filename)
+    rebuilt: set[str] = set()
     exempt_dropped: set[str] = set()
     seen_non_drop = False
-    for statement in statements:
+    for pos, statement in enumerate(statements):
         dropped = _DROP_TABLE.match(statement)
         if dropped is not None:
             # 已应用的迁移文件不能改。空表列与源端不一致时，只允许删掉这张表并在同一文件里建回。
             name = dropped.group(1)
+            if rebuild_allowed is not None:
+                nxt = statements[pos + 1] if pos + 1 < len(statements) else ""
+                following = _CREATE_TABLE.match(nxt)
+                if name not in rebuild_allowed or following is None or following.group(1) != name:
+                    raise MigrationError(
+                        f"{filename} 的删表重建不在白名单或未紧跟同名 CREATE: {name}"
+                    )
+                rebuilt.add(name)
+                continue
             if name in created:
                 continue
             if name in exempt and not seen_non_drop:
@@ -187,6 +213,8 @@ def assert_migration_sql(sql: str, *, filename: str) -> tuple[str, ...]:
             raise MigrationError(f"{filename} 含禁止动词: {statement[:80]}")
     if exempt_dropped != exempt:
         raise MigrationError(f"{filename} 的开头删表与白名单不一致")
+    if rebuild_allowed is not None and rebuilt != rebuild_allowed:
+        raise MigrationError(f"{filename} 的删表重建与白名单不一致")
     return statements
 
 
