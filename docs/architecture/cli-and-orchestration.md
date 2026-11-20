@@ -21,7 +21,7 @@ Scheduler 的远端配置，实际触发链条跨了两处。
 这不是纪律问题。根因是「一段可执行代码该往哪放」没有答案，于是全都放进
 `scripts/`，然后无法区分哪些还在用。
 
-## 解法：入口只有两处，加一个草稿区
+## 解法：业务入口只有两处，加一个草稿区
 
 | 归属 | 用途 | 判断标准 |
 |---|---|---|
@@ -29,8 +29,8 @@ Scheduler 的远端配置，实际触发链条跨了两处。
 | Dagster asset / job | 有数据产出、有依赖关系、需要调度 | 产出落 lake 或 publish |
 | `notebooks/` | 探索性分析 | 一次性、结论待定、不被依赖 |
 
-**没有 `scripts/` 目录。** pre-commit 钩子 `no-scripts-dir` 与 CI 的
-`禁止 scripts/ 目录` 都会拦它出现。
+`scripts/` 仅放 Windows 和 macOS 的 Dagster Web 启动入口；pre-commit 与 CI
+限制为这两个文件。业务逻辑与采集入口仍归 CLI 和 Dagster。
 
 这条规则的有效性依赖前两处足够好用。如果 CLI 难用，人还是会想建
 `scripts/`——所以 CLI 的设计目标是"比写一个脚本更省事"。

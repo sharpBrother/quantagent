@@ -37,6 +37,25 @@ uv run quantagent db status      # 第一刀不连库；未配置会打印「未
 uv run pre-commit install
 ```
 
+## Dagster Web 界面
+
+先在当前机器配置好 Dagster daemon 和运行目录，再在仓库根目录启动：
+
+```powershell
+# Windows
+.\scripts\dagster-web.cmd
+```
+
+```bash
+# macOS
+./scripts/dagster-web.sh
+```
+
+浏览器打开 `http://127.0.0.1:3000/`，使用期间保持启动窗口打开。Web 界面
+与 daemon 分开；关闭 Web 窗口不会停止 daemon。默认使用该机器已有的
+Dagster 运行目录，也可显式设置 `DAGSTER_HOME`。如果提示找不到虚拟环境，
+先运行 `uv sync --all-extras --dev`。
+
 ## 目录结构
 
 ```
@@ -57,6 +76,7 @@ quantagent/
 │   ├── publish/          发布产物装配
 │   └── cli/              统一命令行入口
 ├── orchestration/        Dagster asset / job / schedule / resources
+├── scripts/              Windows / macOS Dagster Web 启动入口
 ├── db/                   PG 迁移（src 与 ops 两条独立序列）
 ├── tests/                unit / contracts / golden / integration
 ├── notebooks/            探索性分析的唯一去处（jupytext 配对）
@@ -78,7 +98,7 @@ quantagent/
 3. **时间语义必须显式声明**。业务时间、发布时间、采集时间是三条独立的轴，
    三者都不是 PIT。可见日由声明式规则计算得出。
 4. **契约是代码，不是文档**。schema 与可见性规则在 CI 中执行。
-5. **入口只有两处**。CLI 子命令与 Dagster asset，**没有 `scripts/`**。
+5. **业务入口只有两处**。CLI 子命令与 Dagster asset；`scripts/` 仅放 Web 启动入口。
 6. **机械检查只覆盖可机械检查的部分**。职责定义靠文档，工具管依赖方向、
    风格、类型和行为口径。
 

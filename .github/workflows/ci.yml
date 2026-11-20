@@ -58,8 +58,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 禁止 scripts/ 目录
-        run: test ! -d scripts
+      - name: scripts/ 只允许 Dagster Web 启动入口
+        run: |
+          python -c "from pathlib import Path; import sys; allowed = {'scripts/dagster-web.cmd', 'scripts/dagster-web.sh'}; bad = sorted(p.as_posix() for p in Path('scripts').rglob('*') if p.as_posix() not in allowed); sys.exit('scripts/ 含未允许的路径：' + ', '.join(bad) if bad else 0)"
 
       - name: 禁止凭据入库
         run: |

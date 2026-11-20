@@ -171,9 +171,9 @@ psycopg3 的 binary 包自带预编译 libpq，不依赖系统 ODBC，不需要 
 
 ## 入口
 
-只有两处：`quantagent <group> <command>`（Typer）和 Dagster asset/job。
-**没有 `scripts/` 目录**，pre-commit 与 CI 都会拦。探索性代码进
-`notebooks/` 并有过期规则。
+业务入口为 `quantagent <group> <command>`（Typer）和 Dagster asset/job。
+`scripts/` 仅放 Windows 与 macOS 的 Dagster Web 启动入口，pre-commit 与 CI
+拦截其他脚本。探索性代码进 `notebooks/`。
 
 ## 前端
 

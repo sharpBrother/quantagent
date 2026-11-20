@@ -26,12 +26,11 @@ applies_to:
 
 全部层（composition root 的特权）。反之业务层不得 import `cli`。
 
-## 硬约束：没有 scripts/ 目录
+## 入口约束
 
-所有可执行入口只有两处来源：本层的 CLI 子命令，和 `orchestration/` 的
-Dagster asset/job。探索性代码进 `notebooks/`。
-
-pre-commit 与 CI 都会拦 `scripts/` 目录的出现。
+业务入口只有本层的 CLI 子命令和 `orchestration/` 的 Dagster asset/job；
+探索性代码进 `notebooks/`。`scripts/` 仅允许 Windows 和 macOS 的 Dagster
+Web 启动入口，pre-commit 与 CI 会拦其他文件。
 
 理由见 [../cli-and-orchestration.md](../cli-and-orchestration.md)。简单说：
 旧仓 `scripts/` 有 316 个脚本，只有约 8% 是长期入口，约 81% 既不在调度也
@@ -79,4 +78,4 @@ quantagent check <action>       契约与一致性校验
 
 - import-linter `业务层不得依赖 composition root`：`domain` / `features` /
   `models` / `strategy` / `portfolio` / `agents` 禁止 import `cli`。
-- pre-commit `no-scripts-dir` 与 CI `禁止 scripts/ 目录`。
+- pre-commit `limited-scripts-dir` 与 CI 限制 `scripts/` 只放两个 Dagster Web 启动入口。

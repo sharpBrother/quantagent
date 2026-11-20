@@ -35,9 +35,9 @@ repos:
 
   - repo: local
     hooks:
-      - id: no-scripts-dir
-        name: 禁止新建 scripts/ 目录（入口只能是 CLI 子命令或 Dagster asset）
-        entry: bash -c 'test ! -d scripts || { echo "本仓库不设 scripts/，见 docs/architecture/cli-and-orchestration.md"; exit 1; }'
+      - id: limited-scripts-dir
+        name: scripts/ 只允许 Dagster Web 启动入口
+        entry: python -c "from pathlib import Path; import sys; allowed = {'scripts/dagster-web.cmd', 'scripts/dagster-web.sh'}; bad = sorted(p.as_posix() for p in Path('scripts').rglob('*') if p.as_posix() not in allowed); sys.exit('scripts/ 含未允许的路径：' + ', '.join(bad) if bad else 0)"
         language: system
         pass_filenames: false
 

@@ -101,8 +101,8 @@ ARCH_CONCERN → ARCH_REVIEW 升级链。
    `domain.ports` 的 Protocol；只有 `ingest` 写 PG 研究数据面；只有
    `platform` 接触连接串。每层职责见
    [`docs/architecture/layers/`](docs/architecture/layers/)。
-6. **不新建 `scripts/` 目录**。入口只有 CLI 子命令与 Dagster asset，探索性
-   代码进 `notebooks/`。
+6. `scripts/` 仅允许 Windows 与 macOS 的 Dagster Web 启动入口；其他入口
+   仍用 CLI 子命令与 Dagster asset，探索性代码进 `notebooks/`。
 7. 关键的公共接口、PIT 规则、业务常量、容错算法和跨层特殊逻辑用中文注释
    说明**为什么**；专有名词、库名和 SQL 保持原文。不写"这里递增计数器"
    这种复述性注释。

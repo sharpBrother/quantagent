@@ -58,10 +58,11 @@ fail-closed 的情形。
 数据集 schema、发布产物 schema、可见性规则都是可执行的，在 CI 中运行。旧仓
 `docs/data_dictionary/` 的 318 张表字典是文档，无法阻止实现漂移。
 
-### 5. 入口只有两处
+### 5. 业务入口只有两处
 
-`quantagent <group> <command>` 和 Dagster asset/job。**没有 `scripts/`
-目录**，pre-commit 与 CI 都会拦。探索性代码进 `notebooks/` 并有过期规则。
+`quantagent <group> <command>` 和 Dagster asset/job。`scripts/` 只放 Windows 与
+macOS 的 Dagster Web 启动入口，pre-commit 与 CI 拦截其他脚本；探索性代码进
+`notebooks/`。
 
 旧仓 `scripts/` 有 316 个脚本，只有约 8% 是长期入口，约 81% 既不在调度也不
 在现役文档中——这不是纪律问题，是缺少「该往哪放」的答案。
