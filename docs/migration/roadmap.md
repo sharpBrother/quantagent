@@ -61,7 +61,7 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 
 ### P2 数据入湖明细
 
-**Wind（第一批 30 张，24 张已接，执行机回填）**：首次回填走独立作业 `orchestration/jobs/wind_initial.py`，按下表优先级串行（`c9db3c3`）；日更顺序不变。
+**Wind（第一批 30 张全部已接，另加 `AINDEXDESCRIPTIONZL`；执行机回填）**：首次回填走独立作业 `orchestration/jobs/wind_initial.py`，按下表优先级串行（`c9db3c3`）；日更顺序不变。
 
 | 优先级 | 表 | 状态 |
 |---|---|---|
@@ -75,7 +75,7 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 | 6 | `ASHAREMONEYFLOW` | 🔄 461 万 / 1,328 万，无新仓消费者 |
 | 6 | `CHINAMUTUALFUNDSTOCKPORTFOLIO` | 🔄 1,984 万行，旧仓仅一处读取 |
 | 5 | `CBONDCURVECNBD`（只同步曲线 1232 的 10 个期限）、`CBONDCURVECSI`（只同步 0901、02502）、`FXEODPRICES`、`CBONDREPO`、`CBONDPRICESREPO`、`CBONDREPOANDIBLEODPRICES` | ✅ 已接采集与契约；0019 已执行（11-19），主键、`_batch_id` 索引、ingest 权限就绪；过滤条件在 wx2 上覆盖旧表全部行；随初始化回填进库 |
-| — | `AINDEXINDUSTRIESCITICS` | ⏳ 改为镜像 `AINDEXDESCRIPTION` + 视图，等执行机给出 wind_db 列清单 |
+| 3 | `AINDEXDESCRIPTION`、`AINDEXDESCRIPTIONZL`（全表，各约 12 万行，not_pit） | ✅ 已接，0020 已执行（11-19）；`AINDEXINDUSTRIESCITICS` 改为视图（按中信一二三级成分筛选），随初始化回填出数 |
 
 已入库数据在 11-17 用 `ingest wind verify` 重算指纹核对，业务值不一致 0。
 
@@ -113,7 +113,6 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 
 | 事项 | 等谁 |
 |---|---|
-| `AINDEXDESCRIPTION` 的 wind_db 列与类型、行数 | 执行机 |
 | ISM、美债等跨时区数据的可见性：按消费市场收盘时刻判断，需扩展规则引擎 | 已裁定，待实现 |
 | ToDesk 链路会吞连接：回填靠看门狗与逐列回读兜底，未根治 | 观察 |
 | daemon 连 PG 用超级用户 `leo`，应改 `quantagent_ingest` | 负责人放密码 |
