@@ -74,7 +74,7 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 | 5 | 指数估值、中信行业行情、两融明细、两融汇总、停牌 | 🔄 部分；两融明细仅 5 万行 |
 | 6 | `ASHAREMONEYFLOW` | 🔄 461 万 / 1,328 万，无新仓消费者 |
 | 6 | `CHINAMUTUALFUNDSTOCKPORTFOLIO` | 🔄 1,984 万行，旧仓仅一处读取 |
-| 5 | `CBONDCURVECNBD`（只同步曲线 1232 的 10 个期限）、`CBONDCURVECSI`（只同步 0901、02502）、`FXEODPRICES`、`CBONDREPO`、`CBONDPRICESREPO`、`CBONDREPOANDIBLEODPRICES` | 🔧 已接采集与契约；迁移 0019 补主键、去 `GSUPDTIME`，**待执行机停写后执行**；过滤条件在 wx2 上覆盖旧表全部行 |
+| 5 | `CBONDCURVECNBD`（只同步曲线 1232 的 10 个期限）、`CBONDCURVECSI`（只同步 0901、02502）、`FXEODPRICES`、`CBONDREPO`、`CBONDPRICESREPO`、`CBONDREPOANDIBLEODPRICES` | ✅ 已接采集与契约；0019 已执行（11-19），主键、`_batch_id` 索引、ingest 权限就绪；过滤条件在 wx2 上覆盖旧表全部行；随初始化回填进库 |
 | — | `AINDEXINDUSTRIESCITICS` | ⏳ 改为镜像 `AINDEXDESCRIPTION` + 视图，等执行机给出 wind_db 列清单 |
 
 已入库数据在 11-17 用 `ingest wind verify` 重算指纹核对，业务值不一致 0。
@@ -113,7 +113,6 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 
 | 事项 | 等谁 |
 |---|---|
-| 0019 执行：需要执行机先 `ingest wind stop` 停写（DROP 要锁 `_batch`） | 执行机 |
 | `AINDEXDESCRIPTION` 的 wind_db 列与类型、行数 | 执行机 |
 | ISM、美债等跨时区数据的可见性：按消费市场收盘时刻判断，需扩展规则引擎 | 已裁定，待实现 |
 | ToDesk 链路会吞连接：回填靠看门狗与逐列回读兜底，未根治 | 观察 |
