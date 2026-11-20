@@ -15,67 +15,67 @@ columns:
   WIND_CODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "Wind代码（废弃）"
   S_INFO_WINDCODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "Wind代码"
   S_DIV_PROGRESS:
     dtype: string
     nullable: true
-    description: ""
+    description: "方案进度"
   STK_DVD_PER_SH:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股送转"
   CASH_DVD_PER_SH_PRE_TAX:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股派息(税前)(元)"
   CASH_DVD_PER_SH_AFTER_TAX:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股派息(税后)(元)"
   EQY_RECORD_DT:
     dtype: string
     nullable: true
-    description: ""
+    description: "股权登记日"
   EX_DT:
     dtype: string
     nullable: true
-    description: ""
+    description: "除权除息日"
   DVD_PAYOUT_DT:
     dtype: string
     nullable: true
-    description: ""
+    description: "派息日"
   LISTING_DT_OF_DVD_SHR:
     dtype: string
     nullable: true
-    description: ""
+    description: "红股上市日"
   S_DIV_PRELANDATE:
     dtype: string
     nullable: true
-    description: ""
+    description: "预案公告日"
   S_DIV_SMTGDATE:
     dtype: string
     nullable: true
-    description: ""
+    description: "股东大会公告日"
   DVD_ANN_DT:
     dtype: string
     nullable: true
-    description: ""
+    description: "分红实施公告日"
   S_DIV_BASEDATE:
     dtype: string
     nullable: true
-    description: ""
+    description: "基准日期"
   S_DIV_BASESHARE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "基准股本(万股)"
   CRNCY_CODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "货币代码"
   ANN_DT:
     dtype: string
     nullable: true
@@ -83,51 +83,51 @@ columns:
   IS_CHANGED:
     dtype: int64
     nullable: true
-    description: ""
+    description: "方案是否变更"
   REPORT_PERIOD:
     dtype: string
     nullable: true
-    description: ""
+    description: "分红年度"
   S_DIV_CHANGE:
     dtype: string
     nullable: true
-    description: ""
+    description: "方案变更说明"
   S_DIV_BONUSRATE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股送股比例"
   S_DIV_CONVERSEDRATE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股转增比例"
   MEMO:
     dtype: string
     nullable: true
-    description: ""
+    description: "备注"
   S_DIV_PREANNDT:
     dtype: string
     nullable: true
-    description: ""
+    description: "预案预披露公告日"
   S_DIV_OBJECT:
     dtype: string
     nullable: true
-    description: ""
+    description: "分红对象"
   IS_TRANSFER:
     dtype: int64
     nullable: true
-    description: ""
+    description: "是否不分转"
   DISTRI_PROFIT_CONSOLIDATE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "可分配利润(合并)"
   DISTRI_PROFIT_PARENT_COMP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "可分配利润(母公司)"
   TOT_CASH_DVD:
     dtype: float64
     nullable: true
-    description: ""
+    description: "现金分红总额"
   OPDATE:
     dtype: datetime
     nullable: true

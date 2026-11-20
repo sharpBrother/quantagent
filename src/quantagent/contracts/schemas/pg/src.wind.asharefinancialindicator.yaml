@@ -16,15 +16,15 @@ columns:
   S_INFO_WINDCODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "Wind代码"
   WIND_CODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "Wind代码"
   S_INFO_COMPCODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "公司ID"
   ANN_DT:
     dtype: string
     nullable: true
@@ -32,663 +32,663 @@ columns:
   REPORT_PERIOD:
     dtype: string
     nullable: true
-    description: ""
+    description: "报告期"
   CRNCY_CODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "货币代码"
   S_FA_EXTRAORDINARY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "非经常性损益"
   S_FA_DEDUCTEDPROFIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "扣除非经常性损益后的净利润(扣除少数股东损益)"
   S_FA_GROSSMARGIN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "毛利"
   S_FA_OPERATEINCOME:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动净收益"
   S_FA_INVESTINCOME:
     dtype: float64
     nullable: true
-    description: ""
+    description: "价值变动净收益"
   S_STMNOTE_FINEXP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "利息费用"
   S_STM_IS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "折旧与摊销"
   S_FA_EBIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "息税前利润"
   S_FA_EBITDA:
     dtype: float64
     nullable: true
-    description: ""
+    description: "息税折旧摊销前利润"
   S_FA_FCFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "企业自由现金流量(FCFF)"
   S_FA_FCFE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "股权自由现金流量(FCFE)"
   S_FA_EXINTERESTDEBT_CURRENT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "无息流动负债"
   S_FA_EXINTERESTDEBT_NONCURRENT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "无息非流动负债"
   S_FA_INTERESTDEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "带息债务"
   S_FA_NETDEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "净债务"
   S_FA_TANGIBLEASSET:
     dtype: float64
     nullable: true
-    description: ""
+    description: "有形资产"
   S_FA_WORKINGCAPITAL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "营运资金"
   S_FA_NETWORKINGCAPITAL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "营运流动资本"
   S_FA_INVESTCAPITAL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "全部投入资本"
   S_FA_RETAINEDEARNINGS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "留存收益"
   S_FA_EPS_BASIC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "基本每股收益"
   S_FA_EPS_DILUTED:
     dtype: float64
     nullable: true
-    description: ""
+    description: "稀释每股收益"
   S_FA_EPS_DILUTED2:
     dtype: float64
     nullable: true
-    description: ""
+    description: "期末摊薄每股收益"
   S_FA_BPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股净资产"
   S_FA_OCFPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股经营活动产生的现金流量净额"
   S_FA_GRPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股营业总收入"
   S_FA_ORPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股营业收入"
   S_FA_SURPLUSCAPITALPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股资本公积"
   S_FA_SURPLUSRESERVEPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股盈余公积"
   S_FA_UNDISTRIBUTEDPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股未分配利润"
   S_FA_RETAINEDPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股留存收益"
   S_FA_CFPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股现金流量净额"
   S_FA_EBITPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股息税前利润"
   S_FA_FCFFPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股企业自由现金流量"
   S_FA_FCFEPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "每股股东自由现金流量"
   S_FA_NETPROFITMARGIN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "销售净利率"
   S_FA_GROSSPROFITMARGIN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "销售毛利率"
   S_FA_COGSTOSALES:
     dtype: float64
     nullable: true
-    description: ""
+    description: "销售成本率"
   S_FA_EXPENSETOSALES:
     dtype: float64
     nullable: true
-    description: ""
+    description: "销售期间费用率"
   S_FA_PROFITTOGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "净利润/营业总收入"
   S_FA_SALEEXPENSETOGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "销售费用/营业总收入"
   S_FA_ADMINEXPENSETOGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "管理费用/营业总收入"
   S_FA_FINAEXPENSETOGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "财务费用/营业总收入"
   S_FA_IMPAIRTOGR_TTM:
     dtype: float64
     nullable: true
-    description: ""
+    description: "资产减值损失/营业总收入"
   S_FA_GCTOGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "营业总成本/营业总收入"
   S_FA_OPTOGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "营业利润/营业总收入"
   S_FA_EBITTOGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "息税前利润/营业总收入"
   S_FA_ROE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "净资产收益率"
   S_FA_ROE_DEDUCTED:
     dtype: float64
     nullable: true
-    description: ""
+    description: "净资产收益率(扣除非经常损益)"
   S_FA_ROA2:
     dtype: float64
     nullable: true
-    description: ""
+    description: "总资产报酬率"
   S_FA_ROA:
     dtype: float64
     nullable: true
-    description: ""
+    description: "总资产净利率"
   S_FA_ROIC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "投入资本回报率"
   S_FA_ROE_YEARLY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "年化净资产收益率"
   S_FA_ROA2_YEARLY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "年化总资产报酬率"
   S_FA_ROE_AVG:
     dtype: float64
     nullable: true
-    description: ""
+    description: "平均净资产收益率(增发条件)"
   S_FA_OPERATEINCOMETOEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动净收益/利润总额"
   S_FA_INVESTINCOMETOEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "价值变动净收益/利润总额"
   S_FA_NONOPERATEPROFITTOEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "营业外收支净额/利润总额"
   S_FA_TAXTOEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "所得税/利润总额"
   S_FA_DEDUCTEDPROFITTOPROFIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "扣除非经常损益后的净利润/净利润"
   S_FA_SALESCASHINTOOR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "销售商品提供劳务收到的现金/营业收入"
   S_FA_OCFTOOR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动产生的现金流量净额/营业收入"
   S_FA_OCFTOOPERATEINCOME:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动产生的现金流量净额/经营活动净收益"
   S_FA_CAPITALIZEDTODA:
     dtype: float64
     nullable: true
-    description: ""
+    description: "资本支出/折旧和摊销"
   S_FA_DEBTTOASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "资产负债率"
   S_FA_ASSETSTOEQUITY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "权益乘数"
   S_FA_DUPONT_ASSETSTOEQUITY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "权益乘数(用于杜邦分析)"
   S_FA_CATOASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "流动资产/总资产"
   S_FA_NCATOASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "非流动资产/总资产"
   S_FA_TANGIBLEASSETSTOASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "有形资产/总资产"
   S_FA_INTDEBTTOTOTALCAP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "带息债务/全部投入资本"
   S_FA_EQUITYTOTOTALCAPITAL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "归属于母公司的股东权益/全部投入资本"
   S_FA_CURRENTDEBTTODEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "流动负债/负债合计"
   S_FA_LONGDEBTODEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "非流动负债/负债合计"
   S_FA_CURRENT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "流动比率"
   S_FA_QUICK:
     dtype: float64
     nullable: true
-    description: ""
+    description: "速动比率"
   S_FA_CASHRATIO:
     dtype: float64
     nullable: true
-    description: ""
+    description: "保守速动比率"
   S_FA_OCFTOSHORTDEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动产生的现金流量净额/流动负债"
   S_FA_DEBTTOEQUITY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "产权比率"
   S_FA_EQUITYTODEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "归属于母公司的股东权益/负债合计"
   S_FA_EQUITYTOINTERESTDEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "归属于母公司的股东权益/带息债务"
   S_FA_TANGIBLEASSETTODEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "有形资产/负债合计"
   S_FA_TANGASSETTOINTDEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "有形资产/带息债务"
   S_FA_TANGIBLEASSETTONETDEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "有形资产/净债务"
   S_FA_OCFTODEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动产生的现金流量净额/负债合计"
   S_FA_OCFTOINTERESTDEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动产生的现金流量净额/带息债务"
   S_FA_OCFTONETDEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动产生的现金流量净额/净债务"
   S_FA_EBITTOINTEREST:
     dtype: float64
     nullable: true
-    description: ""
+    description: "已获利息倍数(EBIT/利息费用)"
   S_FA_LONGDEBTTOWORKINGCAPITAL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "长期债务与营运资金比率"
   S_FA_EBITDATODEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "息税折旧摊销前利润/负债合计"
   S_FA_TURNDAYS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "营业周期"
   S_FA_INVTURNDAYS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "存货周转天数"
   S_FA_ARTURNDAYS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收账款周转天数"
   S_FA_INVTURN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "存货周转率"
   S_FA_ARTURN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收账款周转率"
   S_FA_CATURN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "流动资产周转率"
   S_FA_FATURN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "固定资产周转率"
   S_FA_ASSETSTURN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "总资产周转率"
   S_FA_ROA_YEARLY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "年化总资产净利率"
   S_FA_DUPONT_ROA:
     dtype: float64
     nullable: true
-    description: ""
+    description: "总资产净利率(杜邦分析)"
   S_STM_BS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "固定资产合计"
   S_FA_PREFINEXPENSE_OPPROFIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "扣除财务费用前营业利润"
   S_FA_NONOPPROFIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "非营业利润"
   S_FA_OPTOEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "营业利润／利润总额"
   S_FA_NOPTOEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "非营业利润／利润总额"
   S_FA_OCFTOPROFIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动产生的现金流量净额／营业利润"
   S_FA_CASHTOLIQDEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "货币资金／流动负债"
   S_FA_CASHTOLIQDEBTWITHINTEREST:
     dtype: float64
     nullable: true
-    description: ""
+    description: "货币资金／带息流动负债"
   S_FA_OPTOLIQDEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "营业利润／流动负债"
   S_FA_OPTODEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "营业利润／负债合计"
   S_FA_ROIC_YEARLY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "年化投入资本回报率"
   S_FA_TOT_FATURN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "固定资产合计周转率"
   S_FA_PROFITTOOP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "利润总额／营业收入"
   S_QFA_OPERATEINCOME:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.经营活动净收益"
   S_QFA_INVESTINCOME:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.价值变动净收益"
   S_QFA_DEDUCTEDPROFIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.扣除非经常损益后的净利润"
   S_QFA_EPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.每股收益"
   S_QFA_NETPROFITMARGIN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.销售净利率"
   S_QFA_GROSSPROFITMARGIN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.销售毛利率"
   S_QFA_EXPENSETOSALES:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.销售期间费用率"
   S_QFA_PROFITTOGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.净利润／营业总收入"
   S_QFA_SALEEXPENSETOGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.销售费用／营业总收入"
   S_QFA_ADMINEXPENSETOGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.管理费用／营业总收入"
   S_QFA_FINAEXPENSETOGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.财务费用／营业总收入"
   S_QFA_IMPAIRTOGR_TTM:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.资产减值损失／营业总收入"
   S_QFA_GCTOGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.营业总成本／营业总收入"
   S_QFA_OPTOGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.营业利润／营业总收入"
   S_QFA_ROE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.净资产收益率"
   S_QFA_ROE_DEDUCTED:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.净资产收益率(扣除非经常损益)"
   S_QFA_ROA:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.总资产净利润"
   S_QFA_OPERATEINCOMETOEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.经营活动净收益／利润总额"
   S_QFA_INVESTINCOMETOEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.价值变动净收益／利润总额"
   S_QFA_DEDUCTEDPROFITTOPROFIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.扣除非经常损益后的净利润／净利润"
   S_QFA_SALESCASHINTOOR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.销售商品提供劳务收到的现金／营业收入"
   S_QFA_OCFTOSALES:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.经营活动产生的现金流量净额／营业收入"
   S_QFA_OCFTOOR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.经营活动产生的现金流量净额／经营活动净收益"
   S_FA_YOYEPS_BASIC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "同比增长率-基本每股收益(%)"
   S_FA_YOYEPS_DILUTED:
     dtype: float64
     nullable: true
-    description: ""
+    description: "同比增长率-稀释每股收益(%)"
   S_FA_YOYOCFPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "同比增长率-每股经营活动产生的现金流量净额(%)"
   S_FA_YOYOP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "同比增长率-营业利润(%)"
   S_FA_YOYEBT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "同比增长率-利润总额(%)"
   S_FA_YOYNETPROFIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "同比增长率-归属母公司股东的净利润(%)"
   S_FA_YOYNETPROFIT_DEDUCTED:
     dtype: float64
     nullable: true
-    description: ""
+    description: "同比增长率-归属母公司股东的净利润-扣除非经常损益(%)"
   S_FA_YOYOCF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "同比增长率-经营活动产生的现金流量净额(%)"
   S_FA_YOYROE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "同比增长率-净资产收益率(摊薄)(%)"
   S_FA_YOYBPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "相对年初增长率-每股净资产(%)"
   S_FA_YOYASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "相对年初增长率-资产总计(%)"
   S_FA_YOYEQUITY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "相对年初增长率-归属母公司的股东权益(%)"
   S_FA_YOY_TR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "营业总收入同比增长率(%)"
   S_FA_YOY_OR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "营业收入同比增长率(%)"
   S_QFA_YOYGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.营业总收入同比增长率(%)"
   S_QFA_CGRGR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.营业总收入环比增长率(%)"
   S_QFA_YOYSALES:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.营业收入同比增长率(%)"
   S_QFA_CGRSALES:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.营业收入环比增长率(%)"
   S_QFA_YOYOP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.营业利润同比增长率(%)"
   S_QFA_CGROP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.营业利润环比增长率(%)"
   S_QFA_YOYPROFIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.净利润同比增长率(%)"
   S_QFA_CGRPROFIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.净利润环比增长率(%)"
   S_QFA_YOYNETPROFIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.归属母公司股东的净利润同比增长率(%)"
   S_QFA_CGRNETPROFIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "单季度.归属母公司股东的净利润环比增长率(%)"
   S_FA_YOY_EQUITY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "净资产(同比增长率)"
   RD_EXPENSE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "研发费用"
   WAA_ROE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "加权平均净资产收益率"
   OPDATE:
     dtype: datetime
     nullable: true

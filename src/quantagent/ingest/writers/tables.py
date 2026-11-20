@@ -20,6 +20,7 @@ from quantagent.adapters.postgres.src_targets import (
     FIRST_BATCH_WIND_SPECS,
     FRED_OBSERVATION_VINTAGE,
     GPR_DAILY,
+    INDEX_DESCRIPTION_WIND_SPECS,
     JIN10_ECONOMIC_CALENDAR,
     SHIBOR,
     TRADE_CAL,
@@ -48,6 +49,7 @@ ALLOWED_SRC_WRITE_TARGETS: dict[str, SrcTableWriteSpec] = {
     AINDEXVALUATION.dataset: AINDEXVALUATION,
     **{spec.dataset: spec for spec in FIRST_BATCH_WIND_SPECS.values()},
     **{spec.dataset: spec for spec in BOND_FX_WIND_SPECS.values()},
+    **{spec.dataset: spec for spec in INDEX_DESCRIPTION_WIND_SPECS.values()},
 }
 
 # 旁表只允许写入器按批次协议 INSERT，不能当业务目标表；其余 tushare 表本

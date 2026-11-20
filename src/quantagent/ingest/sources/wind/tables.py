@@ -16,6 +16,7 @@ from quantagent.adapters.postgres.src_targets import (
     ASHAREMONEYFLOW,
     BOND_FX_WIND_SPECS,
     FIRST_BATCH_WIND_SPECS,
+    INDEX_DESCRIPTION_WIND_SPECS,
     SrcTableWriteSpec,
 )
 from quantagent.ingest.errors import TargetNotAllowedError
@@ -127,6 +128,27 @@ WIND_PAGED_TABLES.update(
             source_filter=_BOND_FX_SOURCE_FILTER.get(name, ()),
         )
         for name, spec in BOND_FX_WIND_SPECS.items()
+    }
+)
+# 指数基本资料两张表全表镜像，chi_fields 与旧仓 data/wind_to_sql_2.py 同一组。
+_INDEX_DESCRIPTION_CHI_FIELDS: tuple[str, ...] = (
+    "S_INFO_NAME",
+    "S_INFO_COMPNAME",
+    "S_INFO_PUBLISHER",
+    "S_INFO_INDEXSTYLE",
+    "INDEX_INTRO",
+    "INCOME_PROCESSING_METHOD",
+    "WEIGHT_TYPE_NAME",
+    "S_INFO_INDEXTYPE",
+)
+WIND_PAGED_TABLES.update(
+    {
+        name: WindPagedTable(
+            source_table=name,
+            spec=spec,
+            chi_fields=_INDEX_DESCRIPTION_CHI_FIELDS,
+        )
+        for name, spec in INDEX_DESCRIPTION_WIND_SPECS.items()
     }
 )
 

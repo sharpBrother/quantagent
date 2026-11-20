@@ -290,6 +290,8 @@ def test_ingest_wind_single_first_batch_table_dispatches(
         "CBONDPRICESREPO",
         "CBONDREPO",
         "FXEODPRICES",
+        "AINDEXDESCRIPTION",
+        "AINDEXDESCRIPTIONZL",
     ],
 )
 def test_ingest_wind_dispatches_to_paged_job(monkeypatch: pytest.MonkeyPatch, table: str) -> None:

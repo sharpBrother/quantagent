@@ -67,6 +67,10 @@ tables:
   - source: wind
     name: AINDEXINDUSTRIESCITICS
   - source: wind
+    name: AINDEXDESCRIPTION
+  - source: wind
+    name: AINDEXDESCRIPTIONZL
+  - source: wind
     name: CBONDPRICESREPO
   - source: wind
     name: CBONDREPO

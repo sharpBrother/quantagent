@@ -16,11 +16,11 @@ columns:
   S_INFO_WINDCODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "Wind代码"
   WIND_CODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "Wind代码"
   ANN_DT:
     dtype: string
     nullable: true
@@ -28,707 +28,707 @@ columns:
   REPORT_PERIOD:
     dtype: string
     nullable: true
-    description: ""
+    description: "报告期"
   STATEMENT_TYPE:
     dtype: string
     nullable: true
-    description: ""
+    description: "报表类型"
   CRNCY_CODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "货币代码"
   MONETARY_CAP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "货币资金"
   TRADABLE_FIN_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "交易性金融资产"
   NOTES_RCV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收票据"
   ACCT_RCV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收账款"
   OTH_RCV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他应收款"
   PREPAY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "预付款项"
   DVD_RCV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收股利"
   INT_RCV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收利息"
   INVENTORIES:
     dtype: float64
     nullable: true
-    description: ""
+    description: "存货"
   CONSUMPTIVE_BIO_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "消耗性生物资产"
   DEFERRED_EXP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "待摊费用"
   NON_CUR_ASSETS_DUE_WITHIN_1Y:
     dtype: float64
     nullable: true
-    description: ""
+    description: "一年内到期的非流动资产"
   SETTLE_RSRV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "结算备付金"
   LOANS_TO_OTH_BANKS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "拆出资金"
   PREM_RCV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收保费"
   RCV_FROM_REINSURER:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收分保账款"
   RCV_FROM_CEDED_INSUR_CONT_RSRV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收分保合同准备金"
   RED_MONETARY_CAP_FOR_SALE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "买入返售金融资产"
   OTH_CUR_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他流动资产"
   TOT_CUR_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "流动资产合计"
   FIN_ASSETS_AVAIL_FOR_SALE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "可供出售金融资产"
   HELD_TO_MTY_INVEST:
     dtype: float64
     nullable: true
-    description: ""
+    description: "持有至到期投资"
   LONG_TERM_EQY_INVEST:
     dtype: float64
     nullable: true
-    description: ""
+    description: "长期股权投资"
   INVEST_REAL_ESTATE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "投资性房地产"
   TIME_DEPOSITS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "定期存款"
   OTH_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他资产"
   LONG_TERM_REC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "长期应收款"
   FIX_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "固定资产"
   CONST_IN_PROG:
     dtype: float64
     nullable: true
-    description: ""
+    description: "在建工程"
   PROJ_MATL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "工程物资"
   FIX_ASSETS_DISP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "固定资产清理"
   PRODUCTIVE_BIO_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "生产性生物资产"
   OIL_AND_NATURAL_GAS_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "油气资产"
   INTANG_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "无形资产"
   R_AND_D_COSTS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "开发支出"
   GOODWILL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "商誉"
   LONG_TERM_DEFERRED_EXP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "长期待摊费用"
   DEFERRED_TAX_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "递延所得税资产"
   LOANS_AND_ADV_GRANTED:
     dtype: float64
     nullable: true
-    description: ""
+    description: "发放贷款及垫款"
   OTH_NON_CUR_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他非流动资产"
   TOT_NON_CUR_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "非流动资产合计"
   CASH_DEPOSITS_CENTRAL_BANK:
     dtype: float64
     nullable: true
-    description: ""
+    description: "现金及存放中央银行款项"
   ASSET_DEP_OTH_BANKS_FIN_INST:
     dtype: float64
     nullable: true
-    description: ""
+    description: "存放同业和其它金融机构款项"
   PRECIOUS_METALS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "贵金属"
   DERIVATIVE_FIN_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "衍生金融资产"
   AGENCY_BUS_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "代理业务资产"
   SUBR_REC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收代位追偿款"
   RCV_CEDED_UNEARNED_PREM_RSRV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收分保未到期责任准备金"
   RCV_CEDED_CLAIM_RSRV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收分保未决赔款准备金"
   RCV_CEDED_LIFE_INSUR_RSRV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收分保寿险责任准备金"
   RCV_CEDED_LT_HEALTH_INSUR_RSRV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收分保长期健康险责任准备金"
   MRGN_PAID:
     dtype: float64
     nullable: true
-    description: ""
+    description: "存出保证金"
   INSURED_PLEDGE_LOAN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "保户质押贷款"
   CAP_MRGN_PAID:
     dtype: float64
     nullable: true
-    description: ""
+    description: "存出资本保证金"
   INDEPENDENT_ACCT_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "独立账户资产"
   CLIENTS_CAP_DEPOSIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "客户资金存款"
   CLIENTS_RSRV_SETTLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "客户备付金"
   INCL_SEAT_FEES_EXCHANGE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其中:交易席位费"
   RCV_INVEST:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收款项类投资"
   TOT_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "资产总计"
   ST_BORROW:
     dtype: float64
     nullable: true
-    description: ""
+    description: "短期借款"
   BORROW_CENTRAL_BANK:
     dtype: float64
     nullable: true
-    description: ""
+    description: "向中央银行借款"
   DEPOSIT_RECEIVED_IB_DEPOSITS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "吸收存款及同业存放"
   LOANS_OTH_BANKS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "拆入资金"
   TRADABLE_FIN_LIAB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "交易性金融负债"
   NOTES_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应付票据"
   ACCT_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应付账款"
   ADV_FROM_CUST:
     dtype: float64
     nullable: true
-    description: ""
+    description: "预收款项"
   FUND_SALES_FIN_ASSETS_RP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "卖出回购金融资产款"
   HANDLING_CHARGES_COMM_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应付手续费及佣金"
   EMPL_BEN_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应付职工薪酬"
   TAXES_SURCHARGES_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应交税费"
   INT_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应付利息"
   DVD_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应付股利"
   OTH_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他应付款"
   ACC_EXP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "预提费用"
   DEFERRED_INC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "递延收益"
   ST_BONDS_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应付短期债券"
   PAYABLE_TO_REINSURER:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应付分保账款"
   RSRV_INSUR_CONT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "保险合同准备金"
   ACTING_TRADING_SEC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "代理买卖证券款"
   ACTING_UW_SEC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "代理承销证券款"
   NON_CUR_LIAB_DUE_WITHIN_1Y:
     dtype: float64
     nullable: true
-    description: ""
+    description: "一年内到期的非流动负债"
   OTH_CUR_LIAB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他流动负债"
   TOT_CUR_LIAB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "流动负债合计"
   LT_BORROW:
     dtype: float64
     nullable: true
-    description: ""
+    description: "长期借款"
   BONDS_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应付债券"
   LT_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "长期应付款"
   SPECIFIC_ITEM_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "专项应付款"
   PROVISIONS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "预计负债"
   DEFERRED_TAX_LIAB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "递延所得税负债"
   DEFERRED_INC_NON_CUR_LIAB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "递延收益-非流动负债"
   OTH_NON_CUR_LIAB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他非流动负债"
   TOT_NON_CUR_LIAB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "非流动负债合计"
   LIAB_DEP_OTH_BANKS_FIN_INST:
     dtype: float64
     nullable: true
-    description: ""
+    description: "同业和其它金融机构存放款项"
   DERIVATIVE_FIN_LIAB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "衍生金融负债"
   CUST_BANK_DEP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "吸收存款"
   AGENCY_BUS_LIAB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "代理业务负债"
   OTH_LIAB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他负债"
   PREM_RECEIVED_ADV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "预收保费"
   DEPOSIT_RECEIVED:
     dtype: float64
     nullable: true
-    description: ""
+    description: "存入保证金"
   INSURED_DEPOSIT_INVEST:
     dtype: float64
     nullable: true
-    description: ""
+    description: "保户储金及投资款"
   UNEARNED_PREM_RSRV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "未到期责任准备金"
   OUT_LOSS_RSRV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "未决赔款准备金"
   LIFE_INSUR_RSRV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "寿险责任准备金"
   LT_HEALTH_INSUR_V:
     dtype: float64
     nullable: true
-    description: ""
+    description: "长期健康险责任准备金"
   INDEPENDENT_ACCT_LIAB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "独立账户负债"
   INCL_PLEDGE_LOAN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其中:质押借款"
   CLAIMS_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应付赔付款"
   DVD_PAYABLE_INSURED:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应付保单红利"
   TOT_LIAB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "负债合计"
   CAP_STK:
     dtype: float64
     nullable: true
-    description: ""
+    description: "股本"
   CAP_RSRV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "资本公积金"
   SPECIAL_RSRV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "专项储备"
   SURPLUS_RSRV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "盈余公积金"
   UNDISTRIBUTED_PROFIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "未分配利润"
   LESS_TSY_STK:
     dtype: float64
     nullable: true
-    description: ""
+    description: "减:库存股"
   PROV_NOM_RISKS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "一般风险准备"
   CNVD_DIFF_FOREIGN_CURR_STAT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "外币报表折算差额"
   UNCONFIRMED_INVEST_LOSS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "未确认的投资损失"
   MINORITY_INT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "少数股东权益"
   TOT_SHRHLDR_EQY_EXCL_MIN_INT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "股东权益合计(不含少数股东权益)"
   TOT_SHRHLDR_EQY_INCL_MIN_INT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "股东权益合计(含少数股东权益)"
   TOT_LIAB_SHRHLDR_EQY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "负债及股东权益总计"
   COMP_TYPE_CODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "公司类型代码"
   ACTUAL_ANN_DT:
     dtype: string
     nullable: true
-    description: ""
+    description: "实际公告日期"
   SPE_CUR_ASSETS_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "流动资产差额(特殊报表科目)"
   TOT_CUR_ASSETS_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "流动资产差额(合计平衡项目)"
   SPE_NON_CUR_ASSETS_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "非流动资产差额(特殊报表科目)"
   TOT_NON_CUR_ASSETS_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "非流动资产差额(合计平衡项目)"
   SPE_BAL_ASSETS_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "资产差额(特殊报表科目)"
   TOT_BAL_ASSETS_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "资产差额(合计平衡项目)"
   SPE_CUR_LIAB_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "流动负债差额(特殊报表科目)"
   TOT_CUR_LIAB_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "流动负债差额(合计平衡项目)"
   SPE_NON_CUR_LIAB_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "非流动负债差额(特殊报表科目)"
   TOT_NON_CUR_LIAB_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "非流动负债差额(合计平衡项目)"
   SPE_BAL_LIAB_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "负债差额(特殊报表科目)"
   TOT_BAL_LIAB_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "负债差额(合计平衡项目)"
   SPE_BAL_SHRHLDR_EQY_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "股东权益差额(特殊报表科目)"
   TOT_BAL_SHRHLDR_EQY_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "股东权益差额(合计平衡项目)"
   SPE_BAL_LIAB_EQY_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "负债及股东权益差额(特殊报表项目)"
   TOT_BAL_LIAB_EQY_DIFF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "负债及股东权益差额(合计平衡项目)"
   LT_PAYROLL_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "长期应付职工薪酬"
   OTHER_COMP_INCOME:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他综合收益"
   OTHER_EQUITY_TOOLS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他权益工具"
   OTHER_EQUITY_TOOLS_P_SHR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他权益工具:优先股"
   LENDING_FUNDS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融出资金"
   ACCOUNTS_RECEIVABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收款项"
   ST_FINANCING_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应付短期融资款"
   PAYABLES:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应付款项"
   S_INFO_COMPCODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "公司ID"
   TOT_SHR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "期末总股本"
   HFS_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "持有待售的资产"
   HFS_SALES:
     dtype: float64
     nullable: true
-    description: ""
+    description: "持有待售的负债"
   FIN_ASSETS_COST_SHARING:
     dtype: float64
     nullable: true
-    description: ""
+    description: "以摊余成本计量的金融资产"
   FIN_ASSETS_FAIR_VALUE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "以公允价值计量且其变动计入其他综合收益的金融资产"
   CONTRACTUAL_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "合同资产"
   CONTRACT_LIABILITIES:
     dtype: float64
     nullable: true
-    description: ""
+    description: "合同负债"
   ACCOUNTS_RECEIVABLE_BILL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收票据及应收账款"
   ACCOUNTS_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应付票据及应付账款"
   OTH_RCV_TOT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他应收款(合计)（元）"
   STM_BS_TOT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "固定资产(合计)(元)"
   CONST_IN_PROG_TOT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "在建工程(合计)(元)"
   OTH_PAYABLE_TOT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他应付款(合计)(元)"
   LT_PAYABLE_TOT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "长期应付款(合计)(元)"
   DEBT_INVESTMENT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "债权投资(元)"
   OTHER_DEBT_INVESTMENT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他债权投资(元)"
   OTHER_EQUITY_INVESTMENT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他权益工具投资(元)"
   OTHER_ILLIQUIDFINANCIAL_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他非流动金融资产(元)"
   OTHER_SUSTAINABLE_BOND:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他权益工具:永续债(元)"
   RECEIVABLES_FINANCING:
     dtype: float64
     nullable: true
-    description: ""
+    description: "应收款项融资"
   RIGHT_USE_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "使用权资产"
   LEASE_LIAB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "租赁负债"
   OPDATE:
     dtype: datetime
     nullable: true

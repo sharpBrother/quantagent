@@ -48,7 +48,17 @@ _CREATE_TABLE = re.compile(
     r'^CREATE TABLE\s+((?:[A-Za-z_][\w]*\.)?"[^"]+")',
     re.IGNORECASE,
 )
+_CREATE_VIEW = re.compile(
+    r'^CREATE VIEW\s+((?:[A-Za-z_][\w]*\.)?"[^"]+")\s+AS\b',
+    re.IGNORECASE,
+)
 _FILENAME = re.compile(r"^(\d{4})_[a-z0-9_]+\.sql$")
+# COMMENT 只放行列注释：说明文字来自契约 YAML，由 contracts emit-comments 生成。
+# 表注释、库注释等其他形式一律拒绝。
+_COMMENT_COLUMN = re.compile(
+    r"COMMENT ON COLUMN \w+\.\"[^\"]+\"\.\"[^\"]+\" IS '(?:[^']|'')*'",
+    re.IGNORECASE,
+)
 # 删表且不在同文件重建的历史例外，文件与表名写死。0018 按分表原则删除三张空的旧宏观表，
 # 必须位于文件开头。应用时 _refuse_nonempty_drop 仍会检查行数，非空则拒绝。
 _DROP_WITHOUT_REBUILD: dict[str, frozenset[str]] = {
@@ -75,6 +85,12 @@ _REBUILD_PAIRS: dict[str, frozenset[str]] = {
             'src_wind."FXEODPRICES"',
         }
     ),
+}
+# 删物理表并在同一文件建同名视图的白名单。视图只做筛选、不存数据，与重建表的规则不同：
+# 不要求 _batch_id 索引，但仍要求每条 DROP 紧跟同名 CREATE VIEW，且表集合与白名单完全一致。
+# 只登记 0020 的一处：AINDEXINDUSTRIESCITICS 由 AINDEXDESCRIPTION 按中信成分筛出（2026-11-19 裁定）。
+_DROP_TO_VIEW_PAIRS: dict[str, frozenset[str]] = {
+    "0020_aindexdescription.sql": frozenset({'src_wind."AINDEXINDUSTRIESCITICS"'}),
 }
 CATALOG_SCHEMA_SQL = "CREATE SCHEMA IF NOT EXISTS qa_migrate"
 CATALOG_TABLE_SQL = """
@@ -142,7 +158,11 @@ def list_migration_files(repo_root: Path, plane: Plane) -> tuple[MigrationFile, 
 
 
 def split_sql_statements(sql: str) -> tuple[str, ...]:
-    """按分号切语句。生成的 SQL 不含字符串字面量里的分号。"""
+    """按分号切语句。分号若在双引号标识符或单引号字面量里则不切。
+
+    单引号也要识别：列注释的 description 是字面量，里面的 ``;`` 与 ``"`` 不能把语句切坏。
+    ``''`` 转义会让引号状态翻转两次，状态保持正确。
+    """
     body_lines: list[str] = []
     for raw in sql.splitlines():
         stripped = raw.strip()
@@ -152,13 +172,14 @@ def split_sql_statements(sql: str) -> tuple[str, ...]:
     body = "\n".join(body_lines)
     parts: list[str] = []
     buf: list[str] = []
-    in_quote = False
+    in_ident = False
+    in_literal = False
     for char in body:
-        if char == '"':
-            in_quote = not in_quote
-            buf.append(char)
-            continue
-        if char == ";" and not in_quote:
+        if char == "'" and not in_ident:
+            in_literal = not in_literal
+        elif char == '"' and not in_literal:
+            in_ident = not in_ident
+        elif char == ";" and not in_ident and not in_literal:
             statement = "".join(buf).strip()
             if statement:
                 parts.append(statement)
@@ -182,7 +203,9 @@ def assert_migration_sql(sql: str, *, filename: str) -> tuple[str, ...]:
     }
     exempt = _DROP_WITHOUT_REBUILD.get(filename, frozenset())
     rebuild_allowed = _REBUILD_PAIRS.get(filename)
+    view_allowed = _DROP_TO_VIEW_PAIRS.get(filename)
     rebuilt: set[str] = set()
+    replaced_by_view: set[str] = set()
     exempt_dropped: set[str] = set()
     seen_non_drop = False
     for pos, statement in enumerate(statements):
@@ -190,10 +213,19 @@ def assert_migration_sql(sql: str, *, filename: str) -> tuple[str, ...]:
         if dropped is not None:
             # 已应用的迁移文件不能改。空表列与源端不一致时，只允许删掉这张表并在同一文件里建回。
             name = dropped.group(1)
+            if view_allowed is not None:
+                if name not in view_allowed or not _followed_by_same(
+                    statements, pos, name, _CREATE_VIEW
+                ):
+                    raise MigrationError(
+                        f"{filename} 的删表改视图不在白名单或未紧跟同名 CREATE VIEW: {name}"
+                    )
+                replaced_by_view.add(name)
+                continue
             if rebuild_allowed is not None:
-                nxt = statements[pos + 1] if pos + 1 < len(statements) else ""
-                following = _CREATE_TABLE.match(nxt)
-                if name not in rebuild_allowed or following is None or following.group(1) != name:
+                if name not in rebuild_allowed or not _followed_by_same(
+                    statements, pos, name, _CREATE_TABLE
+                ):
                     raise MigrationError(
                         f"{filename} 的删表重建不在白名单或未紧跟同名 CREATE: {name}"
                     )
@@ -209,13 +241,39 @@ def assert_migration_sql(sql: str, *, filename: str) -> tuple[str, ...]:
         leading = _leading_keyword(statement)
         if leading not in ALLOWED_LEADING:
             raise MigrationError(f"{filename} 语句动词非法: {leading}")
+        _assert_comment_form(statement, leading=leading, filename=filename)
         if _FORBIDDEN.search(_FK_ACTION.sub(" ", statement)):
             raise MigrationError(f"{filename} 含禁止动词: {statement[:80]}")
     if exempt_dropped != exempt:
         raise MigrationError(f"{filename} 的开头删表与白名单不一致")
-    if rebuild_allowed is not None and rebuilt != rebuild_allowed:
-        raise MigrationError(f"{filename} 的删表重建与白名单不一致")
+    _assert_replacements_complete(filename, rebuilt, replaced_by_view)
     return statements
+
+
+def _assert_comment_form(statement: str, *, leading: str, filename: str) -> None:
+    """COMMENT 只允许列注释的完整形式，其他 COMMENT 形式一律拒绝。"""
+    if leading == "COMMENT" and _COMMENT_COLUMN.fullmatch(statement) is None:
+        raise MigrationError(f"{filename} 只允许 COMMENT ON COLUMN: {statement[:80]}")
+
+
+def _assert_replacements_complete(
+    filename: str, rebuilt: set[str], replaced_by_view: set[str]
+) -> None:
+    """白名单中登记的每张表都必须被删除并在同文件重建或改视图，不多不少。"""
+    if rebuilt != _REBUILD_PAIRS.get(filename, frozenset()):
+        raise MigrationError(f"{filename} 的删表重建与白名单不一致")
+    if replaced_by_view != _DROP_TO_VIEW_PAIRS.get(filename, frozenset()):
+        raise MigrationError(f"{filename} 的删表改视图与白名单不一致")
+
+
+def _followed_by_same(
+    statements: Sequence[str], pos: int, name: str, pattern: re.Pattern[str]
+) -> bool:
+    """第 pos 条 DROP 之后紧跟的语句是否是同名 CREATE（由 pattern 限定是 TABLE 还是 VIEW）。"""
+    if pos + 1 >= len(statements):
+        return False
+    following = pattern.match(statements[pos + 1])
+    return following is not None and following.group(1) == name
 
 
 def resolve_planes(raw: str) -> tuple[Plane, ...]:

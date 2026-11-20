@@ -14,16 +14,21 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
+# 0020 把物理表 AINDEXINDUSTRIESCITICS 改成同名视图。清单里仍保留这一项，但它的终态是视图。
+_VIEW_TABLES = frozenset({"AINDEXINDUSTRIESCITICS"})
+
+
 @pytest.mark.unit
 def test_keep_list_tables_are_created(repo_root: Path) -> None:
     tables = load_src_tables(repo_root)
-    assert len(tables) == 59
+    assert len(tables) == 61
     sql = "\n".join(
         path.read_text(encoding="utf-8")
         for path in sorted((repo_root / "db" / "migrations" / "src").glob("*.sql"))
     )
     for table in tables:
-        needle = f'CREATE TABLE {table.schema}."{table.name}"'
+        kind = "VIEW" if table.name in _VIEW_TABLES else "TABLE"
+        needle = f'CREATE {kind} {table.schema}."{table.name}"'
         assert needle in sql, needle
 
 
@@ -72,6 +77,8 @@ def test_every_batch_id_column_is_indexed(repo_root: Path) -> None:
         if (match := re.match(r"CREATE TABLE (src_\w+\.\"[^\"]+\")", stmt)) is not None
         and "_batch_id bigint NOT NULL REFERENCES" in stmt
     }
+    # 视图没有存储，不需要 _batch_id 索引。0020 之后的终态里，它不在这个集合中。
+    with_batch -= _view_names(statements)
     indexed = {
         match.group(1)
         for stmt in statements
@@ -82,9 +89,9 @@ def test_every_batch_id_column_is_indexed(repo_root: Path) -> None:
         )
         is not None
     }
-    # 59 张清单表 + 0008 建的 ASHARECALENDAR（不在清单）+ 0007 建后被 0018 删除的三张旧宏观表。
-    # 0007 已应用不能改，所以旧表的 CREATE 仍在迁移文件里。
-    assert len(with_batch) == 63
+    # 61 张清单表减去 0020 改成视图的 AINDEXINDUSTRIESCITICS，加上 0008 建的 ASHARECALENDAR（不在清单）
+    # 与 0007 建后被 0018 删除的三张旧宏观表。0007 已应用不能改，所以旧表的 CREATE 仍在迁移文件里。
+    assert len(with_batch) == 64
     assert with_batch - indexed == set()
 
 
@@ -125,6 +132,19 @@ _BOND_FX_REBUILD = (
 )
 _PAIR_REBUILD = {"0019_bond_fx_wind_tables.sql": _BOND_FX_REBUILD}
 
+# 0020 删掉 0003 的空物理表 AINDEXINDUSTRIESCITICS，并在同文件建同名视图。每条 DROP 紧跟同名 CREATE VIEW。
+_DROP_TO_VIEW = {
+    "0020_aindexdescription.sql": ('src_wind."AINDEXINDUSTRIESCITICS"',),
+}
+
+
+def _view_names(statements: list[str] | tuple[str, ...]) -> set[str]:
+    return {
+        match.group(1)
+        for stmt in statements
+        if (match := re.match(r"CREATE VIEW (src_\w+\.\"[^\"]+\")\s+AS\b", stmt)) is not None
+    }
+
 
 @pytest.mark.unit
 def test_src_sql_has_no_drop_or_dml(repo_root: Path) -> None:
@@ -141,6 +161,15 @@ def test_src_sql_has_no_drop_or_dml(repo_root: Path) -> None:
                     name = stmt.removeprefix("DROP TABLE ")
                     assert file_statements[pos + 1].startswith(f"CREATE TABLE {name} ("), name
             file_statements = tuple(s for s in file_statements if not s.startswith("DROP TABLE"))
+        view_names = _DROP_TO_VIEW.get(item.path.name)
+        if view_names is not None:
+            drops = [s for s in file_statements if s.startswith("DROP TABLE")]
+            assert drops == [f"DROP TABLE {name}" for name in view_names], item.path.name
+            for pos, stmt in enumerate(file_statements):
+                if stmt.startswith("DROP TABLE"):
+                    name = stmt.removeprefix("DROP TABLE ")
+                    assert file_statements[pos + 1].startswith(f"CREATE VIEW {name} AS"), name
+            file_statements = tuple(s for s in file_statements if not s.startswith("DROP TABLE"))
         rebuilt = _HISTORICAL_DROP_REBUILD.get(item.path.name)
         if rebuilt is not None:
             assert file_statements[0] == f"DROP TABLE {rebuilt}", item.path.name
@@ -153,7 +182,11 @@ def test_src_sql_has_no_drop_or_dml(repo_root: Path) -> None:
             file_statements = file_statements[len(drop_only) :]
         statements.extend(file_statements)
     assert statements
-    assert all(stmt.split(None, 1)[0].upper() == "CREATE" for stmt in statements)
+    # 列注释是唯一允许的非 CREATE 语句；迁移运行器只放行 COMMENT ON COLUMN 的完整形式。
+    assert all(
+        stmt.split(None, 1)[0].upper() == "CREATE" or stmt.startswith("COMMENT ON COLUMN ")
+        for stmt in statements
+    )
 
 
 @pytest.mark.unit
@@ -179,5 +212,8 @@ def test_batch_id_index_follows_last_table_rebuild(repo_root: Path) -> None:
         indexed = re.match(r"CREATE INDEX \"[^\"]+\" ON (src_\w+\.\"[^\"]+\") \(_batch_id\)$", stmt)
         if indexed is not None:
             last_index[indexed.group(1)] = pos
+    # 被视图取代的表已不存在，不需要索引。
+    for view in _view_names(statements):
+        last_create.pop(view, None)
     missing = sorted(t for t, pos in last_create.items() if last_index.get(t, -1) < pos)
     assert missing == []

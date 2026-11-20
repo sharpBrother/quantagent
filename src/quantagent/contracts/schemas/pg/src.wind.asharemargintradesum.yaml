@@ -18,59 +18,59 @@ columns:
   S_MARSUM_EXCHMARKET:
     dtype: string
     nullable: true
-    description: ""
+    description: "交易所英文简称"
   S_MARSUM_TRADINGBALANCE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融资余额(元)"
   S_MARSUM_PURCHWITHBORROWMONEY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融资买入额(元)"
   S_MARSUM_REPAYMENTTOBROKER:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融资偿还额(元)"
   S_MARSUM_SECLENDINGBALANCE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融券余额(元)"
   S_MARSUM_SALESOFBORROWEDSEC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融券卖出量(股,份,手)"
   S_MARSUM_MARGINTRADEBALANCE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融资融券余额(元)"
   S_MARSUM_MARGIN_MARGIN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融券余量"
   S_MARSUM_FINANCING_MARGIN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融资余量股(份/手)"
   S_MARSUM_SECURITIES_SALES:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融券卖出额(元)"
   S_MARSUM_SECURITIES_REPAY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融券偿还额(元)"
   S_MARSUM_FLOW_EQUITY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "A股流通股本(万股)"
   S_MARSUM_CIRCULATION_VALUE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "A股流通市值(万元)"
   S_MARSUM_TURNOVER_AMOUNT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "A股成交金额(万元)"
   OPDATE:
     dtype: datetime
     nullable: true

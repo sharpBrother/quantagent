@@ -18,27 +18,27 @@ columns:
   B_INFO_TERM:
     dtype: float64
     nullable: true
-    description: ""
+    description: "期限(天)"
   B_TENDER_INTERESTRATE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "招标利率(%)"
   B_TENDER_AMOUNT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "招标数量(亿元)"
   B_TENDER_METHOD:
     dtype: float64
     nullable: true
-    description: ""
+    description: "招标方式"
   B_INFO_REPO_TYPE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "操作类型代码"
   B_INFO_TERM_WORDS:
     dtype: string
     nullable: true
-    description: ""
+    description: "期限(文字）"
   OPDATE:
     dtype: datetime
     nullable: true

@@ -18,35 +18,35 @@ columns:
   S_INFO_WINDCODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "外汇交易代码"
   S_DQ_OPEN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "开盘价"
   S_DQ_HIGH:
     dtype: float64
     nullable: true
-    description: ""
+    description: "最高价"
   S_DQ_LOW:
     dtype: float64
     nullable: true
-    description: ""
+    description: "最低价"
   S_DQ_CLOSE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "收盘价"
   WINDCODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "Wind代码"
   S_DQ_BUY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "买入价"
   S_DQ_SELL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "卖出价"
   OPDATE:
     dtype: datetime
     nullable: true
