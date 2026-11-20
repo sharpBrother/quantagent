@@ -182,7 +182,11 @@ def test_src_sql_has_no_drop_or_dml(repo_root: Path) -> None:
             file_statements = file_statements[len(drop_only) :]
         statements.extend(file_statements)
     assert statements
-    assert all(stmt.split(None, 1)[0].upper() == "CREATE" for stmt in statements)
+    # 列注释是唯一允许的非 CREATE 语句；迁移运行器只放行 COMMENT ON COLUMN 的完整形式。
+    assert all(
+        stmt.split(None, 1)[0].upper() == "CREATE" or stmt.startswith("COMMENT ON COLUMN ")
+        for stmt in statements
+    )
 
 
 @pytest.mark.unit

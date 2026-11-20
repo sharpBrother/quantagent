@@ -14,7 +14,7 @@ columns:
   S_INFO_WINDCODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "Wind代码"
   S_DQ_SUSPENDDATE:
     dtype: string
     nullable: true
@@ -22,23 +22,23 @@ columns:
   S_DQ_SUSPENDTYPE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "停牌类型代码"
   S_DQ_RESUMPDATE:
     dtype: string
     nullable: true
-    description: ""
+    description: "复牌日期"
   S_DQ_CHANGEREASON:
     dtype: string
     nullable: true
-    description: ""
+    description: "停牌原因"
   S_DQ_TIME:
     dtype: string
     nullable: true
-    description: ""
+    description: "停复牌时间"
   S_DQ_CHANGEREASONTYPE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "停牌原因代码"
   OPDATE:
     dtype: datetime
     nullable: true

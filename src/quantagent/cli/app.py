@@ -6,6 +6,7 @@ import typer
 
 from quantagent.cli.calendar import calendar_app
 from quantagent.cli.check import check_app
+from quantagent.cli.contracts import contracts_app
 from quantagent.cli.db import db_app
 from quantagent.cli.feature import feature_app
 from quantagent.cli.forward_return import forward_return_app
@@ -23,6 +24,7 @@ app = typer.Typer(
 )
 app.add_typer(calendar_app, name="calendar", help="交易日历研究读取")
 app.add_typer(check_app, name="check", help="契约与一致性校验")
+app.add_typer(contracts_app, name="contracts", help="从契约派生产物")
 app.add_typer(db_app, name="db", help="数据库迁移与状态")
 app.add_typer(feature_app, name="feature", help="因子长表与评价指标研究读取")
 app.add_typer(forward_return_app, name="forward-return", help="前瞻收益研究读取")

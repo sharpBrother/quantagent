@@ -14,7 +14,7 @@ columns:
   S_INFO_WINDCODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "Wind代码"
   TRADE_DT:
     dtype: string
     nullable: true
@@ -22,139 +22,139 @@ columns:
   CRNCY_CODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "货币代码"
   S_VAL_MV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "当日总市值"
   S_DQ_MV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "当日流通市值"
   S_PQ_HIGH_52W_:
     dtype: float64
     nullable: true
-    description: ""
+    description: "52周最高价"
   S_PQ_LOW_52W_:
     dtype: float64
     nullable: true
-    description: ""
+    description: "52周最低价"
   S_VAL_PE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "市盈率(PE)"
   S_VAL_PB_NEW:
     dtype: float64
     nullable: true
-    description: ""
+    description: "市净率(PB)"
   S_VAL_PE_TTM:
     dtype: float64
     nullable: true
-    description: ""
+    description: "市盈率(PE,TTM)"
   S_VAL_PCF_OCF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "市现率(PCF,经营现金流)"
   S_VAL_PCF_OCFTTM:
     dtype: float64
     nullable: true
-    description: ""
+    description: "市现率(PCF,经营现金流TTM)"
   S_VAL_PCF_NCF:
     dtype: float64
     nullable: true
-    description: ""
+    description: "市现率(PCF,现金净流量)"
   S_VAL_PCF_NCFTTM:
     dtype: float64
     nullable: true
-    description: ""
+    description: "市现率(PCF,现金净流量TTM)"
   S_VAL_PS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "市销率(PS)"
   S_VAL_PS_TTM:
     dtype: float64
     nullable: true
-    description: ""
+    description: "市销率(PS,TTM)"
   S_DQ_TURN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "换手率"
   S_DQ_FREETURNOVER:
     dtype: float64
     nullable: true
-    description: ""
+    description: "换手率(基准.自由流通股本)"
   TOT_SHR_TODAY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "当日总股本"
   FLOAT_A_SHR_TODAY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "当日流通股本"
   S_DQ_CLOSE_TODAY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "当日收盘价"
   S_PRICE_DIV_DPS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "股价/每股派息"
   S_PQ_ADJHIGH_52W:
     dtype: float64
     nullable: true
-    description: ""
+    description: "52周最高价(复权)"
   S_PQ_ADJLOW_52W:
     dtype: float64
     nullable: true
-    description: ""
+    description: "52周最低价(复权)"
   FREE_SHARES_TODAY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "当日自由流通股本"
   NET_PROFIT_PARENT_COMP_TTM:
     dtype: float64
     nullable: true
-    description: ""
+    description: "归属母公司净利润(TTM)"
   NET_PROFIT_PARENT_COMP_LYR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "归属母公司净利润(LYR)"
   NET_ASSETS_TODAY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "当日净资产"
   NET_CASH_FLOWS_OPER_ACT_TTM:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动产生的现金流量净额(TTM)"
   NET_CASH_FLOWS_OPER_ACT_LYR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动产生的现金流量净额(LYR)"
   OPER_REV_TTM:
     dtype: float64
     nullable: true
-    description: ""
+    description: "营业收入(TTM)"
   OPER_REV_LYR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "营业收入(LYR)"
   NET_INCR_CASH_CASH_EQU_TTM:
     dtype: float64
     nullable: true
-    description: ""
+    description: "现金及现金等价物净增加额(TTM)"
   NET_INCR_CASH_CASH_EQU_LYR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "现金及现金等价物净增加额(LYR)"
   UP_DOWN_LIMIT_STATUS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "涨跌停状态"
   LOWEST_HIGHEST_STATUS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "最高最低价状态"
   OPDATE:
     dtype: datetime
     nullable: true
@@ -166,11 +166,11 @@ columns:
   CRNCY_CODE2:
     dtype: string
     nullable: true
-    description: ""
+    description: "面值货币代码"
   S_INFO_ASHARECODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "证券ID"
   gsUTime:
     dtype: datetime
     nullable: true
@@ -186,12 +186,12 @@ columns:
   ABPRICERATIO:
     dtype: float64
     nullable: true
-    description: ""
+    description: "AB股比价"
   SWING:
     dtype: float64
     nullable: true
-    description: ""
+    description: "振幅"
   AVGVOLUME_3M:
     dtype: float64
     nullable: true
-    description: ""
+    description: "最近3个月平均成交量(股)"

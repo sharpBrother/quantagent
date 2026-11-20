@@ -18,23 +18,23 @@ columns:
   B_ANAL_CURVENUMBER:
     dtype: string
     nullable: true
-    description: ""
+    description: "中证收益率曲线ID"
   B_ANAL_CURVENAME:
     dtype: string
     nullable: true
-    description: ""
+    description: "曲线名称"
   B_ANAL_CURVETYPE:
     dtype: string
     nullable: true
-    description: ""
+    description: "曲线类型"
   B_ANAL_CURVETERM:
     dtype: float64
     nullable: true
-    description: ""
+    description: "年限"
   B_ANAL_YIELD:
     dtype: float64
     nullable: true
-    description: ""
+    description: "收益率(%)"
   OPDATE:
     dtype: datetime
     nullable: true

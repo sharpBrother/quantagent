@@ -79,6 +79,8 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 
 已入库数据在 11-17 用 `ingest wind verify` 重算指纹核对，业务值不一致 0。
 
+字段说明只在契约 YAML 维护；PG 列注释由 `quantagent contracts emit-comments` 生成编号迁移（0021 已执行，1,081 列），测试防止两边漂移。Wind 说明来自旧仓数据字典，待用 wind_db 自带注释（`MS_Description`）复核。
+
 **公开源与 Tushare（Mac）**：详见[宏观采集方案](macro-source-ingest-plan.md)
 
 | 源 | 状态 |
@@ -115,6 +117,7 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 |---|---|
 | ISM、美债等跨时区数据的可见性：按消费市场收盘时刻判断，需扩展规则引擎 | 已裁定，待实现 |
 | ToDesk 链路会吞连接：回填靠看门狗与逐列回读兜底，未根治 | 观察 |
+| 导出 wind_db 列注释（`sys.extended_properties` 的 `MS_Description`）供复核字段说明 | 执行机 |
 | daemon 连 PG 用超级用户 `leo`，应改 `quantagent_ingest` | 负责人放密码 |
 
 专题文档：[Wind 交接](wind-pipeline-handoff.md)、[宏观采集方案](macro-source-ingest-plan.md)、

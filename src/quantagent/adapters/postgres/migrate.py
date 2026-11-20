@@ -53,6 +53,12 @@ _CREATE_VIEW = re.compile(
     re.IGNORECASE,
 )
 _FILENAME = re.compile(r"^(\d{4})_[a-z0-9_]+\.sql$")
+# COMMENT 只放行列注释：说明文字来自契约 YAML，由 contracts emit-comments 生成。
+# 表注释、库注释等其他形式一律拒绝。
+_COMMENT_COLUMN = re.compile(
+    r"COMMENT ON COLUMN \w+\.\"[^\"]+\"\.\"[^\"]+\" IS '(?:[^']|'')*'",
+    re.IGNORECASE,
+)
 # 删表且不在同文件重建的历史例外，文件与表名写死。0018 按分表原则删除三张空的旧宏观表，
 # 必须位于文件开头。应用时 _refuse_nonempty_drop 仍会检查行数，非空则拒绝。
 _DROP_WITHOUT_REBUILD: dict[str, frozenset[str]] = {
@@ -152,7 +158,11 @@ def list_migration_files(repo_root: Path, plane: Plane) -> tuple[MigrationFile, 
 
 
 def split_sql_statements(sql: str) -> tuple[str, ...]:
-    """按分号切语句。生成的 SQL 不含字符串字面量里的分号。"""
+    """按分号切语句。分号若在双引号标识符或单引号字面量里则不切。
+
+    单引号也要识别：列注释的 description 是字面量，里面的 ``;`` 与 ``"`` 不能把语句切坏。
+    ``''`` 转义会让引号状态翻转两次，状态保持正确。
+    """
     body_lines: list[str] = []
     for raw in sql.splitlines():
         stripped = raw.strip()
@@ -162,13 +172,14 @@ def split_sql_statements(sql: str) -> tuple[str, ...]:
     body = "\n".join(body_lines)
     parts: list[str] = []
     buf: list[str] = []
-    in_quote = False
+    in_ident = False
+    in_literal = False
     for char in body:
-        if char == '"':
-            in_quote = not in_quote
-            buf.append(char)
-            continue
-        if char == ";" and not in_quote:
+        if char == "'" and not in_ident:
+            in_literal = not in_literal
+        elif char == '"' and not in_literal:
+            in_ident = not in_ident
+        elif char == ";" and not in_ident and not in_literal:
             statement = "".join(buf).strip()
             if statement:
                 parts.append(statement)
@@ -230,12 +241,19 @@ def assert_migration_sql(sql: str, *, filename: str) -> tuple[str, ...]:
         leading = _leading_keyword(statement)
         if leading not in ALLOWED_LEADING:
             raise MigrationError(f"{filename} 语句动词非法: {leading}")
+        _assert_comment_form(statement, leading=leading, filename=filename)
         if _FORBIDDEN.search(_FK_ACTION.sub(" ", statement)):
             raise MigrationError(f"{filename} 含禁止动词: {statement[:80]}")
     if exempt_dropped != exempt:
         raise MigrationError(f"{filename} 的开头删表与白名单不一致")
     _assert_replacements_complete(filename, rebuilt, replaced_by_view)
     return statements
+
+
+def _assert_comment_form(statement: str, *, leading: str, filename: str) -> None:
+    """COMMENT 只允许列注释的完整形式，其他 COMMENT 形式一律拒绝。"""
+    if leading == "COMMENT" and _COMMENT_COLUMN.fullmatch(statement) is None:
+        raise MigrationError(f"{filename} 只允许 COMMENT ON COLUMN: {statement[:80]}")
 
 
 def _assert_replacements_complete(

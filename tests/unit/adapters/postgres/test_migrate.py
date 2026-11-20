@@ -197,6 +197,7 @@ def test_list_migration_files_on_repo(repo_root: Path) -> None:
         "0018_macro_source_tables.sql",
         "0019_bond_fx_wind_tables.sql",
         "0020_aindexdescription.sql",
+        "0021_column_comments.sql",
     ]
     assert [item.filename for item in ops] == [
         "0001_schema.sql",
@@ -239,6 +240,37 @@ def test_on_delete_cascade_is_not_dml() -> None:
     assert_migration_sql(
         "CREATE TABLE ops.run_tags (run_id varchar REFERENCES ops.runs (run_id) ON DELETE CASCADE)",
         filename="fk.sql",
+    )
+
+
+@pytest.mark.unit
+def test_comment_is_allowed_only_on_column() -> None:
+    assert_migration_sql(
+        'COMMENT ON COLUMN src_wind."ASHAREINCOME"."TOT_OPER_REV" IS \'营业总收入\'',
+        filename="0021_column_comments.sql",
+    )
+    with pytest.raises(MigrationError, match="只允许 COMMENT ON COLUMN"):
+        assert_migration_sql(
+            "COMMENT ON TABLE src_wind.\"ASHAREINCOME\" IS 'x'",
+            filename="0021_column_comments.sql",
+        )
+    with pytest.raises(MigrationError, match="只允许 COMMENT ON COLUMN"):
+        assert_migration_sql(
+            "COMMENT ON COLUMN src_wind.\"ASHAREINCOME\".\"X\" IS 'a' || 'b'",
+            filename="0021_column_comments.sql",
+        )
+
+
+@pytest.mark.unit
+def test_split_keeps_semicolon_and_double_quote_inside_string_literal() -> None:
+    sql = (
+        'COMMENT ON COLUMN src_wind."T"."A" IS \'0 新增; 1 修改 "x"\';\n'
+        "COMMENT ON COLUMN src_wind.\"T\".\"B\" IS 'it''s; ok';\n"
+    )
+    statements = split_sql_statements(sql)
+    assert statements == (
+        'COMMENT ON COLUMN src_wind."T"."A" IS \'0 新增; 1 修改 "x"\'',
+        "COMMENT ON COLUMN src_wind.\"T\".\"B\" IS 'it''s; ok'",
     )
 
 

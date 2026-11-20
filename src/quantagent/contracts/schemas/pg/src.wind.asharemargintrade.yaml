@@ -14,7 +14,7 @@ columns:
   S_INFO_WINDCODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "Wind代码"
   TRADE_DT:
     dtype: string
     nullable: true
@@ -22,95 +22,95 @@ columns:
   S_MARGIN_TRADINGBALANCE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融资余额(元)"
   S_MARGIN_PURCHWITHBORROWMONEY:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融资买入额(元)"
   S_MARGIN_REPAYMENTTOBROKER:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融资偿还额(元)"
   S_MARGIN_SECLENDINGBALANCE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融券余额(元)"
   S_MARGIN_SECLENDINGBALANCEVOL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融券余量(股,份,手)"
   S_MARGIN_SALESOFBORROWEDSEC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融券卖出量(股,份,手)"
   S_MARGIN_REPAYMENTOFBORROWSEC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融券偿还量(股,份,手)"
   S_MARGIN_MARGINTRADEBALANCE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融资融券余额(元)"
   S_REFIN_SL_VOL_3D:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券融出数量(3天)"
   S_REFIN_SL_VOL_7D:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券融出数量(7天)"
   S_REFIN_SL_VOL_14D:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券融出数量(14天)"
   S_REFIN_SL_VOL_28D:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券融出数量(28天)"
   S_REFIN_SL_VOL_182D:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券融出数量(182天)"
   S_REFIN_SB_VOL_3D:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券融入数量(3天)"
   S_REFIN_SB_VOL_7D:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券融入数量(7天)"
   S_REFIN_SB_VOL_14D:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券融入数量(14天)"
   S_SB_VOL_28D:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券融入数量(28天)"
   S_SB_VOL_182D:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券融入数量(182天)"
   S_REFIN_SL_EOD_VOL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券融出日成交量"
   S_REFIN_SB_EOD_VOL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券融入日成交量"
   S_REFIN_SL_EOP_VOL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券期末余量"
   S_REFIN_SL_EOP_BAL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券期末余额"
   S_REFIN_REPAY_VOL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "转融券偿还量"
   OPDATE:
     dtype: datetime
     nullable: true

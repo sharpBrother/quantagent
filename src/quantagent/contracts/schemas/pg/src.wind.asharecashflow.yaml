@@ -16,11 +16,11 @@ columns:
   S_INFO_WINDCODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "Wind代码"
   WIND_CODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "Wind代码"
   ANN_DT:
     dtype: string
     nullable: true
@@ -28,471 +28,471 @@ columns:
   REPORT_PERIOD:
     dtype: string
     nullable: true
-    description: ""
+    description: "报告期"
   STATEMENT_TYPE:
     dtype: string
     nullable: true
-    description: ""
+    description: "报表类型"
   CRNCY_CODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "货币代码"
   CASH_RECP_SG_AND_RS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "销售商品、提供劳务收到的现金"
   RECP_TAX_RENDS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "收到的税费返还"
   NET_INCR_DEP_COB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "客户存款和同业存放款项净增加额"
   NET_INCR_LOANS_CENTRAL_BANK:
     dtype: float64
     nullable: true
-    description: ""
+    description: "向中央银行借款净增加额"
   NET_INCR_FUND_BORR_OFI:
     dtype: float64
     nullable: true
-    description: ""
+    description: "向其他金融机构拆入资金净增加额"
   CASH_RECP_PREM_ORIG_INCO:
     dtype: float64
     nullable: true
-    description: ""
+    description: "收到原保险合同保费取得的现金"
   NET_INCR_INSURED_DEP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "保户储金净增加额"
   NET_CASH_RECEIVED_REINSU_BUS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "收到再保业务现金净额"
   NET_INCR_DISP_TFA:
     dtype: float64
     nullable: true
-    description: ""
+    description: "处置交易性金融资产净增加额"
   NET_INCR_INT_HANDLING_CHRG:
     dtype: float64
     nullable: true
-    description: ""
+    description: "收取利息和手续费净增加额"
   NET_INCR_DISP_FAAS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "处置可供出售金融资产净增加额"
   NET_INCR_LOANS_OTHER_BANK:
     dtype: float64
     nullable: true
-    description: ""
+    description: "拆入资金净增加额"
   NET_INCR_REPURCH_BUS_FUND:
     dtype: float64
     nullable: true
-    description: ""
+    description: "回购业务资金净增加额"
   OTHER_CASH_RECP_RAL_OPER_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "收到其他与经营活动有关的现金"
   STOT_CASH_INFLOWS_OPER_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动现金流入小计"
   CASH_PAY_GOODS_PURCH_SERV_REC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "购买商品、接受劳务支付的现金"
   CASH_PAY_BEH_EMPL:
     dtype: float64
     nullable: true
-    description: ""
+    description: "支付给职工以及为职工支付的现金"
   PAY_ALL_TYP_TAX:
     dtype: float64
     nullable: true
-    description: ""
+    description: "支付的各项税费"
   NET_INCR_CLIENTS_LOAN_ADV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "客户贷款及垫款净增加额"
   NET_INCR_DEP_CBOB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "存放央行和同业款项净增加额"
   CASH_PAY_CLAIMS_ORIG_INCO:
     dtype: float64
     nullable: true
-    description: ""
+    description: "支付原保险合同赔付款项的现金"
   HANDLING_CHRG_PAID:
     dtype: float64
     nullable: true
-    description: ""
+    description: "支付手续费的现金"
   COMM_INSUR_PLCY_PAID:
     dtype: float64
     nullable: true
-    description: ""
+    description: "支付保单红利的现金"
   OTHER_CASH_PAY_RAL_OPER_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "支付其他与经营活动有关的现金"
   STOT_CASH_OUTFLOWS_OPER_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动现金流出小计"
   NET_CASH_FLOWS_OPER_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动产生的现金流量净额"
   CASH_RECP_DISP_WITHDRWL_INVEST:
     dtype: float64
     nullable: true
-    description: ""
+    description: "收回投资收到的现金"
   CASH_RECP_RETURN_INVEST:
     dtype: float64
     nullable: true
-    description: ""
+    description: "取得投资收益收到的现金"
   NET_CASH_RECP_DISP_FIOLTA:
     dtype: float64
     nullable: true
-    description: ""
+    description: "处置固定资产、无形资产和其他长期资产收回的现金净额"
   NET_CASH_RECP_DISP_SOBU:
     dtype: float64
     nullable: true
-    description: ""
+    description: "处置子公司及其他营业单位收到的现金净额"
   OTHER_CASH_RECP_RAL_INV_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "收到其他与投资活动有关的现金"
   STOT_CASH_INFLOWS_INV_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "投资活动现金流入小计"
   CASH_PAY_ACQ_CONST_FIOLTA:
     dtype: float64
     nullable: true
-    description: ""
+    description: "购建固定资产、无形资产和其他长期资产支付的现金"
   CASH_PAID_INVEST:
     dtype: float64
     nullable: true
-    description: ""
+    description: "投资支付的现金"
   NET_CASH_PAY_AQUIS_SOBU:
     dtype: float64
     nullable: true
-    description: ""
+    description: "取得子公司及其他营业单位支付的现金净额"
   OTHER_CASH_PAY_RAL_INV_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "支付其他与投资活动有关的现金"
   NET_INCR_PLEDGE_LOAN:
     dtype: float64
     nullable: true
-    description: ""
+    description: "质押贷款净增加额"
   STOT_CASH_OUTFLOWS_INV_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "投资活动现金流出小计"
   NET_CASH_FLOWS_INV_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "投资活动产生的现金流量净额"
   CASH_RECP_CAP_CONTRIB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "吸收投资收到的现金"
   INCL_CASH_REC_SAIMS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其中:子公司吸收少数股东投资收到的现金"
   CASH_RECP_BORROW:
     dtype: float64
     nullable: true
-    description: ""
+    description: "取得借款收到的现金"
   PROC_ISSUE_BONDS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "发行债券收到的现金"
   OTHER_CASH_RECP_RAL_FNC_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "收到其他与筹资活动有关的现金"
   STOT_CASH_INFLOWS_FNC_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "筹资活动现金流入小计"
   CASH_PREPAY_AMT_BORR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "偿还债务支付的现金"
   CASH_PAY_DIST_DPCP_INT_EXP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "分配股利、利润或偿付利息支付的现金"
   INCL_DVD_PROFIT_PAID_SC_MS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其中:子公司支付给少数股东的股利、利润"
   OTHER_CASH_PAY_RAL_FNC_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "支付其他与筹资活动有关的现金"
   STOT_CASH_OUTFLOWS_FNC_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "筹资活动现金流出小计"
   NET_CASH_FLOWS_FNC_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "筹资活动产生的现金流量净额"
   EFF_FX_FLU_CASH:
     dtype: float64
     nullable: true
-    description: ""
+    description: "汇率变动对现金的影响"
   NET_INCR_CASH_CASH_EQU:
     dtype: float64
     nullable: true
-    description: ""
+    description: "现金及现金等价物净增加额"
   CASH_CASH_EQU_BEG_PERIOD:
     dtype: float64
     nullable: true
-    description: ""
+    description: "期初现金及现金等价物余额"
   CASH_CASH_EQU_END_PERIOD:
     dtype: float64
     nullable: true
-    description: ""
+    description: "期末现金及现金等价物余额"
   NET_PROFIT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "净利润"
   UNCONFIRMED_INVEST_LOSS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "未确认投资损失"
   PLUS_PROV_DEPR_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "加:资产减值准备"
   DEPR_FA_COGA_DPBA:
     dtype: float64
     nullable: true
-    description: ""
+    description: "固定资产折旧、油气资产折耗、生产性生物资产折旧"
   AMORT_INTANG_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "无形资产摊销"
   AMORT_LT_DEFERRED_EXP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "长期待摊费用摊销"
   DECR_DEFERRED_EXP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "待摊费用减少"
   INCR_ACC_EXP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "预提费用增加"
   LOSS_DISP_FIOLTA:
     dtype: float64
     nullable: true
-    description: ""
+    description: "处置固定、无形资产和其他长期资产的损失"
   LOSS_SCR_FA:
     dtype: float64
     nullable: true
-    description: ""
+    description: "固定资产报废损失"
   LOSS_FV_CHG:
     dtype: float64
     nullable: true
-    description: ""
+    description: "公允价值变动损失"
   FIN_EXP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "财务费用"
   INVEST_LOSS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "投资损失"
   DECR_DEFERRED_INC_TAX_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "递延所得税资产减少"
   INCR_DEFERRED_INC_TAX_LIAB:
     dtype: float64
     nullable: true
-    description: ""
+    description: "递延所得税负债增加"
   DECR_INVENTORIES:
     dtype: float64
     nullable: true
-    description: ""
+    description: "存货的减少"
   DECR_OPER_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营性应收项目的减少"
   INCR_OPER_PAYABLE:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营性应付项目的增加"
   OTHERS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他"
   IM_NET_CASH_FLOWS_OPER_ACT:
     dtype: float64
     nullable: true
-    description: ""
+    description: "间接法-经营活动产生的现金流量净额"
   CONV_DEBT_INTO_CAP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "债务转为资本"
   CONV_CORP_BONDS_DUE_WITHIN_1Y:
     dtype: float64
     nullable: true
-    description: ""
+    description: "一年内到期的可转换公司债券"
   FA_FNC_LEASES:
     dtype: float64
     nullable: true
-    description: ""
+    description: "融资租入固定资产"
   END_BAL_CASH:
     dtype: float64
     nullable: true
-    description: ""
+    description: "现金的期末余额"
   LESS_BEG_BAL_CASH:
     dtype: float64
     nullable: true
-    description: ""
+    description: "减:现金的期初余额"
   PLUS_END_BAL_CASH_EQU:
     dtype: float64
     nullable: true
-    description: ""
+    description: "加:现金等价物的期末余额"
   LESS_BEG_BAL_CASH_EQU:
     dtype: float64
     nullable: true
-    description: ""
+    description: "减:现金等价物的期初余额"
   IM_NET_INCR_CASH_CASH_EQU:
     dtype: float64
     nullable: true
-    description: ""
+    description: "间接法-现金及现金等价物净增加额"
   FREE_CASH_FLOW:
     dtype: float64
     nullable: true
-    description: ""
+    description: "企业自由现金流量(FCFF)"
   COMP_TYPE_CODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "公司类型代码"
   ACTUAL_ANN_DT:
     dtype: string
     nullable: true
-    description: ""
+    description: "实际公告日期"
   SPE_BAL_CASH_INFLOWS_OPER:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动现金流入差额(特殊报表科目)"
   TOT_BAL_CASH_INFLOWS_OPER:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动现金流入差额(合计平衡项目)"
   SPE_BAL_CASH_OUTFLOWS_OPER:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动现金流出差额(特殊报表科目)"
   TOT_BAL_CASH_OUTFLOWS_OPER:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动现金流出差额(合计平衡项目)"
   TOT_BAL_NETCASH_OUTFLOWS_OPER:
     dtype: float64
     nullable: true
-    description: ""
+    description: "经营活动产生的现金流量净额差额(合计平衡项目)"
   SPE_BAL_CASH_INFLOWS_INV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "投资活动现金流入差额(特殊报表科目)"
   TOT_BAL_CASH_INFLOWS_INV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "投资活动现金流入差额(合计平衡项目)"
   SPE_BAL_CASH_OUTFLOWS_INV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "投资活动现金流出差额(特殊报表科目)"
   TOT_BAL_CASH_OUTFLOWS_INV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "投资活动现金流出差额(合计平衡项目)"
   TOT_BAL_NETCASH_OUTFLOWS_INV:
     dtype: float64
     nullable: true
-    description: ""
+    description: "投资活动产生的现金流量净额差额(合计平衡项目)"
   SPE_BAL_CASH_INFLOWS_FNC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "筹资活动现金流入差额(特殊报表科目)"
   TOT_BAL_CASH_INFLOWS_FNC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "筹资活动现金流入差额(合计平衡项目)"
   SPE_BAL_CASH_OUTFLOWS_FNC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "筹资活动现金流出差额(特殊报表科目)"
   TOT_BAL_CASH_OUTFLOWS_FNC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "筹资活动现金流出差额(合计平衡项目)"
   TOT_BAL_NETCASH_OUTFLOWS_FNC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "筹资活动产生的现金流量净额差额(合计平衡项目)"
   SPE_BAL_NETCASH_INC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "现金净增加额差额(特殊报表科目)"
   TOT_BAL_NETCASH_INC:
     dtype: float64
     nullable: true
-    description: ""
+    description: "现金净增加额差额(合计平衡项目)"
   SPE_BAL_NETCASH_EQU_UNDIR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "间接法-经营活动现金流量净额差额(特殊报表科目)"
   TOT_BAL_NETCASH_EQU_UNDIR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "间接法-经营活动现金流量净额差额(合计平衡项目)"
   SPE_BAL_NETCASH_INC_UNDIR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "间接法-现金净增加额差额(特殊报表科目)"
   TOT_BAL_NETCASH_INC_UNDIR:
     dtype: float64
     nullable: true
-    description: ""
+    description: "间接法-现金净增加额差额(合计平衡项目)"
   S_INFO_COMPCODE:
     dtype: string
     nullable: true
-    description: ""
+    description: "公司ID"
   S_DISMANTLE_CAPITAL_ADD_NET:
     dtype: float64
     nullable: true
-    description: ""
+    description: "拆出资金净增加额"
   IS_CALCULATION:
     dtype: float64
     nullable: true
-    description: ""
+    description: "是否计算报表"
   SECURITIE_NETCASH_RECEIVED:
     dtype: float64
     nullable: true
-    description: ""
+    description: "代理买卖证券收到的现金净额(元)"
   OTHER_IMPAIR_LOSS_ASSETS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "其他资产减值损失"
   CREDIT_IMPAIRMENT_LOSS:
     dtype: float64
     nullable: true
-    description: ""
+    description: "信用减值损失"
   RIGHT_USE_ASSETS_DEP:
     dtype: float64
     nullable: true
-    description: ""
+    description: "使用权资产折旧"
   OPDATE:
     dtype: datetime
     nullable: true
