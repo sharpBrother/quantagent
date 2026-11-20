@@ -79,7 +79,7 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 
 已入库数据在 11-17 用 `ingest wind verify` 重算指纹核对，业务值不一致 0。
 
-字段说明只在契约 YAML 维护；PG 列注释由 `quantagent contracts emit-comments` 生成编号迁移（0021 已执行，1,081 列），测试防止两边漂移。Wind 说明来自旧仓数据字典，待用 wind_db 自带注释（`MS_Description`）复核。
+字段说明只在契约 YAML 维护；PG 列注释由 `quantagent contracts emit-comments` 生成编号迁移（0021 已执行，1,081 列），测试防止两边漂移。Wind 说明已按 wind_db 的 `MS_Description`（11-20 导出）校正并补单位，0022 已执行。`S_DQ_ADJCLOSE_BACKWARD` 是前复权，含未来除权信息，研究读取不得使用。
 
 **公开源与 Tushare（Mac）**：详见[宏观采集方案](macro-source-ingest-plan.md)
 
