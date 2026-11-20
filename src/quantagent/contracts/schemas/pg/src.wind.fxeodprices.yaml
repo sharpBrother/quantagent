@@ -1,0 +1,73 @@
+dataset: src.wind.fxeodprices
+layer: pg
+doc_ref: docs/migration/wind-pipeline-handoff.md
+temporal_kind: point_event
+keys:
+  - OBJECT_ID
+reads: []
+event_field: TRADE_DT
+columns:
+  OBJECT_ID:
+    dtype: string
+    nullable: false
+    description: "Wind 行对象主键"
+  TRADE_DT:
+    dtype: string
+    nullable: true
+    description: "交易日 YYYYMMDD，PIT 可见日依据"
+  S_INFO_WINDCODE:
+    dtype: string
+    nullable: true
+    description: ""
+  S_DQ_OPEN:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_DQ_HIGH:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_DQ_LOW:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_DQ_CLOSE:
+    dtype: float64
+    nullable: true
+    description: ""
+  WINDCODE:
+    dtype: string
+    nullable: true
+    description: ""
+  S_DQ_BUY:
+    dtype: float64
+    nullable: true
+    description: ""
+  S_DQ_SELL:
+    dtype: float64
+    nullable: true
+    description: ""
+  OPDATE:
+    dtype: datetime
+    nullable: true
+    description: "Wind 运维时间，用于采集游标"
+  OPMODE:
+    dtype: string
+    nullable: true
+    description: "Wind 操作类型"
+  mopdate:
+    dtype: datetime
+    nullable: true
+    description: "Wind 维护时间"
+  gsCTime:
+    dtype: datetime
+    nullable: true
+    description: "Wind 创建时间"
+  gsUTime:
+    dtype: datetime
+    nullable: true
+    description: "Wind 更新时间"
+  SEC_ID:
+    dtype: string
+    nullable: true
+    description: ""

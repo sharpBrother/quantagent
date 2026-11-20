@@ -99,6 +99,7 @@ class _RecordingWindIngest(WindIngestResource):
         write_db: bool,
         page_size: int,
         max_pages: int | None,
+        stop_run_id: str | None = None,
     ) -> WindPagedIngestResult:
         self.calls.append(
             {

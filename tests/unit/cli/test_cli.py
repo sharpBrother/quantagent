@@ -279,7 +279,18 @@ def test_ingest_wind_single_first_batch_table_dispatches(
 @pytest.mark.unit
 @pytest.mark.parametrize(
     "table",
-    ["ASHARECALENDAR", "ASHAREEODPRICES", "AINDEXEODPRICES", "ASHAREMONEYFLOW"],
+    [
+        "ASHARECALENDAR",
+        "ASHAREEODPRICES",
+        "AINDEXEODPRICES",
+        "ASHAREMONEYFLOW",
+        "CBONDCURVECNBD",
+        "CBONDCURVECSI",
+        "CBONDREPOANDIBLEODPRICES",
+        "CBONDPRICESREPO",
+        "CBONDREPO",
+        "FXEODPRICES",
+    ],
 )
 def test_ingest_wind_dispatches_to_paged_job(monkeypatch: pytest.MonkeyPatch, table: str) -> None:
     job = Mock()

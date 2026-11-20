@@ -13,7 +13,8 @@ from quantagent.adapters.postgres.errors import (
     PostgresAdapterError,
     TransactionUnknownError,
 )
-from quantagent.adapters.postgres.src_progress import wind_progress
+from quantagent.adapters.postgres.src_progress import SRC_SCHEMAS, src_progress
+from quantagent.adapters.postgres.wind_bond_fx_columns import BOND_FX_WIND_SYNC
 from quantagent.adapters.postgres.wind_first_batch_columns import FIRST_BATCH_WIND_SYNC
 from quantagent.adapters.postgres.wind_large_columns import LARGE_WIND_SYNC
 from quantagent.ingest.errors import IngestError
@@ -448,6 +449,12 @@ def _compact_ymd(raw: str, *, flag: str) -> str:
 @wind_app.command("ASHAREINCOME")
 @wind_app.command("ASHAREBALANCESHEET")
 @wind_app.command("AINDEXVALUATION")
+@wind_app.command("CBONDCURVECNBD")
+@wind_app.command("CBONDCURVECSI")
+@wind_app.command("CBONDREPOANDIBLEODPRICES")
+@wind_app.command("CBONDPRICESREPO")
+@wind_app.command("CBONDREPO")
+@wind_app.command("FXEODPRICES")
 def ingest_wind_table(
     ctx: typer.Context,
     *,
@@ -507,6 +514,8 @@ def ingest_wind_table(
 
 
 for _name in FIRST_BATCH_WIND_SYNC:
+    wind_app.command(_name)(ingest_wind_table)
+for _name in BOND_FX_WIND_SYNC:
     wind_app.command(_name)(ingest_wind_table)
 
 
@@ -641,18 +650,45 @@ def ingest_wind_progress(
     ] = 15,
 ) -> None:
     """只读：按表汇总 src_wind._batch，查看回填进度与是否卡住。"""
+    _run_progress(("src_wind",), window=window, stale=stale, show_schema=False)
+
+
+@ingest_app.command("progress")
+def ingest_progress(
+    schema: Annotated[
+        list[str] | None,
+        typer.Option("--schema", help=f"源 schema，可重复。默认全部: {', '.join(SRC_SCHEMAS)}"),
+    ] = None,
+    window: Annotated[int, typer.Option("--window", min=1, help="统计最近 N 分钟的页速")] = 60,
+    stale: Annotated[
+        int, typer.Option("--stale", min=1, help="距上次提交超过 N 分钟且近窗口有页时标 STALE")
+    ] = 15,
+) -> None:
+    """只读：汇总各源 schema 的 _batch，查看回填进度与是否卡住。"""
+    schemas = tuple(schema) if schema else SRC_SCHEMAS
+    unknown = [name for name in schemas if name not in SRC_SCHEMAS]
+    if unknown:
+        raise typer.BadParameter(
+            f"未知源 schema: {', '.join(unknown)}；允许: {', '.join(SRC_SCHEMAS)}",
+            param_hint="--schema",
+        )
+    _run_progress(schemas, window=window, stale=stale, show_schema=True)
+
+
+def _run_progress(schemas: tuple[str, ...], *, window: int, stale: int, show_schema: bool) -> None:
     settings = get_settings()
     try:
         with connect(settings, "src") as conn:
-            rows = wind_progress(conn, window_minutes=window)
+            rows = src_progress(conn, schemas=schemas, window_minutes=window)
     except (ConfigError, PostgresAdapterError) as exc:
         typer.secho(str(exc), fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1) from exc
     now = datetime.now(UTC)
-    typer.echo(
+    head = (f"{'schema':12} " if show_schema else "") + (
         f"{'dataset':38} {'pages':>7} {'rows':>12} {'last_commit':>19} {'idle_min':>8} "
         f"{'s/page':>7}  flag"
     )
+    typer.echo(head)
     for item in rows:
         idle = (now - item.last_commit).total_seconds() / 60
         # 只对“近窗口还在出页、但最近一段没动静”的表报警；早已追平的表闲着是正常的。
@@ -660,8 +696,9 @@ def ingest_wind_progress(
         speed = (
             "" if item.recent_seconds_per_page is None else f"{item.recent_seconds_per_page:.1f}"
         )
+        prefix = f"{item.schema:12} " if show_schema else ""
         typer.echo(
-            f"{item.dataset:38} {item.pages:7d} {item.rows:12,d} "
+            f"{prefix}{item.dataset:38} {item.pages:7d} {item.rows:12,d} "
             f"{item.last_commit.astimezone().strftime('%Y-%m-%d %H:%M:%S'):>19} "
             f"{idle:8.1f} {speed:>7}  {flag}"
         )

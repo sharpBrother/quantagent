@@ -1,4 +1,4 @@
-"""汇总 ``src_wind._batch`` 的采集进度。只读。
+"""汇总各源 schema 的 ``_batch`` 采集进度。只读。
 
 每页提交时，批次行与数据行在同一事务写入，所以 ``_batch`` 就是权威进度：
 页在这里，数据就在库里；页回滚，批次行也不在。
@@ -21,8 +21,13 @@ if TYPE_CHECKING:
     import psycopg
 
 
+# 所有源 schema。schema 名只能来自这里，不得拼接外部输入；查询时经 quote_ident 引用。
+SRC_SCHEMAS = ("src_wind", "src_tushare", "src_macro", "src_jydb", "src_suntime")
+
+
 @dataclass(frozen=True)
 class TableProgress:
+    schema: str
     dataset: str
     pages: int
     rows: int
@@ -33,13 +38,13 @@ class TableProgress:
     recent_seconds_per_page: float | None
 
 
-_SQL = assert_src_dml_sql(
-    """
+# ``{batch}`` 只能由 ``_progress_sql`` 填入经 quote_ident 引用的 ``<schema>._batch``。
+_PROGRESS_TEMPLATE = """
 SELECT b.dataset,
        count(*) AS pages,
        coalesce(sum(b.row_count), 0) AS rows,
        max(b.finished_at) AS last_commit,
-       (SELECT l.source_cursor FROM src_wind._batch AS l
+       (SELECT l.source_cursor FROM {batch} AS l
          WHERE l.dataset = b.dataset AND l.status = 'success'
          ORDER BY l._batch_id DESC LIMIT 1) AS source_cursor,
        count(*) FILTER (WHERE b.finished_at >= now() - make_interval(mins => %(window)s))
@@ -48,12 +53,16 @@ SELECT b.dataset,
          max(b.finished_at) FILTER (WHERE b.finished_at >= now() - make_interval(mins => %(window)s))
          - min(b.finished_at) FILTER (WHERE b.finished_at >= now() - make_interval(mins => %(window)s))
        ) AS recent_span
-FROM src_wind._batch AS b
+FROM {batch} AS b
 WHERE b.status = 'success'
 GROUP BY b.dataset
 ORDER BY max(b.finished_at) DESC
 """
-)
+
+
+def _progress_sql(schema: str) -> str:
+    batch = f"{quote_ident(schema)}.{quote_ident('_batch')}"
+    return assert_src_dml_sql(_PROGRESS_TEMPLATE.format(batch=batch))
 
 
 def latest_written_value(
@@ -157,24 +166,44 @@ def latest_success_window_end(
     return str(fetched[0])
 
 
-def wind_progress(conn: psycopg.Connection[Any], *, window_minutes: int) -> list[TableProgress]:
-    with conn.cursor(row_factory=dict_row) as cur:
-        cur.execute(_SQL, {"window": window_minutes})
-        fetched = cur.fetchall()
+def src_progress(
+    conn: psycopg.Connection[Any],
+    *,
+    schemas: Sequence[str],
+    window_minutes: int,
+) -> list[TableProgress]:
+    """汇总给定源 schema 的 ``_batch`` 进度，合并后按最后提交时间倒序。只读。
+    schema 必须在 ``SRC_SCHEMAS`` 内，否则抛 ``ValueError``，不发出任何查询。
+    没有成功批次的 schema 不产生行。
+    """
+    unknown = [name for name in schemas if name not in SRC_SCHEMAS]
+    if unknown:
+        raise ValueError(f"未知源 schema: {unknown}；允许: {list(SRC_SCHEMAS)}")
     out: list[TableProgress] = []
-    for row in fetched:
-        recent = int(row["recent_pages"])
-        span = row["recent_span"]
-        per_page = float(span) / (recent - 1) if recent > 1 and span is not None else None
-        out.append(
-            TableProgress(
-                dataset=str(row["dataset"]),
-                pages=int(row["pages"]),
-                rows=int(row["rows"]),
-                source_cursor=row["source_cursor"],
-                last_commit=row["last_commit"],
-                recent_pages=recent,
-                recent_seconds_per_page=per_page,
+    for schema in schemas:
+        statement = _progress_sql(schema)
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(statement, {"window": window_minutes})
+            fetched = cur.fetchall()
+        for row in fetched:
+            recent = int(row["recent_pages"])
+            span = row["recent_span"]
+            per_page = float(span) / (recent - 1) if recent > 1 and span is not None else None
+            out.append(
+                TableProgress(
+                    schema=schema,
+                    dataset=str(row["dataset"]),
+                    pages=int(row["pages"]),
+                    rows=int(row["rows"]),
+                    source_cursor=row["source_cursor"],
+                    last_commit=row["last_commit"],
+                    recent_pages=recent,
+                    recent_seconds_per_page=per_page,
+                )
             )
-        )
+    out.sort(key=lambda item: item.last_commit, reverse=True)
     return out
+
+
+def wind_progress(conn: psycopg.Connection[Any], *, window_minutes: int) -> list[TableProgress]:
+    return src_progress(conn, schemas=("src_wind",), window_minutes=window_minutes)
