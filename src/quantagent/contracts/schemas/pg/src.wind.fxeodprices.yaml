@@ -10,11 +10,11 @@ columns:
   OBJECT_ID:
     dtype: string
     nullable: false
-    description: "Wind 行对象主键"
+    description: 对象ID
   TRADE_DT:
     dtype: string
     nullable: true
-    description: "交易日 YYYYMMDD，PIT 可见日依据"
+    description: 交易日期；交易日 YYYYMMDD，PIT 可见日依据
   S_INFO_WINDCODE:
     dtype: string
     nullable: true

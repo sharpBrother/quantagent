@@ -10,11 +10,11 @@ columns:
   OBJECT_ID:
     dtype: string
     nullable: false
-    description: "Wind 行对象主键；子集镜像，范围见采集规格 source_filter：曲线 0901、02502"
+    description: 对象ID；子集镜像，范围见采集规格 source_filter：曲线 0901、02502
   TRADE_DT:
     dtype: string
     nullable: true
-    description: "交易日 YYYYMMDD，PIT 可见日依据"
+    description: 交易日；PIT 可见日依据；源端措辞为“发布日期”，实为开市日
   B_ANAL_CURVENUMBER:
     dtype: string
     nullable: true
@@ -38,11 +38,11 @@ columns:
   OPDATE:
     dtype: datetime
     nullable: true
-    description: "Wind 运维时间，用于采集游标"
+    description: 更新时间；Wind 运维时间，用于采集游标
   OPMODE:
     dtype: string
     nullable: true
-    description: "Wind 操作类型"
+    description: 操作类型 0:新增 1:修改 2:删除
   gsUTime:
     dtype: datetime
     nullable: true

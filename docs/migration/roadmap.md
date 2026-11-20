@@ -117,7 +117,7 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 |---|---|
 | ISM、美债等跨时区数据的可见性：按消费市场收盘时刻判断，需扩展规则引擎 | 已裁定，待实现 |
 | ToDesk 链路会吞连接：回填靠看门狗与逐列回读兜底，未根治 | 观察 |
-| 导出 wind_db 列注释（`sys.extended_properties` 的 `MS_Description`）供复核字段说明 | 执行机 |
+| wind_db 列注释复核：2026-11-20 导出 `MS_Description` 25,409 条，对完 23 张表 1,118 列；43 列补说明、119 列正文与单位改用 wind_db，`0022` 已生成待执行 | 已结案 |
 | daemon 连 PG 用超级用户 `leo`，应改 `quantagent_ingest` | 负责人放密码 |
 
 专题文档：[Wind 交接](wind-pipeline-handoff.md)、[宏观采集方案](macro-source-ingest-plan.md)、

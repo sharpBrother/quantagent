@@ -10,15 +10,15 @@ columns:
   OBJECT_ID:
     dtype: string
     nullable: false
-    description: Wind 行对象主键
+    description: 对象ID
   S_INFO_WINDCODE:
     dtype: string
     nullable: true
-    description: Wind 证券代码
+    description: Wind代码
   TRADE_DT:
     dtype: string
     nullable: true
-    description: 交易日 YYYYMMDD，源端字符串；PIT 事件日
+    description: 交易日期；PIT 事件日
   CRNCY_CODE:
     dtype: string
     nullable: true
@@ -26,59 +26,59 @@ columns:
   S_DQ_PRECLOSE:
     dtype: float64
     nullable: true
-    description: 昨收
+    description: 昨收盘价(元)
   S_DQ_OPEN:
     dtype: float64
     nullable: true
-    description: 开盘
+    description: 开盘价(元)
   S_DQ_HIGH:
     dtype: float64
     nullable: true
-    description: 最高
+    description: 最高价(元)
   S_DQ_LOW:
     dtype: float64
     nullable: true
-    description: 最低
+    description: 最低价(元)
   S_DQ_CLOSE:
     dtype: float64
     nullable: true
-    description: 收盘
+    description: 收盘价(元)
   S_DQ_CHANGE:
     dtype: float64
     nullable: true
-    description: 涨跌
+    description: 涨跌(元)
   S_DQ_PCTCHANGE:
     dtype: float64
     nullable: true
-    description: 涨跌幅
+    description: 涨跌幅(%)
   S_DQ_VOLUME:
     dtype: float64
     nullable: true
-    description: 成交量
+    description: 成交量(手)
   S_DQ_AMOUNT:
     dtype: float64
     nullable: true
-    description: 成交额
+    description: 成交金额(千元)
   S_DQ_ADJPRECLOSE:
     dtype: float64
     nullable: true
-    description: 复权昨收
+    description: 复权昨收盘价(元)
   S_DQ_ADJOPEN:
     dtype: float64
     nullable: true
-    description: 复权开盘
+    description: 复权开盘价(元)
   S_DQ_ADJHIGH:
     dtype: float64
     nullable: true
-    description: 复权最高
+    description: 复权最高价(元)
   S_DQ_ADJLOW:
     dtype: float64
     nullable: true
-    description: 复权最低
+    description: 复权最低价(元)
   S_DQ_ADJCLOSE:
     dtype: float64
     nullable: true
-    description: 复权收盘
+    description: 复权收盘价（元，后复权）
   S_DQ_ADJFACTOR:
     dtype: float64
     nullable: true
@@ -86,11 +86,11 @@ columns:
   S_DQ_AVGPRICE:
     dtype: float64
     nullable: true
-    description: 均价
+    description: 均价(VWAP)
   S_DQ_TRADESTATUS:
     dtype: string
     nullable: true
-    description: 交易状态中文；采集时 latin1→gbk 修复
+    description: 交易状态；采集时 latin1→gbk 修复
   S_DQ_TRADESTATUSCODE:
     dtype: float64
     nullable: true
@@ -98,23 +98,23 @@ columns:
   S_DQ_LIMIT:
     dtype: float64
     nullable: true
-    description: 涨停价
+    description: 涨停价(元)
   S_DQ_STOPPING:
     dtype: float64
     nullable: true
-    description: 跌停价
+    description: 跌停价(元)
   OPDATE:
     dtype: datetime
     nullable: true
-    description: Wind 运维时间，采集游标用，不是 PIT 可见日
+    description: 更新时间；Wind 运维时间，采集游标用，不是 PIT 可见日
   OPMODE:
     dtype: string
     nullable: true
-    description: 0 新增 1 修改 2 删除
+    description: 操作类型 0:新增 1:修改 2:删除
   S_DQ_ADJCLOSE_BACKWARD:
     dtype: float64
     nullable: true
-    description: 后复权收盘
+    description: 前复权收盘价（元）。含观测日之后的除权信息，随每次除权重算整段历史；研究读取不得使用，复权请用 S_DQ_ADJCLOSE（后复权）或 S_DQ_ADJFACTOR。
   GSUPDTIME:
     dtype: bytes
     nullable: true

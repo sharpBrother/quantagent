@@ -198,6 +198,7 @@ def test_list_migration_files_on_repo(repo_root: Path) -> None:
         "0019_bond_fx_wind_tables.sql",
         "0020_aindexdescription.sql",
         "0021_column_comments.sql",
+        "0022_column_comments_wind_db.sql",
     ]
     assert [item.filename for item in ops] == [
         "0001_schema.sql",

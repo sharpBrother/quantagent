@@ -10,11 +10,11 @@ columns:
   OBJECT_ID:
     dtype: string
     nullable: false
-    description: "Wind 行对象主键"
+    description: 对象ID
   TRADE_DT:
     dtype: string
     nullable: true
-    description: "PIT 可见日依据"
+    description: 日期；PIT 可见日依据
   S_MARSUM_EXCHMARKET:
     dtype: string
     nullable: true
@@ -74,11 +74,11 @@ columns:
   OPDATE:
     dtype: datetime
     nullable: true
-    description: "Wind 运维时间，采集游标用，不是 PIT 可见日"
+    description: 更新时间；Wind 运维时间，采集游标用，不是 PIT 可见日
   OPMODE:
     dtype: string
     nullable: true
-    description: "0 新增 1 修改 2 删除"
+    description: 操作类型 0:新增 1:修改 2:删除
   gsUTime:
     dtype: datetime
     nullable: true

@@ -10,7 +10,7 @@ columns:
   OBJECT_ID:
     dtype: string
     nullable: false
-    description: "Wind 行对象主键"
+    description: 对象ID
   S_INFO_WINDCODE:
     dtype: string
     nullable: true
@@ -18,7 +18,7 @@ columns:
   TRADE_DT:
     dtype: string
     nullable: true
-    description: "交易日 YYYYMMDD，PIT 可见日依据"
+    description: 日期；交易日 YYYYMMDD，PIT 可见日依据
   S_DQ_OPEN:
     dtype: float64
     nullable: true
@@ -50,11 +50,11 @@ columns:
   OPDATE:
     dtype: datetime
     nullable: true
-    description: "Wind 运维时间，用于采集游标"
+    description: 更新时间；Wind 运维时间，用于采集游标
   OPMODE:
     dtype: string
     nullable: true
-    description: "Wind 操作类型"
+    description: 操作类型 0:新增 1:修改 2:删除
   gsCTime:
     dtype: datetime
     nullable: true

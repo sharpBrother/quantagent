@@ -10,23 +10,23 @@ columns:
   OBJECT_ID:
     dtype: string
     nullable: false
-    description: Wind 行对象主键
+    description: 对象ID
   TRADE_DAYS:
     dtype: string
     nullable: true
-    description: 开市日 YYYYMMDD
+    description: 交易日
   S_INFO_EXCHMARKET:
     dtype: string
     nullable: true
-    description: 源端交易所或市场代码
+    description: 交易所英文简称
   OPDATE:
     dtype: datetime
     nullable: true
-    description: Wind 运维时间，用于采集游标
+    description: 更新时间；Wind 运维时间，用于采集游标
   OPMODE:
     dtype: string
     nullable: true
-    description: Wind 操作类型
+    description: 操作类型 0:新增 1:修改 2:删除
   gsCTime:
     dtype: datetime
     nullable: true
