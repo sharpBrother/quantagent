@@ -97,6 +97,46 @@ def test_bond_fx_rebuild_requires_each_drop_followed_by_same_create() -> None:
         )
 
 
+_VIEW_SWAP = """
+DROP TABLE src_wind."AINDEXINDUSTRIESCITICS";
+CREATE VIEW src_wind."AINDEXINDUSTRIESCITICS" AS SELECT 1 AS "OBJECT_ID";
+"""
+
+
+@pytest.mark.unit
+def test_drop_table_then_create_view_is_allowed_only_for_0020() -> None:
+    assert_migration_sql(_VIEW_SWAP, filename="0020_aindexdescription.sql")
+    # 同样的文本换到别的文件就不放行：白名单按文件名写死。
+    with pytest.raises(MigrationError, match="没有在同一文件重建"):
+        assert_migration_sql(_VIEW_SWAP, filename="0021_other.sql")
+
+
+@pytest.mark.unit
+def test_view_swap_requires_the_same_name_directly_after_drop() -> None:
+    other_view = _VIEW_SWAP.replace(
+        'CREATE VIEW src_wind."AINDEXINDUSTRIESCITICS"', 'CREATE VIEW src_wind."OTHER"'
+    )
+    with pytest.raises(MigrationError, match="未紧跟同名 CREATE VIEW"):
+        assert_migration_sql(other_view, filename="0020_aindexdescription.sql")
+    with_gap = _VIEW_SWAP.replace(
+        "CREATE VIEW",
+        'CREATE INDEX "x" ON src_wind.y (_batch_id);\nCREATE VIEW',
+    )
+    with pytest.raises(MigrationError, match="未紧跟同名 CREATE VIEW"):
+        assert_migration_sql(with_gap, filename="0020_aindexdescription.sql")
+    other_table = _VIEW_SWAP.replace(
+        'DROP TABLE src_wind."AINDEXINDUSTRIESCITICS"', 'DROP TABLE src_wind."AINDEXEODPRICES"'
+    )
+    with pytest.raises(MigrationError, match="白名单"):
+        assert_migration_sql(other_table, filename="0020_aindexdescription.sql")
+
+
+@pytest.mark.unit
+def test_view_only_statement_is_not_dml() -> None:
+    with pytest.raises(MigrationError, match="语句动词非法"):
+        assert_migration_sql("UPDATE src_wind.x SET a = 1", filename="0020_aindexdescription.sql")
+
+
 @pytest.mark.unit
 def test_macro_drop_exemption_only_for_0018_leading_drops() -> None:
     assert_migration_sql(_MACRO_DROPS, filename="0018_macro_source_tables.sql")
@@ -156,6 +196,7 @@ def test_list_migration_files_on_repo(repo_root: Path) -> None:
         "0017_rebuilt_tables_batch_id_indexes.sql",
         "0018_macro_source_tables.sql",
         "0019_bond_fx_wind_tables.sql",
+        "0020_aindexdescription.sql",
     ]
     assert [item.filename for item in ops] == [
         "0001_schema.sql",

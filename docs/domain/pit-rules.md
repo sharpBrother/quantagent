@@ -38,7 +38,7 @@ YAML**，也**不得作为 PIT 查询的数据集**（fail-closed 仍然成立�
 就不能当研究序列读）。只允许做身份/代码 join：
 
 - 系统代码表（如聚源 `CT_SystemConst`）
-- 证券/指数/期货主数据（如 `SecuMain`、`ASHAREDESCRIPTION`）
+- 证券/指数/期货主数据（如 `SecuMain`、`ASHAREDESCRIPTION`、`AINDEXDESCRIPTION`、`AINDEXDESCRIPTIONZL`）
 - 指标目录（如 `C_ED_IndicatorMain`，时间序列在数据表里）
 - 行业/代码对照（如 `tushare_ths_industry_mapping_citics`）
 - 手维护对照与配置映射（如 `mapping_industry_etf`、`strategy_citics_list`）

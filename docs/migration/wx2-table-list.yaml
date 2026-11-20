@@ -6,12 +6,12 @@ row_count_note: 本机未连 SQL Server wx2，行数一律未查
 pit_note: 本清单不定版 visibility / 不写 PIT YAML，须负责人逐表确认后再配
 migrate_note: 清单为评审基线，不启动迁入；拟改名/改 schema 的表先改 DDL 再迁
 counts:
-  total: 371
-  c1: 87
+  total: 372
+  c1: 89
   c2: 73
   c3: 0
   c4: 26
-  c5: 185
+  c5: 184
 tables:
 - name: stock_etf_min_price
   folder: factors
@@ -568,7 +568,7 @@ tables:
   row_count: 未查
   category: 1
   reason: 第一批 src_tables.yaml；现役：data/etf_trend_strategy.py, data/情绪择时推送.py, scripts/macro_regime_walk_forward_evaluation.py
-  dest: src_wind.AINDEXINDUSTRIESCITICS（第一批已收录，本清单不启动迁入）
+  dest: src_wind.AINDEXINDUSTRIESCITICS（视图，0020：由 src_wind.AINDEXDESCRIPTION 按中信一二三级成分筛出，不存数据）
   extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。
   src_batch1: true
   origin: dictionary_manifest
@@ -3769,11 +3769,22 @@ tables:
   folder: wind
   nature: vendor
   row_count: 未查
-  category: 5
-  reason: 仅采集写入：data/wind_to_sql_2.py
-  dest: 不迁移
+  category: 1
+  reason: 2026-11-19 收录：AINDEXINDUSTRIESCITICS 视图的源（负责人裁定，替代旧仓 wind_to_sql_2.py 的筛选写入）
+  dest: src_wind.AINDEXDESCRIPTION（完整镜像，0020）
   extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。
-  src_batch1: false
+  src_batch1: true
+  pit_required: false
+- name: AINDEXDESCRIPTIONZL
+  folder: wind
+  nature: vendor
+  row_count: 未查
+  category: 1
+  reason: 2026-11-19 收录：负责人提供的第二张同结构指数基本资料表，只镜像，不参与视图
+  dest: src_wind.AINDEXDESCRIPTIONZL（完整镜像，0020）
+  extra: 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。
+  src_batch1: true
+  pit_required: false
   origin: code
   pit_required: false
 - name: AINDEXFINANCIALDERIVATIVE

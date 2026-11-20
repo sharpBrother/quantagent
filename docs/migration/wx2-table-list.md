@@ -49,7 +49,7 @@ Tushare 宏观三张与 `FIN_APPO_RELE_DATE` 已按本表回写 `db/src_tables.y
 visibility 只管观测何时可知。下列表只做代码/身份 join，**不配 visibility YAML**，
 也不得作为 PIT 查询的数据集。YAML 字段 `pit_required: false`。
 
-### 类别 1（12 张，拟进源面或参考落点）
+### 类别 1（14 张，拟进源面或参考落点）
 
 | 表名 | 去向 |
 |---|---|
@@ -63,10 +63,12 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `strategy_etf_list_2` | 不迁 wx2 行；写入 mart.universe_member，universe_id=universe_etf_2。禁止再建 strategy_etf_list_2 表 |
 | `tushare_ths_industry_mapping_citics` | src_tushare.tushare_ths_industry_mapping_citics（第一批已收录，本清单不启动迁入） |
 | `universe_style_rotation` | 待定落点（src_ref / frozen / 配置），现不迁 |
-| `AINDEXINDUSTRIESCITICS` | src_wind.AINDEXINDUSTRIESCITICS（第一批已收录，本清单不启动迁入） |
+| `AINDEXINDUSTRIESCITICS` | src_wind.AINDEXINDUSTRIESCITICS（视图，0020：由 src_wind.AINDEXDESCRIPTION 按中信成分筛出，不存数据） |
+| `AINDEXDESCRIPTION` | src_wind.AINDEXDESCRIPTION（完整镜像，0020；上面视图的源） |
+| `AINDEXDESCRIPTIONZL` | src_wind.AINDEXDESCRIPTIONZL（完整镜像，0020；只镜像，不参与视图） |
 | `ASHAREDESCRIPTION` | src_wind.ASHAREDESCRIPTION（第一批已收录，本清单不启动迁入） |
 
-### 类别 5（13 张，不迁入，同样不配 PIT）
+### 类别 5（12 张，不迁入，同样不配 PIT）
 
 | 表名 | 说明 |
 |---|---|
@@ -78,7 +80,6 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `strategy_etf_list_rebate` | 不迁移；若将来改判迁入，仍无需 PIT |
 | `tushare_ths_industry_list` | 不迁移；若将来改判迁入，仍无需 PIT |
 | `tushare_ths_industry_market` | 不迁移；若将来改判迁入，仍无需 PIT |
-| `AINDEXDESCRIPTION` | 不迁移；若将来改判迁入，仍无需 PIT |
 | `ASHARESECNINDUSTRIES` | 不迁移；若将来改判迁入，仍无需 PIT |
 | `CBINDEXDESCRIPTION` | 不迁移；若将来改判迁入，仍无需 PIT |
 | `CFUTURESCONTRACTMAPPING` | 不迁移；若将来改判迁入，仍无需 PIT |
@@ -94,7 +95,7 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 ## 范围与指针
 
 - 旧仓：`pycharm_workspace` @ `7c506d51160e57385fd85217edece815268ffd55`
-- 表数：**371**（数据字典 + `db/src_tables.yaml` 宏观表 + 运维表 + 现役代码出现但字典未收录的表）
+- 表数：**372**（数据字典 + `db/src_tables.yaml` 宏观表 + 运维表 + 现役代码出现但字典未收录的表）
 - 行数：未连 wx2，全部 **未查**
 - **不迁入。** visibility 从旧仓下游取数（`data_gateway` 等）反推后写入契约；缺证据、多网关冲突再问。上节映射表与 `strategy_etf_list*` 不配
 - 消费者 = 现役模块引用 ∪ 启用中的 `jobs.json` ∪ `data_registry`；采集写入不算消费者
@@ -105,15 +106,15 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 
 | 类别 | 张数 |
 |---|---:|
-| 1 源镜像 | 87 |
+| 1 源镜像 | 89 |
 | 2 可重算 | 73 |
 | 3 遗产冻结 | 0 |
 | 4 运维改造 | 26 |
-| 5 无消费者 | 185 |
-| 合计 | 371 |
-| 其中无需 PIT | 25 |
+| 5 无消费者 | 184 |
+| 合计 | 372 |
+| 其中无需 PIT | 26 |
 
-第一批 `db/src_tables.yaml` 的 59 张仍全部落在类别 1。Tushare 宏观三张与
+第一批 `db/src_tables.yaml` 的 61 张仍全部落在类别 1。2026-11-19 新增 `AINDEXDESCRIPTION`、`AINDEXDESCRIPTIONZL` 两张，`AINDEXINDUSTRIESCITICS` 改为视图（0020）。Tushare 宏观三张与
 `FIN_APPO_RELE_DATE` 已按拟去向回写 DDL；其余拟去向（如 `fin_*`、`etf_min_price`）仍未改。
 类别 3 本轮为 0：历史策略结果表（`strategy_result_*` 等）现役无读取，已归入类别 5。
 
@@ -168,7 +169,7 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `tushare_ths_industry_mapping_citics` | 未查 | 1 源镜像 | 否 | 第一批 src_tables.yaml；现役：alpha_factory/all_a_canonical_scene.py, scripts/backfill_alpha_factory_pf_quarterly.py | src_tushare.tushare_ths_industry_mapping_citics（第一批已收录，本清单不启动迁入） | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。 |
 | `universe_style_rotation` | 未查 | 1 源镜像 | 否 | 手维护/映射参考表，无法从 vendor 行情重算；现役：agent_style_rotation/score_engine.py, agent_style_rotation/universe.py, core/market_data_service.py 等13处 | 待定落点（src_ref / frozen / 配置），现不迁 | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。非 vendor 行情，不进第一批 src_*。 |
 | `AINDEXEODPRICES` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/gateway.py, alpha_factory/etf/timepoint_momentum/engine.py 等43处 | src_wind.AINDEXEODPRICES（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
-| `AINDEXINDUSTRIESCITICS` | 未查 | 1 源镜像 | 否 | 第一批 src_tables.yaml；现役：data/etf_trend_strategy.py, data/情绪择时推送.py, scripts/macro_regime_walk_forward_evaluation.py | src_wind.AINDEXINDUSTRIESCITICS（第一批已收录，本清单不启动迁入） | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。 |
+| `AINDEXINDUSTRIESCITICS` | 未查 | 1 源镜像 | 否 | 第一批 src_tables.yaml；现役：data/etf_trend_strategy.py, data/情绪择时推送.py, scripts/macro_regime_walk_forward_evaluation.py | src_wind.AINDEXINDUSTRIESCITICS（视图，0020：由 AINDEXDESCRIPTION 按中信成分筛出，不存数据） | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。 |
 | `AINDEXINDUSTRIESEODCITICS` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/timepoint_momentum/engine.py, core/market_data_service.py 等9处 | src_wind.AINDEXINDUSTRIESEODCITICS（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `AINDEXMEMBERS` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py, alpha_factory/etf/gateway.py, alpha_factory/etf/timepoint_momentum/engine.py 等34处 | src_wind.AINDEXMEMBERS（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。 |
 | `AINDEXMEMBERSCITICS` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py, core/market_data_service.py, core/raw_loader.py 等9处 | src_wind.AINDEXMEMBERSCITICS（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。 |
@@ -477,7 +478,8 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `universe_500_1800_balance` | 未查 | 5 无消费者 | — | 旧股票池缓存，现役无引用 | 不迁移 | 旧仓 7c506d511 |
 | `universe_500_1800_growth` | 未查 | 5 无消费者 | — | 旧股票池缓存，现役无引用 | 不迁移 | 旧仓 7c506d511 |
 | `universe_500_1800_value` | 未查 | 5 无消费者 | — | 旧股票池缓存，现役无引用 | 不迁移 | 旧仓 7c506d511 |
-| `AINDEXDESCRIPTION` | 未查 | 5 无消费者 | 否 | 仅采集写入：data/wind_to_sql_2.py | 不迁移 | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。 |
+| `AINDEXDESCRIPTION` | 未查 | 1 源镜像 | 否 | 2026-11-19 收录：AINDEXINDUSTRIESCITICS 视图的源（负责人裁定，替代旧仓 wind_to_sql_2.py 的筛选写入） | src_wind.AINDEXDESCRIPTION（完整镜像，0020） | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。 |
+| `AINDEXDESCRIPTIONZL` | 未查 | 1 源镜像 | 否 | 2026-11-19 收录：负责人提供的第二张同结构指数基本资料表，只镜像，不参与视图 | src_wind.AINDEXDESCRIPTIONZL（完整镜像，0020） | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。 |
 | `AINDEXFINANCIALDERIVATIVE` | 未查 | 5 无消费者 | — | 仅采集写入：data/wind_to_sql_2.py | 不迁移 | 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `ASHARESECNINDUSTRIES` | 未查 | 5 无消费者 | 否 | 字典或代码有记载，现役模块/启用调度/data_registry 均无引用 | 不迁移 | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。旧仓 7c506d511。 |
 | `ASHARESECNINDUSTRIESCLASS` | 未查 | 5 无消费者 | 是 | 仅采集写入：data/wind_to_sql_2.py | 不迁移 | 旧仓 7c506d511。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。 |

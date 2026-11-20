@@ -16,6 +16,9 @@ from quantagent.adapters.postgres.errors import (
 from quantagent.adapters.postgres.src_progress import SRC_SCHEMAS, src_progress
 from quantagent.adapters.postgres.wind_bond_fx_columns import BOND_FX_WIND_SYNC
 from quantagent.adapters.postgres.wind_first_batch_columns import FIRST_BATCH_WIND_SYNC
+from quantagent.adapters.postgres.wind_index_description_columns import (
+    INDEX_DESCRIPTION_WIND_SYNC,
+)
 from quantagent.adapters.postgres.wind_large_columns import LARGE_WIND_SYNC
 from quantagent.ingest.errors import IngestError
 from quantagent.ingest.jobs.jin10_ism_details import ingest_jin10_ism_details
@@ -516,6 +519,8 @@ def ingest_wind_table(
 for _name in FIRST_BATCH_WIND_SYNC:
     wind_app.command(_name)(ingest_wind_table)
 for _name in BOND_FX_WIND_SYNC:
+    wind_app.command(_name)(ingest_wind_table)
+for _name in INDEX_DESCRIPTION_WIND_SYNC:
     wind_app.command(_name)(ingest_wind_table)
 
 

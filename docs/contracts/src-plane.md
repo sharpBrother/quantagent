@@ -13,7 +13,7 @@ superseded_by: null
 
 # 研究数据面第一批源镜像
 
-PG 研究数据面只存源原生结构。这一批共 **59** 张表，清单在
+PG 研究数据面只存源原生结构。这一批共 **61** 张表，清单在
 [`db/src_tables.yaml`](../../db/src_tables.yaml)，DDL 在
 `db/migrations/src/`。
 
@@ -21,7 +21,7 @@ PG 研究数据面只存源原生结构。这一批共 **59** 张表，清单在
 
 | schema | 来源 | 张数 |
 |---|---|---|
-| `src_wind` | Wind | 30 |
+| `src_wind` | Wind | 32（含视图 `AINDEXINDUSTRIESCITICS`，0020 起由 `AINDEXDESCRIPTION` 筛出） |
 | `src_jydb` | 聚源 | 12 |
 | `src_suntime` | 朝阳永续 | 7 |
 | `src_tushare` | Tushare | 6 |

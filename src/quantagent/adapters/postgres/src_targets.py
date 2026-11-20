@@ -6,9 +6,13 @@ from dataclasses import dataclass
 
 from quantagent.adapters.postgres import wind_bond_fx_columns as _bond_fx
 from quantagent.adapters.postgres import wind_first_batch_columns as _first_batch
+from quantagent.adapters.postgres import wind_index_description_columns as _index_description
 from quantagent.adapters.postgres.wind_bond_fx_columns import BOND_FX_WIND_SYNC
 from quantagent.adapters.postgres.wind_first_batch_columns import (
     FIRST_BATCH_WIND_SYNC,
+)
+from quantagent.adapters.postgres.wind_index_description_columns import (
+    INDEX_DESCRIPTION_WIND_SYNC,
 )
 from quantagent.adapters.postgres.wind_large_columns import (
     AINDEXVALUATION_COLUMNS,
@@ -255,4 +259,9 @@ FIRST_BATCH_WIND_SPECS: dict[str, SrcTableWriteSpec] = {
 # 不在这里：写入规格只描述列与主键。
 BOND_FX_WIND_SPECS: dict[str, SrcTableWriteSpec] = {
     name: _wind_table(name, getattr(_bond_fx, f"{name}_COLUMNS")) for name in BOND_FX_WIND_SYNC
+}
+# 指数基本资料两张表全表镜像。AINDEXDESCRIPTION 是 AINDEXINDUSTRIESCITICS 视图的源（0020）。
+INDEX_DESCRIPTION_WIND_SPECS: dict[str, SrcTableWriteSpec] = {
+    name: _wind_table(name, getattr(_index_description, f"{name}_COLUMNS"))
+    for name in INDEX_DESCRIPTION_WIND_SYNC
 }

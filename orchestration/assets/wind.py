@@ -28,6 +28,10 @@ NOT_PIT_WIND_TABLES: frozenset[str] = frozenset(
         "AINDEXMEMBERSCITICS2",
         "AINDEXMEMBERSCITICS3",
         "SWINDEXMEMBERS",
+        # 指数主数据，与 ASHAREDESCRIPTION 同类：只做身份 join，不配 visibility。
+        # AINDEXINDUSTRIESCITICS 是 AINDEXDESCRIPTION 上的视图（0020），不单独采集。
+        "AINDEXDESCRIPTION",
+        "AINDEXDESCRIPTIONZL",
         # ST 区间只经 domain.universe.st 的 st_codes_at 读取（2026-11-17 裁定）。
         "ASHAREST",
     }
