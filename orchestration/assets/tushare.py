@@ -1,8 +1,5 @@
 """Tushare shibor 日更资产。
 
-这个作业只在 Mac（``QUANTAGENT_PROFILE=local``）上跑。公司电脑的 profile 是 ``office``，
-写入 ``src_tushare`` 会被 ``assert_writable`` 拒绝，所以在公司电脑上跑只会失败，不会误写。
-
 起点不由配置给出。它读 ``src_tushare._batch`` 里最近成功批次的 ``window_end``，往前回看 30 天，
 用来重查近期修订。业务实现在函数体内导入，控制 daemon 导入耗时（见 ``orchestration/__init__.py``）。
 不使用 ``from __future__ import annotations``：Dagster 要在导入时解析 Config 的注解。

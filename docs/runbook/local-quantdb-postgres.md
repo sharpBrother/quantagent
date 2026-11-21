@@ -85,7 +85,8 @@ launchd 只托管 `dagster-daemon`，不启动 PostgreSQL。PG 仍按上文手�
   `$DAGSTER_HOME/workspace.yaml`，然后 `exec uv run dagster-daemon run --workspace ...`。
   同步时若旧文件内容不同，先改名为 `*.bak.<时间戳>`。
 - 写库闸 `QUANTAGENT_ALLOW_DB_WRITE=true` 只在 plist 的 `EnvironmentVariables` 里。
-  交互会话读的是仓库 `.env`，仍默认不写库。
+  仓库 `.env` 不设置此变量：Dagster 的 `.env` 加载器会覆盖 daemon 环境，即使写入
+  `false` 也会让采集子进程拒写。交互会话依靠配置默认值关闭写闸；修改后须重启 daemon。
 
 安装（由 `leo` 在执行机上运行）：
 

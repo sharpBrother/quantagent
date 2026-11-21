@@ -21,14 +21,11 @@ applies_to:
 未知发布日期的记录以占位日期作为保守 PIT 日期，按旧项目的 `publish_date < as_of` 规则可见；历史值可能是金十后续修订值，
 整体 PIT 等级 D，`pit_from` 之前不可信。带时区的发布时间按消费市场收盘判断仍是后续规则引擎扩展项。
 
-公司电脑运行 Wind、聚源、朝阳永续源表同步，沿用该 Dagster 实例的全局串行。Mac mini 运行公开源和
-Tushare 日更，使用独立的 `DAGSTER_HOME`、SQLite 和队列。见
+两台机器使用独立的 `DAGSTER_HOME`、SQLite 和队列，见
 [Dagster 本地运行存储](../adr/2026-11-17-dagster-local-run-storage.md)。
 
-**写入入口按 schema 划分，并在代码里强制。** 公司电脑只写 `src_wind`、`src_jydb`、`src_suntime`；
-Mac 只写 `src_tushare`、`src_macro`。两边各有自己的 `_batch`，游标互不相干。两台机器跑同一份代码，
-目标白名单分不出机器，所以按 `QUANTAGENT_PROFILE`（`office` / `local`）限定可写 schema，
-写入前在 `assert_writable` 里拒绝不属于本机的目标（已实现，`PROFILE_WRITABLE_SCHEMAS`）。
+负责人 2026-11-21 裁定取消按机器划分源的写入职责；两个 profile 均可写代码白名单内的目标。
+共享 PostgreSQL 的 `_batch` 保存游标；各机 Dagster 队列互不协调，同一来源的自动采集只能在一台机器启用，交接前核查运行状态。
 
 Mac 直连本机 PG，不经过 ToDesk，前一轮的链路问题在这里不存在。但 PG 数据目录和 `var/` 都在外接盘
 `/Volumes/QuantDB` 上：Mac 的 daemon 要在外接盘挂载之后才启动，启动脚本先检查挂载点，未挂载即退出。
@@ -113,19 +110,19 @@ WGC 官网条款禁止未经授权抓取；负责人选择沿用旧项目 HTML �
 
 ## 实施与验收
 
-**进度（2026-11-18）**：写入入口按 profile 强制已上线。SHIBOR 端到端完成：本机全量回填 2006-10-08 至 2026-11-17
+**进度（2026-11-18，profile 写入限制已于 2026-11-21 取消）**：SHIBOR 端到端完成：本机全量回填 2006-10-08 至 2026-11-17
 共 40,008 行，与 wx2 `macro_shibor` 键与值逐一相同；同窗重跑零新增；19:00 日更调度已注册（仅 Mac）。
 0018 已在本机执行，三张新表与契约就绪（金十 B、FRED A、GPR C，三者均严格早于 `as_of`）。美债 `us_tycr` 完成：全量 1990-01-02 至 2026-11-17 共 99,656 行，与 wx2 逐值一致，并入 `tushare_daily`。GPR 与 FRED/ALFRED 已完成，08:00 宏观日更调度已注册（仅 Mac）。**金十 ISM 与 WGC 暂缓（负责人 2026-11-18 裁定）**，现役消费者只有黄金择时与美股择时，随 P4 迁移再接；表与契约保留。金十没有可用的事件发现接口：`list_v2` 停在 2025-09-02，财经日历 CDN 在 Mac 上 TLS 断开（DNS 落在本机代理 fake-IP 段），详情接口须已知 `dataId`；现网日历改走加密 WebSocket。WGC 匿名只能读报告页 HTML（条款禁止 scrape），xlsx 需登录。
 
-1. 先做写入入口按 profile 强制，以及 Mac daemon 的挂载检查。
+1. Mac daemon 检查外接盘挂载；写入目标使用表白名单。
 2. 用 SHIBOR 验证端到端：存量与 `wx2` 校对、同窗重跑新增零行、中断后从成功批次续跑、下一次真实发布自动追加并通过回读。
 3. 依次接美债、FRED、金十、GPR、WGC，每个先过契约与 PIT，再逐源核对覆盖、缺口和旧仓差异。
-4. 两台机器同时运行一次，验证队列独立、各自只写本机允许的 schema。
+4. 验证队列独立，并避免同一来源跨机并发。
 5. 每次写库运行都落 run log；新增依赖（如解析 xlsx 需要 `openpyxl`）实施前单独确认，现有依赖只有 `requests` 与 `tushare`。
 
 ## 裁定结果（2026-11-18）
 
-1. **写入入口按 profile 强制**：采纳，已实现。公司电脑须设 `QUANTAGENT_PROFILE=office`，否则写 Wind 会被拒绝。
+1. **写入入口按 profile 强制**：2026-11-21 已由负责人撤销，两个 profile 使用同一目标白名单。
 2. **Tushare 已有键异值**：全自动跟随源端，见 [ADR](../adr/2026-11-18-tushare-mirror-follows-source.md)。
 3. **ISM 可见性按时区**：采纳。源表保存带时区的发布时刻，可见性按消费市场的收盘时刻判断，接入金十前扩展规则引擎。
    扩展前维持 `< T`。

@@ -8,7 +8,6 @@
 PIT 读法：每个 ``(series_id, observation_date)`` 取 ``file_vintage`` 严格早于 ``as_of`` 的最新一行。
 值没变的版本不落库，所以读到的是最早得知这个值的那一行，取值与逐版本落库的结果一致。
 公开源按自然日跑，不做交易日判断，也不按 as_of 切片：文件总是全量历史。
-只在 Mac（``QUANTAGENT_PROFILE=local``）写入。公司电脑的 profile 写 ``src_macro`` 会被 ``assert_writable`` 拒绝。
 """
 
 from __future__ import annotations

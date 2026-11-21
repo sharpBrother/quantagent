@@ -51,22 +51,25 @@ applies_to:
 
 ### 运行环境
 
-| 机器 | profile | 只写 | 调度 | 托管 | 状态 |
-|---|---|---|---|---|---|
-| 公司电脑（执行机） | `office` | `src_wind`、`src_jydb`、`src_suntime` | Wind 16:30、06:00 | Windows 计划任务（ONLOGON，不可注销） | 运行，经 ToDesk 连 PG |
-| Mac mini | `local` | `src_tushare`、`src_macro` | Tushare 19:00、宏观 08:00 | launchd `com.quantagent.dagster-daemon` | 2026-11-18 起运行 |
+| 机器 | profile | 调度 | 托管 | 状态 |
+|---|---|---|---|---|
+| 公司电脑 | `office` | Wind 16:30、06:00（交接期间暂停） | Windows 计划任务 | 经 ToDesk 连 PG |
+| Mac mini | `local` | Tushare 19:00、宏观 08:00 | launchd `com.quantagent.dagster-daemon` | Wind 回填交接中 |
+
+2026-11-21 负责人取消按机器划分源的写入职责；目标表白名单及写库保护保留。
+两机队列独立，同一来源的自动采集不得跨机同时启用。
 
 Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-local-run-storage.md)）。
 采集在子进程里跑，600 秒无新页即终止重试。
 
 ### P2 数据入湖明细
 
-**Wind（第一批 30 张全部已接，另加 `AINDEXDESCRIPTIONZL`；执行机回填）**：首次回填走独立作业 `orchestration/jobs/wind_initial.py`，按下表优先级串行（`c9db3c3`）；日更顺序不变。
+**Wind（第一批 30 张全部已接，另加 `AINDEXDESCRIPTIONZL`；Mac 接手回填）**：首次回填走独立作业 `orchestration/jobs/wind_initial.py`，按下表优先级串行（`c9db3c3`）；日更顺序不变。
 
 | 优先级 | 表 | 状态 |
 |---|---|---|
 | 1 | `ASHAREST` | ✅ 3,358 行，与 wx2 一致（11-19） |
-| 2 | `ASHAREEODDERIVATIVEINDICATOR` | 🔄 回填中（11-19 17:36 约 291 万行，每页约 13 秒） |
+| 2 | `ASHAREEODDERIVATIVEINDICATOR` | 🔄 Mac 续跑（11-21，run `6891eff1-a51f-4bb1-8d5c-8188dd3918c4`；从成功批次 20875 续接，已推进至 20882） |
 | 3 | `ASHAREDESCRIPTION`、`ASHAREEODPRICES`、`ASHARECALENDAR`、`AINDEXEODPRICES` | ✅ 已追平。描述表 8,621 行对 wx2 8,635 行，差 14 行待核 |
 | 3 | `AINDEXMEMBERS`、中信一二三级成分 | ✅；`SWINDEXMEMBERS` 🔄 |
 | 4 | 利润表、资产负债表、现金流量表、财务指标、业绩预告 | ⏳ 未回填 |

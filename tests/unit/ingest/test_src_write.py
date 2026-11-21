@@ -230,12 +230,12 @@ def test_ashareeodprices_is_writable() -> None:
 
 
 @pytest.mark.unit
-def test_profile_limits_writable_schemas() -> None:
-    with pytest.raises(TargetNotAllowedError, match="profile=local"):
-        assert_writable(ASHAREEODPRICES, profile="local")
-    with pytest.raises(TargetNotAllowedError, match="profile=office"):
-        assert_writable(TRADE_CAL, profile="office")
-    assert_writable(TRADE_CAL, profile="local")
+def test_profiles_allow_all_whitelisted_schemas() -> None:
+    for profile in ("local", "office"):
+        assert_writable(ASHAREEODPRICES, profile=profile)
+        assert_writable(TRADE_CAL, profile=profile)
+    with pytest.raises(TargetNotAllowedError):
+        assert_writable(ASHAREEODPRICES, profile="unknown")
 
 
 @pytest.mark.unit

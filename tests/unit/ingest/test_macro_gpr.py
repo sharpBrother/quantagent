@@ -15,7 +15,7 @@ import requests
 
 from quantagent.adapters.postgres.src_progress import latest_written_value
 from quantagent.adapters.postgres.src_targets import GPR_DAILY
-from quantagent.ingest.errors import SourceFetchError, TargetNotAllowedError
+from quantagent.ingest.errors import SourceFetchError
 from quantagent.ingest.jobs.macro_gpr import (
     GprStoredState,
     ingest_macro_gpr,
@@ -498,30 +498,9 @@ def test_failed_fetch_is_logged_and_reraised(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
-def test_gpr_target_is_writable_only_on_local_profile() -> None:
-    assert_writable(GPR_DAILY, profile="local")
-    with pytest.raises(TargetNotAllowedError):
-        assert_writable(GPR_DAILY, profile="office")
-
-
-@pytest.mark.unit
-def test_office_profile_is_refused_before_any_store_call(tmp_path: Path) -> None:
-    payload = _to_dta(_base_frame(), tmp_path)
-    store = FakeGprStore()
-    settings = _settings(tmp_path, profile="office")
-
-    with pytest.raises(TargetNotAllowedError):
-        ingest_macro_gpr(
-            settings=settings,
-            paths=resolve_var_paths(settings, repo_root=tmp_path),
-            write_db=True,
-            fetch=lambda: payload,
-            last_file_sha256=lambda: None,
-            store=store,
-            stored_state=_empty_state,
-            now=lambda: _NOW,
-        )
-    assert store.calls == []
+def test_gpr_target_is_writable_on_both_profiles() -> None:
+    for profile in ("local", "office"):
+        assert_writable(GPR_DAILY, profile=profile)
 
 
 class _FakeCursor:

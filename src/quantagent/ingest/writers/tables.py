@@ -69,12 +69,11 @@ FORBIDDEN_SRC_WRITE_TARGETS: frozenset[str] = frozenset(
 )
 
 
-# 每台机器只写自己负责的源 schema（负责人 2026-11-18 裁定）。两台机器跑同一份代码，
-# 目标白名单分不出机器，所以按 QUANTAGENT_PROFILE 再限一层：公司电脑（office）连 Wind、
-# 聚源、朝阳永续；Mac（local）跑公开源与 Tushare。各自有自己的 _batch，游标互不相干。
+# profile 只决定调度注册；目标权限由表白名单决定，不再按机器划分。
+_ALL_WRITABLE_SCHEMAS = frozenset(spec.pg_schema for spec in ALLOWED_SRC_WRITE_TARGETS.values())
 PROFILE_WRITABLE_SCHEMAS: dict[str, frozenset[str]] = {
-    "office": frozenset({"src_wind", "src_jydb", "src_suntime"}),
-    "local": frozenset({"src_tushare", "src_macro"}),
+    "office": _ALL_WRITABLE_SCHEMAS,
+    "local": _ALL_WRITABLE_SCHEMAS,
 }
 
 

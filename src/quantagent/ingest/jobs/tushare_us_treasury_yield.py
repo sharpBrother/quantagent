@@ -1,8 +1,6 @@
 """Tushare ``us_tycr`` 采集作业。CLI 与 Dagster 共用。
 按自然月分段拉取、分段提交：每段一个事务，每段一条 run log。某段失败即停，前面已提交的段保留。
 重跑同一区间是幂等的：已有行指纹相同则跳过，只有源端改过的历史值才会替换。
-只在 Mac（``QUANTAGENT_PROFILE=local``）上跑。公司电脑的 profile 是 ``office``，写入会被
-``assert_writable`` 拒绝。
 """
 
 from __future__ import annotations

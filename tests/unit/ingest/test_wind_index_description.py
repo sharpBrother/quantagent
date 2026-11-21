@@ -12,7 +12,6 @@ from quantagent.adapters.postgres.src_targets import INDEX_DESCRIPTION_WIND_SPEC
 from quantagent.adapters.postgres.wind_index_description_columns import (
     INDEX_DESCRIPTION_WIND_SYNC,
 )
-from quantagent.ingest.errors import TargetNotAllowedError
 from quantagent.ingest.sources.wind.tables import WIND_PAGED_TABLES, resolve_wind_paged_table
 from quantagent.ingest.writers.tables import ALLOWED_SRC_WRITE_TARGETS, assert_writable
 
@@ -69,8 +68,7 @@ def test_sync_tuple_and_specs() -> None:
         assert "GSUPDTIME" not in spec.native_columns
         assert ALLOWED_SRC_WRITE_TARGETS[spec.dataset] == spec
         assert_writable(spec, profile="office")
-        with pytest.raises(TargetNotAllowedError, match="不负责写"):
-            assert_writable(spec, profile="local")
+        assert_writable(spec, profile="local")
         paged = resolve_wind_paged_table(name)
         assert paged.spec == spec
         assert paged.source_table == name

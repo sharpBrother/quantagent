@@ -1,5 +1,4 @@
 """GPR 日频资产。公开源按自然日跑，不做交易日判断，也不按 as_of 切片：文件总是全量历史。
-只在 Mac（``QUANTAGENT_PROFILE=local``）上写入。公司电脑的 profile 写 ``src_macro`` 会被 ``assert_writable`` 拒绝。
 业务实现在函数体内导入，控制 daemon 导入耗时（见 ``orchestration/__init__.py``）。
 不使用 ``from __future__ import annotations``：Dagster 要在导入时解析 Config 的注解。
 """

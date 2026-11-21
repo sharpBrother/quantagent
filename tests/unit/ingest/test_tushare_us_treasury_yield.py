@@ -13,7 +13,7 @@ import pandas as pd
 import pytest
 
 from quantagent.adapters.postgres.src_targets import US_TREASURY_YIELD
-from quantagent.ingest.errors import IngestError, SourceFetchError, TargetNotAllowedError
+from quantagent.ingest.errors import IngestError, SourceFetchError
 from quantagent.ingest.jobs.tushare_us_treasury_yield import (
     daily_start_date,
     ingest_tushare_us_treasury_yield,
@@ -210,10 +210,9 @@ def test_daily_start_after_end_is_refused() -> None:
 
 
 @pytest.mark.unit
-def test_writer_only_accepts_local_profile_for_src_tushare() -> None:
-    assert_writable(US_TREASURY_YIELD, profile="local")
-    with pytest.raises(TargetNotAllowedError):
-        assert_writable(US_TREASURY_YIELD, profile="office")
+def test_writer_accepts_both_profiles_for_src_tushare() -> None:
+    for profile in ("local", "office"):
+        assert_writable(US_TREASURY_YIELD, profile=profile)
 
 
 @pytest.mark.unit
