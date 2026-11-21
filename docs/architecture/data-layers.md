@@ -2,7 +2,7 @@
 title: 数据分层与存储边界
 status: active
 created: 2026-09-16
-updated: 2026-09-17
+updated: 2026-11-21
 applies_to:
   - src/quantagent/ingest/
   - src/quantagent/lake/
@@ -21,7 +21,7 @@ applies_to:
 
 | 层 | 数据职责 | 允许依赖 | 物理位置 |
 |---|---|---|---|
-| `src` | 源端原生镜像，零加工 | 外部源 | PG `src_*` schema |
+| `src` | 源端原生镜像，零加工 | 外部源 | PG `src_*` schema；唯一例外是 1 分钟行情，见下文 |
 | `std` | 标准化：统一资产标识、单位、字段命名与类型；不做业务口径加工 | `src` | `var/lake/std/` |
 | `mart` | 口径已对齐的可分析事实：行情、财务、成分、持仓、宏观序列、基础信息，以及股票池成员与前瞻收益 | `std` | `var/lake/mart/` |
 | `feature` | 因子值长表与因子评价指标 | `mart` | `var/lake/feature/` |
@@ -119,12 +119,22 @@ PG 后丢弃。补偿只剩契约上的诚实标记：`pit_recoverable: false` �
 未来若某个数据集确需版本语义，走「新增旁表 + 契约声明」的扩展路径，**不改
 原生表**。
 
+### 例外：1 分钟行情放 Parquet（已定，未实施）
+
+A 股 1 分钟行情约 8.7 亿行，按交易日追加，读取以全截面聚合为主。它作为源镜像
+落 `var/lake/src/minprice/ashare_minute_bar/`，按 `trade_date` 一天一个文件；
+分区清单 `src_minprice.lake_partition` 在 PG 研究数据面，读取只认清单登记的文件。
+只有这一个数据集例外。理由见
+[../adr/2026-11-21-minute-bars-in-parquet.md](../adr/2026-11-21-minute-bars-in-parquet.md)，
+做法见 [../migration/minute-bar-ingest-plan.md](../migration/minute-bar-ingest-plan.md)。
+
 ## Parquet Lakehouse
 
 `var/lake/` 下按层分目录，是所有派生事实的唯一事实源。
 
 ```
 var/lake/
+├── src/         源镜像例外，仅 minprice/ashare_minute_bar（已定，未实施）
 ├── std/         标准化
 ├── mart/        分析事实表
 │   ├── universe_member/  股票池成员区间表

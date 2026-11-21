@@ -2,7 +2,7 @@
 title: 决策记录索引
 status: active
 created: 2026-09-16
-updated: 2026-09-19
+updated: 2026-11-21
 applies_to:
   - docs/adr/
 ---
@@ -56,6 +56,7 @@ applies_to:
 | 2026-11-18 | [Tushare 源镜像同样全自动跟随源端](2026-11-18-tushare-mirror-follows-source.md) |
 | 2026-11-18 | [源端发布的版本可以落表，与采集批次 vintage 不同](2026-11-18-source-published-versions.md) |
 | 2026-11-18 | [GPR 日频采集的版本比较与数值口径](2026-11-18-gpr-daily-ingest.md) |
+| 2026-11-21 | [A 股 1 分钟行情以 Parquet 作源镜像，不进 PostgreSQL](2026-11-21-minute-bars-in-parquet.md)（已定，未实施） |
 
 ## 研究口径决策
 

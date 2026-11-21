@@ -2,7 +2,7 @@
 title: 迁移路线 P0–P6
 status: active
 created: 2026-09-16
-updated: 2026-11-19
+updated: 2026-11-21
 applies_to:
   - src/quantagent/
   - orchestration/
@@ -93,6 +93,8 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 | GPR 日频 | ✅ 91,770 行，08:00 日更，只存变化版本（C 级） |
 | FRED/ALFRED | ✅ 15,824 个版本行，08:00 日更，分片取数（A 级） |
 | 金十 ISM、WGC | ⏸ 暂缓到 P4，交给 Codex 调研取数方式 |
+
+**A 股 1 分钟行情**：⏳ 方案已定、未实施（11-21）。MySQL `minprice` 按日分表，约 8.7 亿行，落 Parquet 源镜像，PG 只放分区清单。见 [ADR](../adr/2026-11-21-minute-bars-in-parquet.md) 与 [接入方案](minute-bar-ingest-plan.md)；第一步只读探查，需要先在 `.env` 配好 `QUANTAGENT_MINPRICE_MYSQL_*`。
 
 **其他**：JYDB 12 张、朝阳永续 7 张、Tushare 其余接口 ⏳ 未接（JYDB、朝阳在公司电脑上）；第四类运维表 ⏳ 未动。
 
