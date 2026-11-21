@@ -885,17 +885,20 @@ def test_write_gate_blocks_real_write_before_any_commit(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
-def test_office_profile_is_rejected_even_for_dry_run(tmp_path: Path) -> None:
+def test_office_profile_may_run_fred(tmp_path: Path) -> None:
+    # 负责人 2026-11-21 取消按机器划分写入职责，office 也可采集 FRED。
     settings = Settings(
         _env_file=None,
         var_root=tmp_path / "var",
         profile="office",
         fred_api_key=SecretStr(_KEY),
     )
-    with pytest.raises(IngestError, match="profile=office"):
-        ingest_macro_fred(
-            settings=settings,
-            paths=resolve_var_paths(settings, repo_root=tmp_path),
-            series_ids=["CPIAUCSL"],
-            http=FakeFred([seg("2024-01-01", "2024-01-02", "9999-12-31", "1")]),
-        )
+    result = ingest_macro_fred(
+        settings=settings,
+        paths=resolve_var_paths(settings, repo_root=tmp_path),
+        series_ids=["CPIAUCSL"],
+        http=FakeFred([seg("2024-01-01", "2024-01-02", "9999-12-31", "1")]),
+        now=lambda: _INGESTED,
+    )
+    assert result.written is False
+    assert result.row_count == 1

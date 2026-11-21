@@ -15,7 +15,6 @@ from quantagent.ingest.errors import (
     DuplicateKeyError,
     IngestError,
     ReadbackError,
-    TargetNotAllowedError,
 )
 from quantagent.ingest.writers.src_follow import (
     business_columns,
@@ -327,12 +326,13 @@ def test_unknown_commit_is_not_retried_or_rolled_back() -> None:
 
 
 @pytest.mark.unit
-def test_office_profile_is_rejected_before_touching_store() -> None:
-    store = FakeShiborStore()
-    with pytest.raises(TargetNotAllowedError, match="profile=office"):
-        _write(store, [_row()], settings=_settings(profile="office"))
-    assert store.commit_calls == 0
-    assert store.batches == []
+def test_both_profiles_may_write_whitelisted_target() -> None:
+    # 负责人 2026-11-21 取消按机器划分写入职责。
+    for profile in ("local", "office"):
+        store = FakeShiborStore()
+        result = _write(store, [_row()], settings=_settings(profile=profile))
+        assert result.written is True
+        assert store.commit_calls == 1
 
 
 @pytest.mark.unit
