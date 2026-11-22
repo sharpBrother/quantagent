@@ -67,7 +67,7 @@ def test_lineage_uses_latest_input_and_worst_grade() -> None:
 
 
 @pytest.mark.unit
-def test_equal_adj_close_keeps_trade_date_order() -> None:
+def test_equal_adj_close_result_ignores_input_order() -> None:
     start = date(2024, 1, 1)
     rows = []
     for index in range(WINDOW):
@@ -83,6 +83,23 @@ def test_equal_adj_close_keeps_trade_date_order() -> None:
     backward = cutamp_value(tuple(reversed(rows)), contract=_contract())
     assert forward is not None and backward is not None
     assert forward.raw == backward.raw
+
+
+@pytest.mark.unit
+def test_tied_adj_close_follows_legacy_quicksort_order() -> None:
+    # 20 日窗口里复权收盘价大量并列。按交易日稳定排序时两端均值是 -30；
+    # 旧仓 quicksort 的并列顺序给出 -12。这里锁定 quicksort 的结果。
+    start = date(2024, 1, 2)
+    adj = [3, 2, 3, 2, 3, 3, 3, 3, 1, 2, 1, 3, 1, 1, 1, 2, 2, 1, 2, 3]
+    high = [12, 20, 14, 11, 14, 17, 15, 13, 17, 13, 12, 13, 20, 20, 18, 13, 13, 11, 11, 14]
+    rows = tuple(
+        _price(start + timedelta(days=i), high=str(h), low="10", adj=str(a))
+        for i, (a, h) in enumerate(zip(adj, high, strict=True))
+    )
+    result = cutamp_value(rows, contract=_contract())
+    assert result is not None
+    assert result.raw == Decimal("-12")
+    assert result.value == Decimal("12")
 
 
 @pytest.mark.unit
