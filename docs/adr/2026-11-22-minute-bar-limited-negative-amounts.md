@@ -7,7 +7,7 @@ applies_to:
   - src/quantagent/ingest/jobs/minprice_corrections.py
   - src/quantagent/ingest/jobs/minprice.py
 supersedes: null
-superseded_by: 2026-11-22-minute-bar-negative-amount-daily-check.md
+superseded_by: adr/2026-11-22-minute-bar-negative-amount-daily-check.md
 ---
 
 # 分钟行情少量负成交额处理

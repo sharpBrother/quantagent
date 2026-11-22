@@ -1,5 +1,7 @@
 from datetime import date
+from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 from unittest.mock import MagicMock
 
 import pyarrow as pa
@@ -14,7 +16,9 @@ from quantagent.platform.identity import digest_file
 from quantagent.platform.storage.paths import resolve_var_paths
 
 
-def test_daily_uses_previous_manifest_and_records_eastmoney(monkeypatch, tmp_path):
+def test_daily_uses_previous_manifest_and_records_eastmoney(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     day = date(2026, 11, 20)
     previous = date(2026, 11, 19)
     calendar = SimpleNamespace(list_days=lambda **kw: (CalendarDay(day, "SSE", True, previous),))
@@ -23,9 +27,9 @@ def test_daily_uses_previous_manifest_and_records_eastmoney(monkeypatch, tmp_pat
     monkeypatch.setattr(
         "quantagent.ingest.jobs.eastmoney_minute.list_stocks", lambda: ("000001.SZ",)
     )
-    seen = {}
+    seen: dict[str, Any] = {}
 
-    def ingest(*args, **kwargs):
+    def ingest(*args: Any, **kwargs: Any) -> str:
         seen.update(kwargs)
         return "inserted"
 
@@ -46,7 +50,7 @@ def test_daily_uses_previous_manifest_and_records_eastmoney(monkeypatch, tmp_pat
     assert seen["previous_code_count"] == 100
 
 
-def test_daily_rejects_missing_previous_day(tmp_path):
+def test_daily_rejects_missing_previous_day(tmp_path: Path) -> None:
     day = date(2026, 11, 20)
     calendar = SimpleNamespace(
         list_days=lambda **kw: (CalendarDay(day, "SSE", True, date(2026, 11, 19)),)
@@ -64,7 +68,9 @@ def test_daily_rejects_missing_previous_day(tmp_path):
         )
 
 
-def test_daily_skips_verified_existing_partition_without_network(monkeypatch, tmp_path):
+def test_daily_skips_verified_existing_partition_without_network(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     day = date(2026, 11, 20)
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     paths = resolve_var_paths(settings, repo_root=tmp_path)

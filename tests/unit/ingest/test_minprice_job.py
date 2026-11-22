@@ -1,19 +1,23 @@
 from datetime import date, datetime
 from decimal import Decimal
+from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 from unittest.mock import MagicMock
 
 import pyarrow as pa
 import pytest
 
 from quantagent.domain.minute_exclusions import JANUARY_21_EXCLUDED
-from quantagent.ingest.errors import SourceFetchError
-from quantagent.ingest.jobs.minprice import SourceNotReadyError, assert_daily_ready, ingest_day
+from quantagent.ingest.errors import SourceFetchError, SourceNotReadyError
+from quantagent.ingest.jobs.minprice import assert_daily_ready, ingest_day
 from quantagent.platform.config import Settings
 from quantagent.platform.storage.paths import resolve_var_paths
 
 
-def test_dry_run_reads_source_without_writes(monkeypatch, tmp_path):
+def test_dry_run_reads_source_without_writes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     row = (
         "000001.SZ",
         datetime(2026, 11, 20, 9, 30),
@@ -38,7 +42,7 @@ def test_dry_run_reads_source_without_writes(monkeypatch, tmp_path):
     assert not tmp_path.joinpath("lake").exists()
 
 
-def test_empty_source_stops(monkeypatch, tmp_path):
+def test_empty_source_stops(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([]))
     settings = Settings(var_root=tmp_path, allow_db_write=False)
     with pytest.raises(SourceFetchError):
@@ -52,7 +56,7 @@ def test_empty_source_stops(monkeypatch, tmp_path):
         )
 
 
-def test_daily_ready_requires_close_and_previous_day_coverage():
+def test_daily_ready_requires_close_and_previous_day_coverage() -> None:
     full = pa.table(
         {
             "ts_code": [f"{i:06d}.SZ" for i in range(95)],
@@ -67,7 +71,9 @@ def test_daily_ready_requires_close_and_previous_day_coverage():
         assert_daily_ready(partial, 100)
 
 
-def test_accepted_open_low_difference_is_recorded_in_run_log(monkeypatch, tmp_path):
+def test_accepted_open_low_difference_is_recorded_in_run_log(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     row = (
         "000001.SZ",
         datetime(2026, 11, 20, 9, 31),
@@ -113,7 +119,9 @@ def test_accepted_open_low_difference_is_recorded_in_run_log(monkeypatch, tmp_pa
     ]
 
 
-def test_january_21_excludes_affected_stocks_and_corrects_index(monkeypatch, tmp_path):
+def test_january_21_excludes_affected_stocks_and_corrects_index(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     day = date(2026, 1, 21)
     codes = sorted(JANUARY_21_EXCLUDED)
     rows = []
@@ -145,11 +153,13 @@ def test_january_21_excludes_affected_stocks_and_corrects_index(monkeypatch, tmp
         )
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
-    captured = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
-    )
+    captured: list[pa.Table] = []
+
+    def stage(table: pa.Table, **kwargs: Any) -> SimpleNamespace:
+        captured.append(table)
+        return SimpleNamespace(content_digest="a" * 64)
+
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.stage_partition", stage)
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
     logs = []
     monkeypatch.setattr(

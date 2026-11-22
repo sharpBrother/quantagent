@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -11,7 +12,7 @@ from quantagent.domain.calendar.types import CalendarDay
 from quantagent.domain.errors import EmptyDomainError
 
 
-def test_reader_checks_manifest_and_footer(tmp_path):
+def test_reader_checks_manifest_and_footer(tmp_path: Path) -> None:
     day = date(2026, 11, 20)
     file = tmp_path / "a.parquet"
     pq.write_table(
@@ -34,14 +35,14 @@ def test_reader_checks_manifest_and_footer(tmp_path):
         repo.scan_window(as_of=day, start=day, end=day)
 
 
-def test_reader_rejects_future_window(tmp_path):
+def test_reader_rejects_future_window(tmp_path: Path) -> None:
     day = date(2026, 11, 20)
     repo = LakeMinuteBarRepository(MagicMock(), tmp_path, MagicMock())
     with pytest.raises(EmptyDomainError):
         repo.scan_window(as_of=date(2026, 11, 19), start=day, end=day)
 
 
-def test_partial_day_rejects_full_market_and_excluded_code(tmp_path):
+def test_partial_day_rejects_full_market_and_excluded_code(tmp_path: Path) -> None:
     day = date(2026, 1, 21)
     conn = MagicMock()
     conn.cursor.return_value.__enter__.return_value.fetchall.return_value = [(day, "a.parquet", 1)]
@@ -53,7 +54,7 @@ def test_partial_day_rejects_full_market_and_excluded_code(tmp_path):
         repo.scan_window(as_of=day, start=day, end=day, codes=["002067.SZ"])
 
 
-def test_reader_respects_embedded_exclusion_list(tmp_path):
+def test_reader_respects_embedded_exclusion_list(tmp_path: Path) -> None:
     day = date(2026, 1, 19)
     table = pa.table({"ts_code": ["000001.SZ"], "trade_time": [datetime(2026, 1, 19, 15)]})
     table = table.replace_schema_metadata({b"quantagent.excluded_codes": b'["000002.SZ"]'})

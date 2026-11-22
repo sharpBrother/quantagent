@@ -1,6 +1,8 @@
 from datetime import date, datetime
 from decimal import Decimal
+from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 from unittest.mock import MagicMock
 
 import pyarrow as pa
@@ -18,7 +20,7 @@ from quantagent.platform.config import Settings
 from quantagent.platform.storage.paths import resolve_var_paths
 
 
-def table(rows):
+def table(rows: list[dict[str, Any]]) -> pa.Table:
     schema = pa.schema(
         [
             ("ts_code", pa.string()),
@@ -32,7 +34,7 @@ def table(rows):
     return pa.Table.from_pylist(rows, schema=schema)
 
 
-def row(**updates):
+def row(**updates: Any) -> dict[str, Any]:
     result = {
         "ts_code": "920014.BJ",
         "trade_time": datetime(2025, 10, 28, 15),
@@ -47,7 +49,7 @@ def row(**updates):
     return result
 
 
-def test_corrects_only_specified_values_without_mutating_source():
+def test_corrects_only_specified_values_without_mutating_source() -> None:
     original = table([row(), row(ts_code="000001.SZ", vol=Decimal("5"), amount=Decimal("100"))])
     result, details = correct_known_row(original, trade_date=date(2025, 10, 28), is_mysql=True)
     assert original["vol"].to_pylist() == [Decimal("-1"), Decimal("5")]
@@ -57,19 +59,19 @@ def test_corrects_only_specified_values_without_mutating_source():
 
 
 @pytest.mark.parametrize("rows", [[], [row(vol=Decimal("-2"))], [row(), row()]])
-def test_changed_missing_or_duplicate_target_stops(rows):
+def test_changed_missing_or_duplicate_target_stops(rows: list[dict[str, Any]]) -> None:
     with pytest.raises(SourceFetchError):
         correct_known_row(table(rows), trade_date=date(2025, 10, 28), is_mysql=True)
 
 
-def test_does_not_correct_other_source():
+def test_does_not_correct_other_source() -> None:
     original = table([row()])
     result, details = correct_known_row(original, trade_date=date(2025, 10, 28), is_mysql=False)
     assert result.equals(original)
     assert details == []
 
 
-def test_november_correction_changes_only_target_amount():
+def test_november_correction_changes_only_target_amount() -> None:
     target = row(
         ts_code="600289.SH",
         trade_time=datetime(2025, 11, 26, 15),
@@ -91,7 +93,7 @@ def test_november_correction_changes_only_target_amount():
 
 
 @pytest.mark.parametrize("changes", [{"amount": Decimal("-42")}, {"vol": Decimal("1")}])
-def test_november_changed_original_stops(changes):
+def test_november_changed_original_stops(changes: dict[str, Decimal]) -> None:
     target = row(
         ts_code="600289.SH",
         trade_time=datetime(2025, 11, 26, 15),
@@ -103,7 +105,7 @@ def test_november_changed_original_stops(changes):
         correct_known_row(table([target]), trade_date=date(2025, 11, 26), is_mysql=True)
 
 
-def test_december_correction_is_limited_to_specified_record():
+def test_december_correction_is_limited_to_specified_record() -> None:
     target = row(
         ts_code="920260.BJ",
         trade_time=datetime(2025, 12, 8, 15),
@@ -125,7 +127,7 @@ def test_december_correction_is_limited_to_specified_record():
 
 
 @pytest.mark.parametrize("changes", [{"amount": Decimal("-2")}, {"vol": Decimal("1")}])
-def test_december_changed_original_stops(changes):
+def test_december_changed_original_stops(changes: dict[str, Decimal]) -> None:
     target = row(
         ts_code="920260.BJ",
         trade_time=datetime(2025, 12, 8, 15),
@@ -137,7 +139,7 @@ def test_december_changed_original_stops(changes):
         correct_known_row(table([target]), trade_date=date(2025, 12, 8), is_mysql=True)
 
 
-def test_december_11_correction_only_changes_target():
+def test_december_11_correction_only_changes_target() -> None:
     target = row(
         ts_code="600165.SH",
         trade_time=datetime(2025, 12, 11, 15),
@@ -159,7 +161,7 @@ def test_december_11_correction_only_changes_target():
 
 
 @pytest.mark.parametrize("changes", [{"amount": Decimal("-55")}, {"vol": Decimal("1")}])
-def test_december_11_changed_original_stops(changes):
+def test_december_11_changed_original_stops(changes: dict[str, Decimal]) -> None:
     target = row(
         ts_code="600165.SH",
         trade_time=datetime(2025, 12, 11, 15),
@@ -171,7 +173,7 @@ def test_december_11_changed_original_stops(changes):
         correct_known_row(table([target]), trade_date=date(2025, 12, 11), is_mysql=True)
 
 
-def test_december_29_correction_only_changes_target():
+def test_december_29_correction_only_changes_target() -> None:
     target = row(
         ts_code="002898.SZ",
         trade_time=datetime(2025, 12, 29, 15),
@@ -193,7 +195,7 @@ def test_december_29_correction_only_changes_target():
 
 
 @pytest.mark.parametrize("changes", [{"amount": Decimal("-93")}, {"vol": Decimal("1")}])
-def test_december_29_changed_original_stops(changes):
+def test_december_29_changed_original_stops(changes: dict[str, Decimal]) -> None:
     target = row(
         ts_code="002898.SZ",
         trade_time=datetime(2025, 12, 29, 15),
@@ -206,7 +208,7 @@ def test_december_29_changed_original_stops(changes):
 
 
 @pytest.mark.parametrize("count", [1, 10])
-def test_general_mysql_negative_amount_correction(count):
+def test_general_mysql_negative_amount_correction(count: int) -> None:
     day = date(2026, 1, 5)
     records = [
         row(
@@ -225,7 +227,7 @@ def test_general_mysql_negative_amount_correction(count):
     assert all(item["amount_before"] == "-2.0000" for item in details)
 
 
-def test_general_correction_rejects_more_than_ten():
+def test_general_correction_rejects_more_than_ten() -> None:
     day = date(2026, 1, 5)
     records = [
         row(
@@ -240,7 +242,7 @@ def test_general_correction_rejects_more_than_ten():
         correct_known_row(table(records), trade_date=day, is_mysql=True)
 
 
-def test_october_17_approved_records_only(monkeypatch):
+def test_october_17_approved_records_only(monkeypatch: pytest.MonkeyPatch) -> None:
     day = date(2025, 10, 17)
     records = [
         row(
@@ -266,7 +268,7 @@ def test_october_17_approved_records_only(monkeypatch):
         correct_known_row(table(records[:-1]), trade_date=day, is_mysql=True)
 
 
-def test_january_13_approved_records_only(monkeypatch):
+def test_january_13_approved_records_only(monkeypatch: pytest.MonkeyPatch) -> None:
     day = date(2026, 1, 13)
     records = [
         row(
@@ -292,7 +294,7 @@ def test_january_13_approved_records_only(monkeypatch):
         correct_known_row(table(records[:-1]), trade_date=day, is_mysql=True)
 
 
-def test_general_correction_does_not_fix_negative_volume():
+def test_general_correction_does_not_fix_negative_volume() -> None:
     day = date(2026, 1, 5)
     original = table(
         [
@@ -311,7 +313,9 @@ def test_general_correction_does_not_fix_negative_volume():
         validate_day(corrected, trade_date=day)
 
 
-def test_ingest_records_raw_and_corrected_digests(monkeypatch, tmp_path):
+def test_ingest_records_raw_and_corrected_digests(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     day = date(2025, 10, 28)
     source = row()
     rows = [
@@ -353,10 +357,10 @@ def test_ingest_records_raw_and_corrected_digests(monkeypatch, tmp_path):
     assert logs[0].source_corrections[0]["vol_before"] == "-1.0000"
 
 
-def test_reconcile_negative_amounts_applies_strict_half_percent_and_missing():
+def test_reconcile_negative_amounts_applies_strict_half_percent_and_missing() -> None:
     day = date(2026, 1, 19)
 
-    def record(code, minute, amount):
+    def record(code: str, minute: int, amount: str) -> tuple[Any, ...]:
         return (
             code,
             datetime(2026, 1, 19, 9, minute),

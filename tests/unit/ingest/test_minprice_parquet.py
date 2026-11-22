@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from pathlib import Path
 from types import SimpleNamespace
 
 import pyarrow as pa
@@ -13,7 +14,7 @@ from quantagent.platform.errors import WriteGateError
 from quantagent.platform.storage.paths import resolve_var_paths
 
 
-def sample():
+def sample() -> pa.Table:
     schema = pa.schema(
         [
             ("ts_code", pa.string()),
@@ -41,7 +42,7 @@ def sample():
     )
 
 
-def test_staging_needs_both_gates_and_refuses_overwrite(tmp_path):
+def test_staging_needs_both_gates_and_refuses_overwrite(tmp_path: Path) -> None:
     day = date(2026, 11, 20)
     calendar = SimpleNamespace(list_days=lambda **kw: (CalendarDay(day, "SSE", True, None),))
     settings = Settings(var_root=tmp_path, allow_db_write=True)
@@ -64,7 +65,7 @@ def test_staging_needs_both_gates_and_refuses_overwrite(tmp_path):
         )
 
 
-def test_staging_persists_excluded_codes(tmp_path):
+def test_staging_persists_excluded_codes(tmp_path: Path) -> None:
     day = date(2026, 11, 20)
     calendar = SimpleNamespace(list_days=lambda **kw: (CalendarDay(day, "SSE", True, None),))
     settings = Settings(var_root=tmp_path, allow_db_write=True)

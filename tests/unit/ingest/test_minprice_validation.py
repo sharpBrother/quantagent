@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
 import pyarrow as pa
 import pytest
@@ -10,7 +11,7 @@ from quantagent.ingest.jobs.minprice_validation import content_digest, validate_
 DAY = date(2026, 11, 20)
 
 
-def table(rows):
+def table(rows: list[dict[str, Any]]) -> pa.Table:
     schema = pa.schema(
         [
             ("ts_code", pa.string()),
@@ -24,7 +25,7 @@ def table(rows):
     return pa.Table.from_pylist(rows, schema=schema)
 
 
-def row(**updates):
+def row(**updates: Any) -> dict[str, Any]:
     values = {
         "ts_code": "000001.SZ",
         "trade_time": datetime(2026, 11, 20, 9, 30),
@@ -39,7 +40,7 @@ def row(**updates):
     return values
 
 
-def test_valid_and_digest_independent_of_row_order_and_chunks():
+def test_valid_and_digest_independent_of_row_order_and_chunks() -> None:
     a = row()
     b = row(trade_time=datetime(2026, 11, 20, 9, 31))
     first = validate_day(table([a, b]), trade_date=DAY)
@@ -60,13 +61,13 @@ def test_valid_and_digest_independent_of_row_order_and_chunks():
         [row(open=None)],
     ],
 )
-def test_rejects_invalid_rows(rows):
+def test_rejects_invalid_rows(rows: list[dict[str, Any]]) -> None:
     with pytest.raises(SourceFetchError):
         validate_day(table(rows), trade_date=DAY)
 
 
 @pytest.mark.parametrize("open_price", ["10.0000", "9.9900", "9.9500"])
-def test_open_low_tolerance_is_inclusive_and_preserves_source(open_price):
+def test_open_low_tolerance_is_inclusive_and_preserves_source(open_price: str) -> None:
     source = row(
         open=Decimal(open_price),
         low=Decimal("10.0000"),
@@ -78,7 +79,7 @@ def test_open_low_tolerance_is_inclusive_and_preserves_source(open_price):
     assert result["low"].to_pylist() == [Decimal("10.0000")]
 
 
-def test_open_low_gap_over_threshold_is_rejected():
+def test_open_low_gap_over_threshold_is_rejected() -> None:
     source = row(
         open=Decimal("9.9499"),
         low=Decimal("10.0000"),
@@ -89,7 +90,7 @@ def test_open_low_gap_over_threshold_is_rejected():
         validate_day(table([source]), trade_date=DAY)
 
 
-def test_tolerance_does_not_apply_to_close_or_high():
+def test_tolerance_does_not_apply_to_close_or_high() -> None:
     for overrides in ({"close": Decimal("9.9900")}, {"high": Decimal("9.9900")}):
         source = row(open=Decimal("9.9900"), low=Decimal("10.0000"), **overrides)
         with pytest.raises(SourceFetchError):

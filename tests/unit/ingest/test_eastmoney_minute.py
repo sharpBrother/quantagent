@@ -8,12 +8,12 @@ from quantagent.ingest.errors import SourceFetchError
 from quantagent.ingest.sources.eastmoney_minute import fetch_day, list_stocks
 
 
-def response(row, market=0):
+def response(row: str, market: int = 0) -> SimpleNamespace:
     payload = {"data": {"code": "000001", "market": market, "trends": [row]}}
     return SimpleNamespace(raise_for_status=lambda: None, json=lambda: payload)
 
 
-def test_maps_open_high_low_close_without_float_rounding(monkeypatch):
+def test_maps_open_high_low_close_without_float_rounding(monkeypatch: pytest.MonkeyPatch) -> None:
     row = "2026-11-20 09:31,11.97,11.97,12.02,11.96,31212,37402763.00,11.985"
     monkeypatch.setattr(
         "quantagent.ingest.sources.eastmoney_minute.get_with_retry", lambda *a, **kw: response(row)
@@ -41,7 +41,9 @@ def test_maps_open_high_low_close_without_float_rounding(monkeypatch):
         ("2026-11-20 09:31,11,-,11,11,1,100,11", 0),
     ],
 )
-def test_rejects_wrong_date_market_or_invalid_number(monkeypatch, row, market):
+def test_rejects_wrong_date_market_or_invalid_number(
+    monkeypatch: pytest.MonkeyPatch, row: str, market: int
+) -> None:
     monkeypatch.setattr(
         "quantagent.ingest.sources.eastmoney_minute.get_with_retry",
         lambda *a, **kw: response(row, market=market),
@@ -50,7 +52,7 @@ def test_rejects_wrong_date_market_or_invalid_number(monkeypatch, row, market):
         fetch_day("000001.SZ", trade_date=date(2026, 11, 20))
 
 
-def test_stock_list_includes_all_markets_and_checks_paging(monkeypatch):
+def test_stock_list_includes_all_markets_and_checks_paging(monkeypatch: pytest.MonkeyPatch) -> None:
     payload = {
         "data": {
             "total": 3,
@@ -68,7 +70,7 @@ def test_stock_list_includes_all_markets_and_checks_paging(monkeypatch):
     assert list_stocks() == ("000001.SZ", "600000.SH", "920001.BJ")
 
 
-def test_stock_list_rejects_duplicate_codes(monkeypatch):
+def test_stock_list_rejects_duplicate_codes(monkeypatch: pytest.MonkeyPatch) -> None:
     payload = {
         "data": {
             "total": 2,

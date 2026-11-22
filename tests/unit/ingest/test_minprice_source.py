@@ -6,7 +6,7 @@ from quantagent.ingest.errors import SourceFetchError
 from quantagent.ingest.sources.minprice import list_tables, read_day
 
 
-def test_lists_only_valid_tables():
+def test_lists_only_valid_tables() -> None:
     conn = MagicMock()
     cur = conn.cursor.return_value.__enter__.return_value
     cur.__iter__.return_value = iter([("m20261120",), ("bad",), ("m20261119",)])
@@ -14,7 +14,7 @@ def test_lists_only_valid_tables():
 
 
 @pytest.mark.parametrize("table", ["m20261120; DROP TABLE x", "m20261121", "other"])
-def test_rejects_unlisted_or_unsafe_tables(table):
+def test_rejects_unlisted_or_unsafe_tables(table: str) -> None:
     conn = MagicMock()
     cur = conn.cursor.return_value.__enter__.return_value
     cur.__iter__.return_value = iter([("m20261120",)])
@@ -22,7 +22,7 @@ def test_rejects_unlisted_or_unsafe_tables(table):
         list(read_day(conn, database="minprice", table=table))
 
 
-def test_reads_in_bounded_batches():
+def test_reads_in_bounded_batches() -> None:
     conn = MagicMock()
     cur = conn.cursor.return_value.__enter__.return_value
     cur.__iter__.return_value = iter([("m20261120",)])

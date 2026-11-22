@@ -8,7 +8,7 @@ applies_to:
   - src/quantagent/ingest/jobs/minprice.py
   - src/quantagent/ingest/writers/minprice_parquet.py
   - src/quantagent/adapters/lake/minute_bar.py
-supersedes: 2026-11-22-minute-bar-limited-negative-amounts.md
+supersedes: adr/2026-11-22-minute-bar-limited-negative-amounts.md
 superseded_by: null
 ---
 

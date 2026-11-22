@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Any
 
 import pandas as pd
 import pandera as pa
@@ -8,7 +9,7 @@ from quantagent.contracts.pandera_schema import to_pandera
 from quantagent.contracts.spec import ColumnSpec, DatasetSchemaSpec
 
 
-def schema():
+def schema() -> DatasetSchemaSpec:
     return DatasetSchemaSpec.model_validate(
         {
             "dataset": "src.example.prices",
@@ -25,7 +26,7 @@ def schema():
     )
 
 
-def test_decimal_preserves_precision():
+def test_decimal_preserves_precision() -> None:
     output = to_pandera(schema()).validate(
         pd.DataFrame({"day": [1], "value": [Decimal("1234.56")]})
     )
@@ -34,7 +35,7 @@ def test_decimal_preserves_precision():
 
 
 @pytest.mark.parametrize("value", [1.2, Decimal("12345.67"), Decimal("1.234"), Decimal("NaN")])
-def test_decimal_rejects_invalid_values(value):
+def test_decimal_rejects_invalid_values(value: object) -> None:
     with pytest.raises(pa.errors.SchemaError):
         to_pandera(schema()).validate(pd.DataFrame({"day": [1], "value": [value]}))
 
@@ -47,6 +48,6 @@ def test_decimal_rejects_invalid_values(value):
         {"dtype": "float64", "precision": 2, "scale": 1},
     ],
 )
-def test_invalid_decimal_specs(kwargs):
+def test_invalid_decimal_specs(kwargs: dict[str, Any]) -> None:
     with pytest.raises(ValueError):
         ColumnSpec(**kwargs)

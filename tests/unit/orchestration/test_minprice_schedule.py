@@ -1,10 +1,14 @@
 from datetime import UTC, datetime
+from pathlib import Path
 
+import pytest
 from dagster import DagsterInstance, DefaultScheduleStatus, build_schedule_context
 from orchestration.schedules.minprice import minprice_first, minprice_retry
 
 
-def test_daily_schedules_are_stopped_until_live_validation(monkeypatch, tmp_path):
+def test_daily_schedules_are_stopped_until_live_validation(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.setattr(
         "quantagent.domain.calendar.queries.CalendarQueries.is_open", lambda *a, **kw: True
     )
@@ -19,6 +23,8 @@ def test_daily_schedules_are_stopped_until_live_validation(monkeypatch, tmp_path
             instance=instance, scheduled_execution_time=datetime(2026, 11, 20, 9, tzinfo=UTC)
         )
     )
+    assert first.run_requests is not None
+    assert retry.run_requests is not None
     assert minprice_first.default_status == DefaultScheduleStatus.STOPPED
     assert minprice_retry.default_status == DefaultScheduleStatus.STOPPED
     assert (
