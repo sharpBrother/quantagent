@@ -109,8 +109,8 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 | cutamp、tr_umr | ✅ 2024-01-05 全截面 golden：cutamp 5,076 只全部一致（278 只旧表多出：北交所旧代码 234、已退市 44）；tr_umr 4,861 只中 4,858 一致，3 只已知差异。cutamp 按旧仓 quicksort 并列顺序升 `v2`（[ADR](../adr/2026-11-22-cutamp-legacy-quicksort-order.md)），lake 已补 34 行 v2 | — |
 | 旧网关 golden（已有新端口的方法） | ✅ 股票池、成分池、ST、日行情、交易日历（8,770 天）、指数涨跌幅（`000985.CSI`、`h30269.CSI`）均与 wx2 一致（11-22）。`core/` 三个网关共 51 个公开读取方法，12 个无现役调用；其余多为择时/宏观研究线读取，随 P4 各线迁移、建端口时先做 golden | — |
 | `pit_grade` 木桶、长表写入校验 | ✅ 两层依赖图含 D 输出 D；写入拒绝 A–D 以外的等级与早于 `event_dt` 的 `knowledge_dt`（11-22）。写入时比对完整血缘需改接口，未做 | — |
-| `mart.forward_return` 股票 open-to-open | ✅ 代码与 wx2 对拍完成（11-22，29 个样本日 5D/10D，all_a 内差异全部登记核验；[ADR](../adr/2026-11-22-forward-return-open2open.md)）；尚未物化全历史 | 物化范围待定 |
-| `alpha_factory` 因子批量移植 | ⏳ | 量价等全截面 golden；基本面等四张财报表 |
+| `mart.forward_return` 股票 open-to-open | ✅ 代码与 wx2 对拍完成（29 个样本日 5D/10D，all_a 内差异全部登记核验；[ADR](../adr/2026-11-22-forward-return-open2open.md)）。已物化 2018-01-02 起、as_of 2026-11-20，按年取当年每日 all_a 并集，四个周期共 37,360,480 行，9 份 run log（11-22） | 日更未接 |
+| `alpha_factory` 因子批量移植 | ⏳ 清点完成（11-22）：Current-20 共 20 个，已迁 cutamp、tr_umr。第一批 4 个分钟因子（corr_vrlag、real_kurt、ratio_realupvar、ratio_realdownvar）；第二批资金流（abso_umr、moneyflowh、actlargemedcut）与分钟余项（corr_vrlaglarge、core_up/down，需中性化）、mif；第三批基本面、事件、研报、Barra | 分钟线覆盖 golden 日期（源端 2024-07-29 起）；资金流端口 |
 
 ### 下一步（按顺序）
 
@@ -123,7 +123,8 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 
 | 事项 | 等谁 |
 |---|---|
-| ISM、美债等跨时区数据的可见性：按消费市场收盘时刻判断，需扩展规则引擎 | 已裁定，待实现 |
+| ISM、美债等跨时区数据的可见性：按消费市场收盘时刻判断，需扩展规则引擎 | 已裁定；随 P4 金十或第一个美债读取方实现（11-22 负责人同意推迟）。消费市场由调用方传入还是写在契约里，届时再定 |
+| 朝阳超预期 `der_prob_excess_stock` 的「任一字段早于调仓日」规则 | 随 E 线朝阳永续接入实现（11-22 同意推迟） |
 | ToDesk 链路会吞连接：回填靠看门狗与逐列回读兜底，未根治 | 观察 |
 | daemon 连 PG 用超级用户 `leo`，应改 `quantagent_ingest` | 负责人放密码 |
 
