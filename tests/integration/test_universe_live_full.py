@@ -4,11 +4,11 @@
 - ST：``ashare_st_wx2.json`` 的全部月末，``st_codes_at`` 逐日比对。
 - 成分池：``constituents_wx2.json`` 的全部 (指数, 月末)。同一天若因区间重叠报
   ``InvalidQueryError``，记为失败并列出日期与重叠代码，不吞掉。
-- all_a：只比对衍生指标已完整的日期。完整指本地与 wx2 的
-  ``ASHAREEODDERIVATIVEINDICATOR`` 在该 ``TRADE_DT`` 的行数相同且非零。衍生指标缺行时，
-  市值观测域不完整，与旧快照比对没有意义，所以这些日期不计入。
+- all_a：对 ``all_a_wx2.json`` 的全部金样本日期，经 ``members_at(as_of=dt)`` 逐日比对。
+  本地该日没有任何衍生指标行时，市值观测域缺失，与旧快照比对没有意义，记为缺数据并计入失败。
+  缺数据日期过多（回填未完成）时整个用例 skip。
 
-跳过（skip）不算通过，只说明本机还没有可对拍的数据。wx2 只用于读取衍生指标行数，且只发 SELECT。
+跳过（skip）不算通过，只说明本机还没有可对拍的数据。本文件不连接 wx2，金样本 sha256 来自 wx2 快照。
 """
 
 from __future__ import annotations
@@ -16,7 +16,6 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import date, datetime
-from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -86,45 +85,16 @@ def _table_has_rows(conn: psycopg.Connection[Any], table: str) -> bool:
     return bool(row[0])
 
 
-def _local_indicator_counts(conn: psycopg.Connection[Any], lo: str, hi: str) -> dict[str, int]:
+def _local_indicator_days(conn: psycopg.Connection[Any], lo: str, hi: str) -> frozenset[str]:
+    """[lo, hi] 内本地有衍生指标行的日期。走 0024 的 TRADE_DT 索引。"""
     with conn.cursor() as cur:
         cur.execute(
-            'SELECT "TRADE_DT", count(*) FROM "src_wind"."ASHAREEODDERIVATIVEINDICATOR" '
-            'WHERE "TRADE_DT" >= %s AND "TRADE_DT" <= %s GROUP BY 1',
+            'SELECT DISTINCT "TRADE_DT" FROM "src_wind"."ASHAREEODDERIVATIVEINDICATOR" '
+            'WHERE "TRADE_DT" BETWEEN %s AND %s',
             (lo, hi),
         )
         rows = cur.fetchall()
-    return {str(day).strip(): int(count) for day, count in rows}
-
-
-def _wx2_indicator_counts(settings: Settings, lo: str, hi: str) -> dict[str, int]:
-    """wx2 上 ``ASHAREEODDERIVATIVEINDICATOR`` 的日行数。只发一条 SELECT。
-
-    tds_version 与 login_timeout 与 ``wgc_legacy`` 的连接保持一致。
-    """
-    pymssql = import_module("pymssql")
-    conn = pymssql.connect(
-        server=settings.legacy_mssql_host,
-        port=str(settings.legacy_mssql_port),
-        user=settings.legacy_mssql_user,
-        password=settings.legacy_mssql_password.get_secret_value(),
-        database=settings.legacy_mssql_database,
-        tds_version="7.0",
-        login_timeout=15,
-        # 全表 GROUP BY 约 2,500 万行，超时放宽到 10 分钟。
-        timeout=600,
-    )
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT TRADE_DT, COUNT(*) FROM dbo.ASHAREEODDERIVATIVEINDICATOR "
-                "WHERE TRADE_DT >= %s AND TRADE_DT <= %s GROUP BY TRADE_DT",
-                (lo, hi),
-            )
-            rows = cur.fetchall()
-    finally:
-        conn.close()
-    return {str(day).strip(): int(count) for day, count in rows}
+    return frozenset(str(day).strip() for (day,) in rows)
 
 
 @pytest.mark.integration
@@ -193,58 +163,55 @@ def test_live_constituents_match_legacy_snapshot_on_every_month_end() -> None:
 
 
 @pytest.mark.integration
-def test_live_all_a_matches_legacy_snapshot_on_complete_indicator_days() -> None:
+def test_live_all_a_matches_legacy_snapshot_on_every_golden_day() -> None:
     settings = get_settings()
     if not plane_configured(settings, "src"):
         pytest.skip("src 平面未配置 PG 连接串")
-    if not settings.legacy_mssql_configured:
-        pytest.skip("wx2 未配置，无法比对衍生指标行数以判定完整日期")
     expected: dict[str, dict[str, Any]] = _load("all_a_wx2.json")["dates"]
     keys = sorted(expected)
     lo, hi = keys[0], keys[-1]
-    wx2_counts = _wx2_indicator_counts(settings, lo, hi)
     conn = _open_local_read_only(settings)
     try:
         if not _table_has_rows(conn, "ASHAREDESCRIPTION"):
             pytest.skip('src_wind."ASHAREDESCRIPTION" 为空，无法计算规则池')
         if not _table_has_rows(conn, "ASHAREEODDERIVATIVEINDICATOR"):
             pytest.skip('src_wind."ASHAREEODDERIVATIVEINDICATOR" 为空，无法判断市值观测')
-        local_counts = _local_indicator_counts(conn, lo, hi)
-        complete = [
-            key
-            for key in keys
-            if local_counts.get(key, 0) > 0 and local_counts.get(key, 0) == wx2_counts.get(key, 0)
-        ]
-        if len(complete) < _ALL_A_MIN_COMPLETE_DAYS:
+        present = _local_indicator_days(conn, lo, hi)
+        missing = [key for key in keys if key not in present]
+        if len(keys) - len(missing) < _ALL_A_MIN_COMPLETE_DAYS:
             pytest.skip(
-                f"衍生指标完整日期只有 {len(complete)} 个（需要 >= {_ALL_A_MIN_COMPLETE_DAYS}），"
-                f"回填未完成，不做全量对拍"
+                f"衍生指标缺数据 {len(missing)}/{len(keys)} 个日期，"
+                f"有数据的日期不足 {_ALL_A_MIN_COMPLETE_DAYS} 个，回填未完成，不做全量对拍"
             )
+        # 走正式读取路径 members_at(as_of=dt)，验收的是生产读法而不是测试里的另一套 SQL。
         repo = PostgresUniverseRepository(conn)
         passed = 0
-        known_in_complete = 0
-        failures: list[str] = []
-        for key in complete:
-            dt = _day(key)
-            members = repo.members_at(as_of=dt, dt=dt, universe_id="all_a")
-            codes = [member.asset_id for member in members]
-            want = expected[key]
-            matched = _digest(codes) == want["sha256"] and len(codes) == want["count"]
-            if key in _ALL_A_KNOWN_DIFF_DATES:
-                known_in_complete += 1
-                if matched:
-                    failures.append(f"{key}: 已知例外日竟与 wx2 一致 (count {len(codes)})")
-                else:
+        known = 0
+        failures: list[str] = [f"{key}: 本地无衍生指标行（缺数据）" for key in missing]
+        for key in keys:
+            if key in present:
+                dt = _day(key)
+                try:
+                    members = repo.members_at(as_of=dt, dt=dt, universe_id="all_a")
+                except EmptyDomainError as exc:
+                    failures.append(f"{key}: EmptyDomainError: {exc}")
+                    continue
+                codes = [member.asset_id for member in members]
+                want = expected[key]
+                matched = _digest(codes) == want["sha256"] and len(codes) == want["count"]
+                if key in _ALL_A_KNOWN_DIFF_DATES:
+                    known += 1
+                    if matched:
+                        failures.append(f"{key}: 已知例外日竟与 wx2 一致 (count {len(codes)})")
+                elif matched:
                     passed += 1
-            elif matched:
-                passed += 1
-            else:
-                failures.append(f"{key}: local {len(codes)} vs wx2 {want['count']}")
+                else:
+                    failures.append(f"{key}: local {len(codes)} vs wx2 {want['count']}")
     finally:
         conn.close()
     summary = (
-        f"all_a 完整日期 {len(complete)}/{len(keys)}（其中已知例外日 {known_in_complete}），"
-        f"通过 {passed}，失败 {len(failures)}"
+        f"all_a 金样本 {len(keys)} 个日期：缺数据 {len(missing)}，"
+        f"通过 {passed}，已知例外 {known}，失败 {len(failures)}"
     )
     print(summary)
     assert not failures, f"{summary}；失败日期（前 {_FAILURE_LIST_LIMIT} 个）: " + "; ".join(
