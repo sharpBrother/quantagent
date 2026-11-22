@@ -72,7 +72,7 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 | 2 | `ASHAREEODDERIVATIVEINDICATOR` | ✅ 28,449,317 行（11-22）；0024 补 `TRADE_DT` 索引，单日读取 20 秒降到 0.2 秒。源表含周末行（2018 年以来 1,086 个非交易日），按日计数须先按交易日历过滤 |
 | 3 | `ASHAREDESCRIPTION`、`ASHAREEODPRICES`、`ASHARECALENDAR`、`AINDEXEODPRICES` | ✅ 已追平。描述表 8,621 行对 wx2 8,635 行，差 14 行待核 |
 | 3 | `AINDEXMEMBERS`、中信一二三级成分、`SWINDEXMEMBERS` | ✅（申万负责人已核验，11-22） |
-| 3 | `AINDEXMEMBERSCITICSZL`（中信一级 canonical，约 8,600 行） | ⏳ 0025 已执行（11-22），已入日更与首次回填顺序，待同步出数；随后跑 `test_citics1_zl_live.py` 对 wx2 106 个月末 |
+| 3 | `AINDEXMEMBERSCITICSZL`（中信一级 canonical） | ✅ 8,633 行（11-22）；106 个月末与 wx2 一致。wx2 多 5 行是当前 Wind 源已不提供的旧行，测试中逐行登记核验 |
 | 4 | 利润表、资产负债表、现金流量表、财务指标、业绩预告 | ⏳ 未回填 |
 | 4 | `ASHAREDIVIDEND` | 🔄 约 15.7 万 / wx2 16 万 |
 | 5 | 指数估值、中信行业行情、两融明细、两融汇总、停牌 | 🔄 部分；两融明细仅 5 万行 |
@@ -104,7 +104,7 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 | 项 | 状态 | 前提 |
 |---|---|---|
 | `all_a` 股票池（读取时计算） | ✅ 真实库 2,145 个金样本日：2,138 天与 wx2 一致，7 个已知例外日按预期不同（11-22，测试只读 PG） | — |
-| 指数 / 行业成分池 | ✅ 真实库 4 宽基 × 85 月末与 wx2 一致（11-20）；申万表负责人已核验（11-22）。`citics1` 改读 `AINDEXMEMBERSCITICSZL`（[ADR](../adr/2026-11-22-citics-l1-members-zl.md)） | ZL 表回填后对拍 |
+| 指数 / 行业成分池 | ✅ 真实库 4 宽基 × 85 月末与 wx2 一致（11-20）；申万表负责人已核验（11-22）。`citics1` 改读 `AINDEXMEMBERSCITICSZL`（[ADR](../adr/2026-11-22-citics-l1-members-zl.md)），真实库 106 个月末与 wx2 一致 | — |
 | ST 状态 | ✅ 真实库 202 个月末与 wx2 一致（11-20） | — |
 | cutamp、tr_umr | ✅ 2024-01-05 全截面 golden：cutamp 5,076 只全部一致（278 只旧表多出：北交所旧代码 234、已退市 44）；tr_umr 4,861 只中 4,858 一致，3 只已知差异。cutamp 按旧仓 quicksort 并列顺序升 `v2`（[ADR](../adr/2026-11-22-cutamp-legacy-quicksort-order.md)），lake 已补 34 行 v2 | — |
 | 旧网关 golden（已有新端口的方法） | ✅ 股票池、成分池、ST、日行情、交易日历（8,770 天）、指数涨跌幅（`000985.CSI`、`h30269.CSI`）均与 wx2 一致（11-22）。`core/` 三个网关共 51 个公开读取方法，12 个无现役调用；其余多为择时/宏观研究线读取，随 P4 各线迁移、建端口时先做 golden | — |
@@ -116,7 +116,7 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 
 1. ~~真实库跑 `all_a`、成分池、ST 集成测试~~（11-22 完成）。
 2. ~~2024-01-05 全截面固化 cutamp、tr_umr 对 wx2 的 golden~~（11-22 完成）。
-3. ~~P3 已有端口的网关 golden 与 `pit_grade` 木桶测试~~（11-22 完成）；`AINDEXMEMBERSCITICSZL` 出数后跑对拍。
+3. ~~P3 已有端口的网关 golden 与 `pit_grade` 木桶测试~~（11-22 完成）；`AINDEXMEMBERSCITICSZL` 对拍完成。
 4. 量价因子批量移植；财报表回填后移植基本面因子。
 
 ### 阻塞与待裁定
