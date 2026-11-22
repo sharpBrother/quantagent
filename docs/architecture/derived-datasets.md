@@ -2,7 +2,7 @@
 title: 派生数据集清单与归属
 status: active
 created: 2026-09-17
-updated: 2026-11-17
+updated: 2026-11-22
 applies_to:
   - src/quantagent/lake/
   - src/quantagent/features/
@@ -96,28 +96,68 @@ superseded_by: null
 叠加 `knowledge_dt <= as_of`。调用方不手写区间条件。空池 fail-closed。
 
 ## forward_return：落 mart，但必须防泄漏
-
 前瞻收益是行情派生的口径事实，不是因子，所以归 `mart`。但它天然含未来
 信息，是本项目最直接的一条前视泄漏通道。
-
 多周期检验与研究、Website、组合三层准入遵循
 [因子多周期检验决策](../adr/2026-09-19-factor-horizons-and-admission.md)。
-该要求已裁定、待实现：当前长表与读取接口支持 horizon 维度，并不代表
-股票 1D/5D/10D/20D 的真实标签和检验已贯通。下列现有字段不单独表达
-open-to-open 收益腿；`total/excess` 不能代替收益腿身份，实施前须明确协议绑定。
-标签成熟日以具体协议的结束日及行情可见日确定，不能仅由 horizon 数字推断。
+当前已实现的收益腿是 `open2open`，周期为 1D / 5D / 10D / 20D。其他收益腿与
+`excess` 尚未物化，读取时若窗口内混有多个收益腿，接口直接报错，不做合并。
+
+### 口径（2026-11-22 负责人裁定）
+- `event_dt = T` 是信号日，因子在 T 收盘后形成。它不是可见日。
+- `start_dt` 是 T 之后的第一个 SSE 开市日；`end_dt` 是 T 之后第 h+1 个 SSE 开市日。
+  日历取交易日历，不取个股自己的交易日。T 本身不是开市日则报错。
+- `value = adj_open(end_dt) / adj_open(start_dt) - 1`。`adj_open` 来自
+  `S_DQ_ADJOPEN`，是后复权开盘价。除权日的跳空已被复权抹平，不会误计为收益。
+  计算用 Decimal，写入时转 float64。
+- 端点任一满足以下条件，该 `(T, h)` 不产行。缺失就是缺失，不补值：
+  - 缺行；
+  - `S_DQ_TRADESTATUSCODE == 0`（停牌）；
+  - 状态代码为空，因为无法证明端点未停牌；
+  - `adj_open` 缺失、非正或非有限。
+  状态代码 2（XD）与 4（DR）仍是交易日，照常产出。判停牌只看状态代码，不看价格：
+  停牌行的 `S_DQ_ADJOPEN` 取前收盘价，价格检查挡不住停牌。依据见
+  `domain/prices/types.py`。
+- 只产 `end_dt <= as_of` 的行。`as_of` 必传，未成熟的区间不产行。
 
 | 字段 | 类型 | 含义 |
 |---|---|---|
 | `asset_id` | string | 资产身份 |
-| `event_dt` | date | 区间起始日 |
-| `horizon` | string | 前瞻窗口，如 `1d` / `5d` / `20d` / `60d` |
-| `return_kind` | enum | `total` / `excess` |
-| `benchmark_id` | string | `excess` 时的基准，`total` 时为 `NULL` |
-| `value` | float64 | 区间收益 |
-| `end_dt` | date | 区间结束日，由交易日历推出 |
+| `event_dt` | date | 信号日 T，因子在 T 收盘后形成；不是可见日 |
+| `horizon` | string | 前瞻窗口：`1d` / `5d` / `10d` / `20d` |
+| `return_kind` | string | 本次只有 `total` |
+| `benchmark_id` | string | `total` 时为 `none`，不是把超额填成 0 |
+| `return_leg` | string | 收益腿，本次只有 `open2open`，属于主键 |
+| `start_dt` | date | 区间起点：T 之后的第一个 SSE 开市日 |
+| `end_dt` | date | 区间结束日：T 之后第 h+1 个 SSE 开市日 |
+| `value` | float64 | 区间收益，`adj_open` 比值减 1 |
 | `knowledge_dt` | date | **= `end_dt` 的行情可见日**，不是 `event_dt` |
-| `pit_grade` | enum(A/B/C/D) | 继承自行情 |
+| `pit_grade` | enum(A/B/C/D) | 两端行情 `(trade_dt, 价格契约等级)` 的最差值，由血缘推导 |
+
+身份键为 `(asset_id, event_dt, horizon, return_kind, benchmark_id, return_leg)`。
+物理布局：`var/lake/mart/forward_return/ym=YYYYMM/part-NNNNN.parquet`，按
+`event_dt` 年月分区，与 `feature.value` 一致，但布局独立，不共用 `FeatureValueLayout`。
+
+### 与旧仓的差异
+旧表 `alpha_factory_forward_return_d`（wx2，`return_type='oo'`）只用价格判断
+有效性，不看交易状态。停牌端点的 `ADJOPEN` 取前收盘价，所以旧表会对端点停牌的
+`(T, h)` 仍给出 `valid`，值是停牌前的价格比。新表对这些行不产出，这是已裁定的口径
+差异。
+
+对拍范围是信号日 T 的 `all_a` 成员（`PostgresUniverseRepository.members_at`，`dt=T`）。
+旧表中不在 `all_a(T)` 的代码不比，只计数。在 `all_a(T)` 内，除停牌差异外，新旧值的差异分三类：
+
+- **源价差**：两边 `ADJOPEN` 不同，但旧值等于 wx2 自己两端价按同一公式算出的值。
+  公式没变，输入价不同。一部分端点的复权因子相差超过 1e-4（相对值），价差由它解释。
+  其余端点的因子只差舍入，或完全相同，展示的字段解释不了这部分价差。
+- **旧表陈旧**：两边端点价相同，旧值却与按这些价算出的值不一致。旧值无法由 wx2 在起点前后
+  10 个日历日窗口内任意一对交易日的价格复现，因此归因为旧表行没有随价格重算。根因未能从现有数据确定。
+- **本地缺行**：`all_a(T)` 内旧表 valid，本地端点无行。新表不产出，不补值。
+
+对拍时新值先按旧表的 10 位小数存储精度取整，再做 1e-6 量化。逐类明细在
+`tests/golden/market_data/forward_return_wx2_explained.json`，各 `(T, h)` 的 all_a digest
+在 `tests/golden/market_data/forward_return_wx2.json`，测试见
+`tests/integration/test_forward_return_wx2_live.py`。
 
 ### 三道防线
 

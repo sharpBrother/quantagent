@@ -10,6 +10,7 @@ keys:
   - horizon
   - return_kind
   - benchmark_id
+  - return_leg
 reads:
   - std.trade_calendar
 columns:
@@ -20,11 +21,11 @@ columns:
   event_dt:
     dtype: date
     nullable: false
-    description: 前瞻区间起始日，不是可见日
+    description: 信号日 T，因子在 T 收盘后形成；不是可见日
   horizon:
     dtype: string
     nullable: false
-    description: 前瞻窗口，如 1d / 5d / 20d / 60d，是行维度不是列
+    description: 前瞻窗口，如 1d / 5d / 10d / 20d，是行维度不是列
   return_kind:
     dtype: string
     nullable: false
@@ -33,6 +34,14 @@ columns:
     dtype: string
     nullable: false
     description: excess 时的基准身份；total 时为 none，不是把超额填成 0
+  return_leg:
+    dtype: string
+    nullable: false
+    description: 收益腿身份，本次只有 open2open（端点为复权开盘价）
+  start_dt:
+    dtype: date
+    nullable: false
+    description: 区间起点，即信号日 T 之后的下一个开市日（SSE 日历）
   value:
     dtype: float64
     nullable: false
@@ -40,7 +49,7 @@ columns:
   end_dt:
     dtype: date
     nullable: false
-    description: 区间结束日，由交易日历从 event_dt 与 horizon 推出
+    description: 区间结束日 T+h+1（市场开市日）
   knowledge_dt:
     dtype: date
     nullable: false
@@ -48,4 +57,4 @@ columns:
   pit_grade:
     dtype: string
     nullable: false
-    description: 继承自行情，写入时自动填写
+    description: 继承自行情，写入时由血缘自动推导

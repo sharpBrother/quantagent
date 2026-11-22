@@ -47,6 +47,7 @@ quantagent ingest tushare trade-cal  交易日历采集
 quantagent ingest wind ASHAREEODPRICES  A股日行情（OPDATE+OBJECT_ID 分页，历史与日更共用）
 quantagent lake benchmark-layout  因子长表布局 benchmark
 quantagent lake materialize trade-calendar  交易日历标准化物化
+quantagent lake materialize forward-return  前瞻收益 open2open 物化（--codes 省略则取 all_a 池）
 quantagent calendar is-open / shift  交易日历研究读取（必须 --as-of）
 quantagent feature window / cross-section / matrix / metric  因子长表与评价指标（必须 --as-of）
 quantagent forward-return window  前瞻收益研究读取（必须 --as-of）

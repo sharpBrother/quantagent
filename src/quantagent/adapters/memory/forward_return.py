@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from quantagent.adapters.memory.pit_row import row_cutoff_date
-from quantagent.domain.errors import EmptyDomainError
+from quantagent.domain.errors import EmptyDomainError, InvalidQueryError
 from quantagent.domain.pit import is_cutoff_visible, pit_cutoff
 from quantagent.domain.query import require_text, require_window
 
@@ -49,4 +49,7 @@ class MemoryForwardReturnRepository:
                 f"前瞻收益为空: horizon={horizon} start={start.isoformat()} "
                 f"end={end.isoformat()} as_of={as_of.isoformat()}"
             )
+        legs = sorted({row.return_leg for row in matched})
+        if len(legs) > 1:
+            raise InvalidQueryError(f"前瞻收益窗口含多个收益腿，需显式指定: {legs}")
         return tuple(sorted(matched, key=lambda row: (row.asset_id, row.event_dt)))

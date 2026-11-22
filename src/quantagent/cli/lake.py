@@ -11,6 +11,7 @@ import typer
 
 from quantagent.adapters.postgres.errors import PostgresAdapterError
 from quantagent.cli.cutamp_materialize import materialize_cutamp
+from quantagent.cli.forward_return_materialize import materialize_forward_return_cli
 from quantagent.cli.tr_umr_materialize import materialize_tr_umr
 from quantagent.domain.errors import DomainError
 from quantagent.lake.layout_bench import SCALES, run_layout_benchmark
@@ -187,6 +188,48 @@ def lake_materialize_tr_umr(
         typer.secho(str(exc), fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1) from exc
     typer.echo(f"wrote dataset=feature.value rows={row_count} digest={digest}")
+
+
+@materialize_app.command("forward-return")
+def lake_materialize_forward_return(
+    start: Annotated[str, typer.Option("--start", help="信号日起点 YYYY-MM-DD")],
+    end: Annotated[str, typer.Option("--end", help="信号日终点 YYYY-MM-DD")],
+    as_of: Annotated[str, typer.Option("--as-of", help="行情可见日 YYYY-MM-DD，必填")],
+    codes: Annotated[
+        str | None,
+        typer.Option("--codes", help="逗号分隔的 Wind 代码；省略则取 all_a 池成员"),
+    ] = None,
+) -> None:
+    """把 open-to-open 前瞻收益写入 mart.forward_return。区间不成熟或端点停牌的行不落行。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    wind_codes: tuple[str, ...] | None = None
+    if codes is not None:
+        wind_codes = tuple(part.strip() for part in codes.split(",") if part.strip())
+    try:
+        result = materialize_forward_return_cli(
+            settings=settings,
+            paths=paths,
+            start=datetime.strptime(start.strip(), "%Y-%m-%d").date(),
+            end=datetime.strptime(end.strip(), "%Y-%m-%d").date(),
+            as_of=datetime.strptime(as_of.strip(), "%Y-%m-%d").date(),
+            wind_codes=wind_codes,
+        )
+    except (
+        LakeLayoutError,
+        DomainError,
+        PostgresAdapterError,
+        ConfigError,
+        DuckSessionError,
+        RunLogError,
+        ValueError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(
+        f"wrote dataset=mart.forward_return rows={result.row_count} "
+        f"files={result.n_files} digest={result.digest}"
+    )
 
 
 def _persist_failure(

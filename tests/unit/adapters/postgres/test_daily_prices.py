@@ -11,6 +11,7 @@ import pytest
 from quantagent.adapters.postgres.daily_prices import (
     PostgresDailyPriceRepository,
     _row_from_mapping,
+    _status_code,
 )
 from quantagent.contracts.spec import VisibilityContract
 from quantagent.domain.errors import PriceLookupError
@@ -64,6 +65,8 @@ def test_query_uses_visibility_cutoff_and_closed_bounds() -> None:
     assert '"S_DQ_ADJHIGH"' in statement
     assert '"S_DQ_ADJLOW"' in statement
     assert '"S_DQ_ADJPRECLOSE"' in statement
+    assert '"S_DQ_ADJOPEN"' in statement
+    assert '"S_DQ_TRADESTATUSCODE"' in statement
     assert params == ("20240102", "20240103", ["000001.SZ"])
     assert rows[0].close == Decimal("9.2100")
     assert rows[0].trade_dt == date(2024, 1, 2)
@@ -98,3 +101,30 @@ def test_adjusted_range_columns_enter_daily_price() -> None:
     assert row.adj_preclose == Decimal("9.8")
     assert row.wind_code == "000001.SZ"
     assert row.trade_dt == date(2024, 1, 2)
+
+
+@pytest.mark.unit
+def test_adj_open_and_trade_status_enter_daily_price() -> None:
+    mapping = _fetched("20240102", "000001.SZ", "9.2100")
+    mapping["S_DQ_ADJOPEN"] = Decimal("9.1000")
+    mapping["S_DQ_TRADESTATUSCODE"] = Decimal("0")
+    row = _row_from_mapping(mapping)
+    assert row.adj_open == Decimal("9.1000")
+    assert row.trade_status_code == 0
+
+
+@pytest.mark.unit
+def test_missing_new_columns_stay_none() -> None:
+    row = _row_from_mapping(_fetched("20240102", "000001.SZ", "9.2100"))
+    assert row.adj_open is None
+    assert row.trade_status_code is None
+
+
+@pytest.mark.unit
+def test_trade_status_code_must_be_integral() -> None:
+    assert _status_code(Decimal("4")) == 4
+    assert _status_code(None) is None
+    with pytest.raises(PriceLookupError, match="不是整数"):
+        _status_code(Decimal("0.5"))
+    with pytest.raises(PriceLookupError, match="不是整数"):
+        _status_code(3.0)

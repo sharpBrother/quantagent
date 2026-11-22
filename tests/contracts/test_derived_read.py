@@ -60,6 +60,8 @@ _FR_ROWS = (
         end_dt=date(2024, 1, 30),
         knowledge_dt=date(2024, 1, 30),
         pit_grade="A",
+        return_leg="open2open",
+        start_dt=date(2024, 1, 3),
     ),
     ForwardReturn(
         asset_id="A0000",
@@ -71,6 +73,8 @@ _FR_ROWS = (
         end_dt=date(2024, 1, 31),
         knowledge_dt=date(2024, 1, 31),
         pit_grade="A",
+        return_leg="open2open",
+        start_dt=date(2024, 1, 4),
     ),
     ForwardReturn(
         asset_id="A0001",
@@ -82,6 +86,8 @@ _FR_ROWS = (
         end_dt=date(2024, 1, 9),
         knowledge_dt=date(2024, 1, 9),
         pit_grade="A",
+        return_leg="open2open",
+        start_dt=date(2024, 1, 3),
     ),
 )
 
@@ -187,6 +193,8 @@ def _write_forward_return(path: Path) -> Path:
             "end_dt": pa.array([row.end_dt for row in _FR_ROWS], type=pa.date32()),
             "knowledge_dt": pa.array([row.knowledge_dt for row in _FR_ROWS], type=pa.date32()),
             "pit_grade": [row.pit_grade for row in _FR_ROWS],
+            "return_leg": [row.return_leg for row in _FR_ROWS],
+            "start_dt": pa.array([row.start_dt for row in _FR_ROWS], type=pa.date32()),
         }
     )
     dest = path / "part-00000.parquet"
@@ -311,6 +319,54 @@ def test_forward_return_memory_and_lake_match(tmp_path: Path) -> None:
             end=date(2024, 1, 1),
         )
     assert _scan_fr(lake, as_of=as_of) == visible
+
+
+@pytest.mark.contracts
+def test_forward_return_refuses_mixed_return_legs(tmp_path: Path) -> None:
+    contract = _source_field(
+        dataset="mart.forward_return",
+        doc_ref="docs/architecture/derived-datasets.md",
+        grade="A",
+    )
+    other_leg = ForwardReturn(
+        asset_id="A0002",
+        event_dt=date(2024, 1, 2),
+        horizon="20d",
+        return_kind="total",
+        benchmark_id=NO_BENCHMARK_ID,
+        value=0.04,
+        end_dt=date(2024, 1, 30),
+        knowledge_dt=date(2024, 1, 30),
+        pit_grade="A",
+        return_leg="close2close",
+        start_dt=date(2024, 1, 3),
+    )
+    rows = (*_FR_ROWS, other_leg)
+    memory = MemoryForwardReturnRepository(rows, contract=contract)
+    as_of = date(2024, 1, 30)
+    with pytest.raises(InvalidQueryError, match="多个收益腿"):
+        _scan_fr(memory, as_of=as_of)
+    table_path = tmp_path / "mixed"
+    table_path.mkdir()
+    rows_table = pa.table(
+        {
+            "asset_id": [row.asset_id for row in rows],
+            "event_dt": pa.array([row.event_dt for row in rows], type=pa.date32()),
+            "horizon": [row.horizon for row in rows],
+            "return_kind": [row.return_kind for row in rows],
+            "benchmark_id": [row.benchmark_id for row in rows],
+            "value": pa.array([row.value for row in rows], type=pa.float64()),
+            "end_dt": pa.array([row.end_dt for row in rows], type=pa.date32()),
+            "knowledge_dt": pa.array([row.knowledge_dt for row in rows], type=pa.date32()),
+            "pit_grade": [row.pit_grade for row in rows],
+            "return_leg": [row.return_leg for row in rows],
+            "start_dt": pa.array([row.start_dt for row in rows], type=pa.date32()),
+        }
+    )
+    pq.write_table(rows_table, table_path / "part-00000.parquet")
+    lake = LakeForwardReturnRepository(table_path, contract=contract)
+    with pytest.raises(InvalidQueryError, match="多个收益腿"):
+        _scan_fr(lake, as_of=as_of)
 
 
 @pytest.mark.contracts

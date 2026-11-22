@@ -46,6 +46,7 @@ Scheduler 的远端配置，实际触发链条跨了两处。
 quantagent ingest tushare trade-cal [--start --end --exchange --write-db]
 quantagent lake benchmark-layout [--scale tiny|paper --rebuild]
 quantagent lake materialize trade-calendar [--as-of --rebuild]
+quantagent lake materialize forward-return --start --end --as-of [--codes]
 quantagent calendar is-open --exchange --cal-dt --as-of
 quantagent calendar shift --exchange --origin --n --as-of
 quantagent feature window --feature-id --definition-version --param-hash --start --end --as-of

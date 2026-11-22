@@ -8,7 +8,7 @@ from quantagent.adapters.lake.convert import as_date, require_float
 from quantagent.adapters.lake.visibility import load_dataset_visibility
 from quantagent.contracts.loader import load_bundle
 from quantagent.contracts.pandera_schema import to_pandera
-from quantagent.domain.errors import EmptyDomainError
+from quantagent.domain.errors import EmptyDomainError, InvalidQueryError
 from quantagent.domain.forward_return import ForwardReturn
 from quantagent.domain.pit import pit_cutoff
 from quantagent.domain.query import require_text, require_window
@@ -26,7 +26,7 @@ _VIEW = "forward_return"
 
 _SQL = """
 SELECT asset_id, event_dt, horizon, return_kind, benchmark_id,
-       value, end_dt, knowledge_dt, pit_grade
+       value, end_dt, knowledge_dt, pit_grade, return_leg, start_dt
 FROM {view}
 WHERE horizon = $horizon
   AND return_kind = $return_kind
@@ -78,6 +78,10 @@ class LakeForwardReturnRepository:
                 f"end={end.isoformat()} as_of={as_of.isoformat()}"
             )
         to_pandera(load_bundle().schemas[DATASET]).validate(frame)
+        legs = sorted(set(frame["return_leg"].astype(str)))
+        if len(legs) > 1:
+            # 同一 horizon 在不同收益腿上是不同的标签。接口还没有收益腿参数，混读就是口径错误。
+            raise InvalidQueryError(f"前瞻收益窗口含多个收益腿，需显式指定: {legs}")
         return tuple(_row_from_raw(raw) for raw in frame.to_dict(orient="records"))
 
 
@@ -92,4 +96,6 @@ def _row_from_raw(raw: Mapping[object, object]) -> ForwardReturn:
         end_dt=as_date(raw["end_dt"]),
         knowledge_dt=as_date(raw["knowledge_dt"]),
         pit_grade=str(raw["pit_grade"]),
+        return_leg=str(raw["return_leg"]),
+        start_dt=as_date(raw["start_dt"]),
     )

@@ -42,6 +42,8 @@ _VALUE_COLUMNS = (
     "S_DQ_ADJHIGH",
     "S_DQ_ADJLOW",
     "S_DQ_ADJPRECLOSE",
+    "S_DQ_ADJOPEN",
+    "S_DQ_TRADESTATUSCODE",
 )
 
 
@@ -128,6 +130,8 @@ def _row_from_mapping(row: dict[str, object]) -> DailyPrice:
         adj_high=_decimal(row.get("S_DQ_ADJHIGH"), "S_DQ_ADJHIGH"),
         adj_low=_decimal(row.get("S_DQ_ADJLOW"), "S_DQ_ADJLOW"),
         adj_preclose=_decimal(row.get("S_DQ_ADJPRECLOSE"), "S_DQ_ADJPRECLOSE"),
+        adj_open=_decimal(row.get("S_DQ_ADJOPEN"), "S_DQ_ADJOPEN"),
+        trade_status_code=_status_code(row.get("S_DQ_TRADESTATUSCODE")),
     )
 
 
@@ -158,6 +162,15 @@ def _decimal(value: object, field: str) -> Decimal | None:
             raise PriceLookupError(f"{field} 不是有限值")
         return value
     raise PriceLookupError(f"{field} 不是数值: {type(value).__name__}")
+
+
+def _status_code(value: object) -> int | None:
+    """交易状态代码是 numeric(5,0)，只接受整数值；小数或非数值直接拒绝，不取整。"""
+    if value is None:
+        return None
+    if isinstance(value, Decimal) and value.is_finite() and value == value.to_integral_value():
+        return int(value)
+    raise PriceLookupError(f"S_DQ_TRADESTATUSCODE 不是整数: {value!r}")
 
 
 def _ymd(value: date) -> str:
