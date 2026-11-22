@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any
 
 import pyarrow.parquet as pq
 
 from quantagent.contracts.loader import load_bundle
 from quantagent.domain.errors import EmptyDomainError, MissingVisibilityError
+from quantagent.domain.minute_exclusions import JANUARY_21, JANUARY_21_EXCLUDED
 from quantagent.domain.pit import visible_event_on_or_before
 from quantagent.platform.duck import duck_session
 
@@ -30,7 +32,7 @@ class LakeMinuteBarRepository:
     def __init__(self, conn: Any, root: Path, calendar: CalendarRepository) -> None:
         self._conn, self._root, self._calendar = conn, root.resolve(), calendar
 
-    def scan_window(
+    def scan_window(  # noqa: PLR0912
         self,
         *,
         as_of: date,
@@ -65,12 +67,29 @@ class LakeMinuteBarRepository:
             records = cur.fetchall()
         if {record[0] for record in records} != expected:
             raise EmptyDomainError("分钟行情 manifest 缺失交易日或存在非交易日")
+        # 此日有明确排除的股票，不能把整日视为完整或静默返回空数据。
+        if JANUARY_21 in expected and (codes is None or JANUARY_21_EXCLUDED.intersection(codes)):
+            raise EmptyDomainError("2026-01-21 分钟分区不含已排除股票，请明确选择其他代码")
         files = []
         for day, name, count in records:
             target = (self._root / name).resolve()
             if not target.is_relative_to(self._root) or not target.is_file():
                 raise ValueError(f"分钟分区文件路径无效: {day}")
-            if pq.ParquetFile(target).metadata.num_rows != count:
+            parquet_file = pq.ParquetFile(target)
+            metadata = parquet_file.metadata.metadata or {}
+            raw_exclusions = metadata.get(b"quantagent.excluded_codes")
+            if raw_exclusions is not None:
+                try:
+                    excluded = json.loads(raw_exclusions)
+                    if not isinstance(excluded, list) or not all(
+                        isinstance(item, str) for item in excluded
+                    ):
+                        raise ValueError("invalid exclusion metadata")
+                except (ValueError, UnicodeDecodeError) as exc:
+                    raise ValueError(f"分钟分区排除清单无效: {day}") from exc
+                if excluded and (codes is None or set(excluded).intersection(codes)):
+                    raise EmptyDomainError(f"{day} 分钟分区不含已排除股票，请明确选择其他代码")
+            if parquet_file.metadata.num_rows != count:
                 raise ValueError(f"分钟分区 footer 行数不符: {day}")
             files.append(str(target))
         projection = ", ".join(f'"{col}"' for col in names)

@@ -12,8 +12,12 @@ import pyarrow.compute as pc
 import pyarrow.parquet as pq
 from pydantic import Field
 
+from quantagent.domain.minute_exclusions import JANUARY_21, JANUARY_21_EXCLUDED
 from quantagent.ingest.errors import ReplaceRequiredError, SourceNotReadyError
-from quantagent.ingest.jobs.minprice_corrections import correct_known_row
+from quantagent.ingest.jobs.minprice_corrections import (
+    correct_known_row,
+    reconcile_negative_amounts,
+)
 from quantagent.ingest.jobs.minprice_validation import content_digest, validate_day
 from quantagent.ingest.sources.minprice import read_day
 from quantagent.ingest.writers.minprice_manifest import register_partition
@@ -26,11 +30,24 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from quantagent.domain.ports.calendar import CalendarRepository
+    from quantagent.domain.ports.prices import DailyPriceRepository
     from quantagent.platform.config import Settings
     from quantagent.platform.storage.paths import VarPaths
 
 _NAMES = ("ts_code", "trade_time", "open", "high", "low", "close", "vol", "amount")
 _EXPECTED_BARS = 241
+_JANUARY_21_NEGATIVE_COUNT = 103
+_PREVIOUSLY_APPROVED_DATES = frozenset(
+    {
+        date(2025, 10, 17),
+        date(2025, 10, 28),
+        date(2025, 11, 26),
+        date(2025, 12, 8),
+        date(2025, 12, 11),
+        date(2025, 12, 29),
+        date(2026, 1, 13),
+    }
+)
 _SCHEMA = pa.schema(
     [
         ("ts_code", pa.string()),
@@ -45,6 +62,8 @@ class MinuteRunLog(RunLog):
     unusual_bar_counts: dict[str, int] = Field(default_factory=dict)
     tolerated_open_below_low: list[dict[str, str]] = Field(default_factory=list)
     source_corrections: list[dict[str, str]] = Field(default_factory=list)
+    excluded_codes: list[str] = Field(default_factory=list)
+    amount_comparisons: list[dict[str, str]] = Field(default_factory=list)
     outcome: str = "unknown"
 
 
@@ -67,6 +86,7 @@ def ingest_day(  # noqa: PLR0912, PLR0915
     paths: VarPaths,
     calendar: CalendarRepository,
     previous_code_count: int | None = None,
+    daily_prices: DailyPriceRepository | None = None,
     source_batches: Iterable[list[Any]] | None = None,
     source_table: str | None = None,
     write_db: bool = False,
@@ -90,6 +110,8 @@ def ingest_day(  # noqa: PLR0912, PLR0915
     unusual_bar_counts: dict[str, int] = {}
     tolerated_open_below_low: list[dict[str, str]] = []
     source_corrections: list[dict[str, str]] = []
+    excluded_codes: list[str] = []
+    amount_comparisons: list[dict[str, str]] = []
     try:
         table_name = "m" + trade_date.strftime("%Y%m%d")
         batches = []
@@ -105,10 +127,50 @@ def ingest_day(  # noqa: PLR0912, PLR0915
             ]
             batches.append(pa.RecordBatch.from_arrays(arrays, schema=_SCHEMA))
         table = pa.Table.from_batches(batches, schema=_SCHEMA)
-        corrected, source_corrections = correct_known_row(
-            table, trade_date=trade_date, is_mysql=source_batches is None
-        )
-        if source_corrections:
+        if source_batches is None and trade_date == JANUARY_21:
+            # 源异常集合变化时停止，不能套用过期裁定。
+            negative = table.filter(pc.less(table["amount"], 0))
+            affected = set(negative["ts_code"].to_pylist())
+            if (
+                negative.num_rows != _JANUARY_21_NEGATIVE_COUNT
+                or affected
+                != JANUARY_21_EXCLUDED
+                | {
+                    "899002.BJ",
+                    "899050.BJ",
+                }
+            ):
+                raise ValueError("2026-01-21 异常代码集合已变化")
+            original_input_digest = content_digest(
+                table.append_column(
+                    "trade_date", pa.array([trade_date] * table.num_rows, type=pa.date32())
+                )
+            )
+            excluded_codes = sorted(JANUARY_21_EXCLUDED)
+            table = table.filter(
+                pc.invert(pc.is_in(table["ts_code"], value_set=pa.array(excluded_codes)))
+            )
+        if (
+            source_batches is None
+            and trade_date != JANUARY_21
+            and trade_date not in _PREVIOUSLY_APPROVED_DATES
+            and pc.any(pc.less(table["amount"], 0)).as_py()
+        ):
+            if daily_prices is None:
+                raise ValueError("负成交额需要同日日行情才能判断")
+            original_input_digest = content_digest(
+                table.append_column(
+                    "trade_date", pa.array([trade_date] * table.num_rows, type=pa.date32())
+                )
+            )
+            corrected, source_corrections, excluded_codes, amount_comparisons = (
+                reconcile_negative_amounts(table, trade_date=trade_date, prices=daily_prices)
+            )
+        else:
+            corrected, source_corrections = correct_known_row(
+                table, trade_date=trade_date, is_mysql=source_batches is None
+            )
+        if source_corrections and original_input_digest is None:
             source_dates = pa.array([trade_date] * table.num_rows, type=pa.date32())
             original_input_digest = content_digest(table.append_column("trade_date", source_dates))
         table = corrected
@@ -159,6 +221,7 @@ def ingest_day(  # noqa: PLR0912, PLR0915
             settings=settings,
             paths=paths,
             write_db=True,
+            excluded_codes=excluded_codes,
         )
         register_partition(
             pg,
@@ -188,6 +251,8 @@ def ingest_day(  # noqa: PLR0912, PLR0915
                 unusual_bar_counts=unusual_bar_counts,
                 tolerated_open_below_low=tolerated_open_below_low,
                 source_corrections=source_corrections,
+                excluded_codes=excluded_codes,
+                amount_comparisons=amount_comparisons,
                 action="ingest.minprice.day",
                 status="failure" if failure else "success",
                 started_at=started,

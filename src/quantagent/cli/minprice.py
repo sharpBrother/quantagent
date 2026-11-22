@@ -9,6 +9,7 @@ import pyarrow.parquet as pq
 import typer
 
 from quantagent.adapters.lake.trade_calendar import LakeCalendarRepository
+from quantagent.adapters.postgres.daily_prices import PostgresDailyPriceRepository
 from quantagent.ingest.jobs.eastmoney_minute import ingest_eastmoney_day
 from quantagent.ingest.jobs.minprice import ingest_day
 from quantagent.ingest.sources.minprice import list_tables
@@ -57,6 +58,7 @@ def backfill(
                     settings=settings,
                     paths=paths,
                     calendar=calendar,
+                    daily_prices=PostgresDailyPriceRepository(pg),
                     write_db=write_db,
                 )
                 typer.echo(f"{day}: {status}")

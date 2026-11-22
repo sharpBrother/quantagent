@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 import pyarrow as pa
 import pytest
 
+from quantagent.domain.minute_exclusions import JANUARY_21_EXCLUDED
 from quantagent.ingest.errors import SourceFetchError
 from quantagent.ingest.jobs.minprice import SourceNotReadyError, assert_daily_ready, ingest_day
 from quantagent.platform.config import Settings
@@ -110,3 +111,66 @@ def test_accepted_open_low_difference_is_recorded_in_run_log(monkeypatch, tmp_pa
             "low": "10.0000",
         }
     ]
+
+
+def test_january_21_excludes_affected_stocks_and_corrects_index(monkeypatch, tmp_path):
+    day = date(2026, 1, 21)
+    codes = sorted(JANUARY_21_EXCLUDED)
+    rows = []
+    for code in codes:
+        rows.append(
+            (code, datetime(2026, 1, 21, 9, 30), *[Decimal("10")] * 4, Decimal("1"), Decimal("-1"))
+        )
+    for code in codes[:33]:
+        rows.append(
+            (code, datetime(2026, 1, 21, 9, 31), *[Decimal("10")] * 4, Decimal("1"), Decimal("-1"))
+        )
+    for code, minute in [("899002.BJ", 30), ("899002.BJ", 31), ("899050.BJ", 30)]:
+        rows.append(
+            (
+                code,
+                datetime(2026, 1, 21, 9, minute),
+                *[Decimal("10")] * 4,
+                Decimal("1"),
+                Decimal("-1"),
+            )
+        )
+    rows.append(
+        (
+            "000001.SZ",
+            datetime(2026, 1, 21, 9, 30),
+            *[Decimal("10")] * 4,
+            Decimal("1"),
+            Decimal("5"),
+        )
+    )
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
+    captured = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.stage_partition",
+        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+    )
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
+    logs = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
+    )
+    settings = Settings(var_root=tmp_path, allow_db_write=True)
+    pg = MagicMock()
+    pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
+    assert (
+        ingest_day(
+            MagicMock(),
+            pg,
+            trade_date=day,
+            settings=settings,
+            paths=resolve_var_paths(settings, repo_root=tmp_path),
+            calendar=MagicMock(),
+            write_db=True,
+        )
+        == "inserted"
+    )
+    assert set(captured[0]["ts_code"].to_pylist()) == {"000001.SZ", "899002.BJ", "899050.BJ"}
+    assert len(logs[0].excluded_codes) == 67
+    assert len(logs[0].source_corrections) == 3
+    assert all(row["amount_after"] == "0.0000" for row in logs[0].source_corrections)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -44,6 +45,7 @@ def stage_partition(
     settings: Settings,
     paths: VarPaths,
     write_db: bool = False,
+    excluded_codes: list[str] | None = None,
 ) -> StagedPartition:
     """只写唯一暂存文件并校验，提交清单必须由后续事务完成。"""
     assert_db_write_allowed(settings=settings, write_db=write_db)
@@ -56,8 +58,11 @@ def stage_partition(
     directory = root / f"trade_date={trade_date.isoformat()}"
     directory.mkdir(parents=True, exist_ok=True)
     stage = directory / f".staging-{uuid.uuid4().hex}.parquet"
+    metadata = dict(checked.schema.metadata or {})
+    metadata[b"quantagent.excluded_codes"] = json.dumps(sorted(excluded_codes or [])).encode()
+    parquet_table = checked.replace_schema_metadata(metadata)
     pq.write_table(
-        checked,
+        parquet_table,
         stage,
         compression="zstd",
         compression_level=3,
@@ -66,6 +71,10 @@ def stage_partition(
         write_statistics=True,
         write_page_index=True,
     )
+    # 排除清单决定读取是否允许返回；必须与数据一并回读，不能静默丢失。
+    stored_metadata = pq.ParquetFile(stage).metadata.metadata or {}
+    if stored_metadata.get(b"quantagent.excluded_codes") != metadata[b"quantagent.excluded_codes"]:
+        raise SourceFetchError(f"分钟行情排除清单回读不一致: {trade_date}")
     with duck_session() as conn:
         retrieved = conn.execute(
             "SELECT * FROM read_parquet(?, hive_partitioning=false) ORDER BY ts_code, trade_time",

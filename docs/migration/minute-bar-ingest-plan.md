@@ -31,6 +31,17 @@ applies_to:
 [修正裁定](../adr/2026-11-21-minute-bar-november-negative-correction.md)。
 2025-12-08 一条负成交额亦按负责人要求修正，见
 [修正裁定](../adr/2026-11-22-minute-bar-december-negative-correction.md)。
+2025-12-11 一条负成交额亦按负责人要求修正，见
+[修正裁定](../adr/2026-11-22-minute-bar-december-11-correction.md)。
+2025-12-29 一条负成交额亦按负责人要求修正，见
+[修正裁定](../adr/2026-11-22-minute-bar-december-29-correction.md)。
+后续 MySQL 历史数据中，股票负成交额置 0 后的当日分钟合计与日行情差异严格小于
+0.5% 才修正入库，否则排除该股票全天；缺日行情也排除，其他异常仍停止。
+详见 [处理裁定](../adr/2026-11-22-minute-bar-negative-amount-daily-check.md)。
+2025-10-17 的 45 条已由负责人单独裁定，核对记录摘要后置 0，见
+[当日裁定](../adr/2026-11-22-minute-bar-october-17-correction.md)。
+2026-01-13 的 75 条亦由负责人单独裁定，核对记录摘要后置 0，见
+[当日裁定](../adr/2026-11-22-minute-bar-january-13-correction.md)。
 
 ## 1. 源端
 

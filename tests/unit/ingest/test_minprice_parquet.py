@@ -3,6 +3,7 @@ from decimal import Decimal
 from types import SimpleNamespace
 
 import pyarrow as pa
+import pyarrow.parquet as pq
 import pytest
 
 from quantagent.domain.calendar.types import CalendarDay
@@ -61,3 +62,21 @@ def test_staging_needs_both_gates_and_refuses_overwrite(tmp_path):
             paths=paths,
             write_db=True,
         )
+
+
+def test_staging_persists_excluded_codes(tmp_path):
+    day = date(2026, 11, 20)
+    calendar = SimpleNamespace(list_days=lambda **kw: (CalendarDay(day, "SSE", True, None),))
+    settings = Settings(var_root=tmp_path, allow_db_write=True)
+    paths = resolve_var_paths(settings, repo_root=tmp_path)
+    result = stage_partition(
+        sample(),
+        trade_date=day,
+        calendar=calendar,
+        settings=settings,
+        paths=paths,
+        write_db=True,
+        excluded_codes=["000002.SZ"],
+    )
+    file = paths.lake / "src/minprice/ashare_minute_bar" / result.file_name
+    assert pq.ParquetFile(file).metadata.metadata[b"quantagent.excluded_codes"] == b'["000002.SZ"]'

@@ -39,3 +39,38 @@ def test_reader_rejects_future_window(tmp_path):
     repo = LakeMinuteBarRepository(MagicMock(), tmp_path, MagicMock())
     with pytest.raises(EmptyDomainError):
         repo.scan_window(as_of=date(2026, 11, 19), start=day, end=day)
+
+
+def test_partial_day_rejects_full_market_and_excluded_code(tmp_path):
+    day = date(2026, 1, 21)
+    conn = MagicMock()
+    conn.cursor.return_value.__enter__.return_value.fetchall.return_value = [(day, "a.parquet", 1)]
+    cal = SimpleNamespace(list_days=lambda **kw: (CalendarDay(day, "SSE", True, None),))
+    repo = LakeMinuteBarRepository(conn, tmp_path, cal)
+    with pytest.raises(EmptyDomainError, match="不含已排除股票"):
+        repo.scan_window(as_of=day, start=day, end=day)
+    with pytest.raises(EmptyDomainError, match="不含已排除股票"):
+        repo.scan_window(as_of=day, start=day, end=day, codes=["002067.SZ"])
+
+
+def test_reader_respects_embedded_exclusion_list(tmp_path):
+    day = date(2026, 1, 19)
+    table = pa.table({"ts_code": ["000001.SZ"], "trade_time": [datetime(2026, 1, 19, 15)]})
+    table = table.replace_schema_metadata({b"quantagent.excluded_codes": b'["000002.SZ"]'})
+    pq.write_table(table, tmp_path / "partial.parquet")
+    conn = MagicMock()
+    conn.cursor.return_value.__enter__.return_value.fetchall.return_value = [
+        (day, "partial.parquet", 1)
+    ]
+    cal = SimpleNamespace(list_days=lambda **kw: (CalendarDay(day, "SSE", True, None),))
+    repo = LakeMinuteBarRepository(conn, tmp_path, cal)
+    with pytest.raises(EmptyDomainError, match="不含已排除股票"):
+        repo.scan_window(as_of=day, start=day, end=day)
+    with pytest.raises(EmptyDomainError, match="不含已排除股票"):
+        repo.scan_window(as_of=day, start=day, end=day, codes=["000002.SZ"])
+    assert (
+        repo.scan_window(
+            as_of=day, start=day, end=day, codes=["000001.SZ"], columns=["ts_code"]
+        ).num_rows
+        == 1
+    )
