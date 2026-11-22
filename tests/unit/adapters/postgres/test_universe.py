@@ -236,7 +236,7 @@ def _crow(code: str, indate: str | None, outdate: str | None) -> dict[str, objec
     ("family", "table"),
     [
         ("index", "AINDEXMEMBERS"),
-        ("citics1", "AINDEXMEMBERSCITICS"),
+        ("citics1", "AINDEXMEMBERSCITICSZL"),
         ("citics2", "AINDEXMEMBERSCITICS2"),
         ("citics3", "AINDEXMEMBERSCITICS3"),
         ("sw", "SWINDEXMEMBERS"),

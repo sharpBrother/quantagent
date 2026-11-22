@@ -114,7 +114,7 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | 合计 | 372 |
 | 其中无需 PIT | 26 |
 
-第一批 `db/src_tables.yaml` 的 61 张仍全部落在类别 1。2026-11-19 新增 `AINDEXDESCRIPTION`、`AINDEXDESCRIPTIONZL` 两张，`AINDEXINDUSTRIESCITICS` 改为视图（0020）。Tushare 宏观三张与
+第一批 `db/src_tables.yaml` 的 62 张仍全部落在类别 1。2026-11-22 新增 `AINDEXMEMBERSCITICSZL`（0025，中信一级成员 canonical 表）。2026-11-19 新增 `AINDEXDESCRIPTION`、`AINDEXDESCRIPTIONZL` 两张，`AINDEXINDUSTRIESCITICS` 改为视图（0020）。Tushare 宏观三张与
 `FIN_APPO_RELE_DATE` 已按拟去向回写 DDL；其余拟去向（如 `fin_*`、`etf_min_price`）仍未改。
 类别 3 本轮为 0：历史策略结果表（`strategy_result_*` 等）现役无读取，已归入类别 5。
 
@@ -175,7 +175,7 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `AINDEXMEMBERSCITICS` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：alpha_factory/data_gateway.py, core/market_data_service.py, core/raw_loader.py 等9处 | src_wind.AINDEXMEMBERSCITICS（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。 |
 | `AINDEXMEMBERSCITICS2` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, core/market_data_service.py, data/宽基指数配置策略2.py 等5处 | src_wind.AINDEXMEMBERSCITICS2（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。 |
 | `AINDEXMEMBERSCITICS3` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, core/market_data_service.py, data/宽基指数配置策略2.py 等4处 | src_wind.AINDEXMEMBERSCITICS3（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。 |
-| `AINDEXMEMBERSCITICSZL` | 未查 | 1 源镜像 | 是 | 现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/timepoint_momentum/engine.py, core/market_data_service.py | src_wind.AINDEXMEMBERSCITICSZL（第一批未收录，有现役读取，现不迁） | 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。 |
+| `AINDEXMEMBERSCITICSZL` | 未查 | 1 源镜像 | 是 | 现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/timepoint_momentum/engine.py, core/market_data_service.py | src_wind.AINDEXMEMBERSCITICSZL（第一批已收录，本清单不启动迁入；2026-11-22 负责人裁定中信一级成员改用本表） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。 |
 | `AINDEXVALUATION` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/gateway.py, core/market_data_service.py 等15处 | src_wind.AINDEXVALUATION（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `ASHAREBALANCESHEET` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/consensus_fttm_wide_builder.py, agent_style_rotation/data_gateway.py, enhanced_optimizer/factors/exposure.py 等5处 | src_wind.ASHAREBALANCESHEET（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。ANN_DT<=as_of（调仓日当天可见）；raw_loader 的 <adj 因 adj_date 是调仓日，不是另一套规则。 |
 | `ASHARECASHFLOW` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, agent_style_rotation/lifecycle_engine.py, enhanced_optimizer/factors/exposure.py | src_wind.ASHARECASHFLOW（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。ANN_DT<=as_of（调仓日当天可见）；raw_loader 的 <adj 因 adj_date 是调仓日，不是另一套规则。 |

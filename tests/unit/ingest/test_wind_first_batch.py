@@ -33,7 +33,7 @@ def _ddl_columns(repo_root: Path) -> dict[str, list[str]]:
 
 @pytest.mark.unit
 def test_first_batch_tables_are_writable_and_paged() -> None:
-    assert len(FIRST_BATCH_WIND_SYNC) == 15
+    assert len(FIRST_BATCH_WIND_SYNC) == 16
     assert FIRST_BATCH_WIND_SYNC[0] == "ASHAREDESCRIPTION"
     for name in FIRST_BATCH_WIND_SYNC:
         spec = FIRST_BATCH_WIND_SPECS[name]

@@ -640,9 +640,9 @@ tables:
   category: 1
   reason: 现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/timepoint_momentum/engine.py,
     core/market_data_service.py
-  dest: src_wind.AINDEXMEMBERSCITICSZL（第一批未收录，有现役读取，现不迁）
-  extra: 补 DDL / src_tables.yaml 前须负责人确认。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。
-  src_batch1: false
+  dest: src_wind.AINDEXMEMBERSCITICSZL（第一批已收录，本清单不启动迁入；2026-11-22 负责人裁定中信一级成员改用本表，citics1 读取指向此表）
+  extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问。延续旧仓：S_CON_INDATE<=as_of 且 (OUTDATE 空或 >=as_of)。
+  src_batch1: true
   origin: code
   pit_required: true
 - name: AINDEXVALUATION

@@ -16,6 +16,7 @@ FIRST_BATCH_WIND_SYNC: tuple[str, ...] = (
     "AINDEXMEMBERSCITICS",
     "AINDEXMEMBERSCITICS2",
     "AINDEXMEMBERSCITICS3",
+    "AINDEXMEMBERSCITICSZL",
     "SWINDEXMEMBERS",
     "ASHAREFINANCIALINDICATOR",
     "ASHAREPROFITNOTICE",
@@ -98,6 +99,20 @@ AINDEXMEMBERSCITICS2_COLUMNS: tuple[str, ...] = (
     "mopdate",
 )
 
+# 中信一级行业成分的 canonical 表（AR-0038，2026-11-22 裁定）。列与 CITICS2 一致，顺序与 0025 的 CREATE 一致。
+AINDEXMEMBERSCITICSZL_COLUMNS: tuple[str, ...] = (
+    "OBJECT_ID",
+    "S_INFO_WINDCODE",
+    "S_CON_WINDCODE",
+    "S_CON_INDATE",
+    "S_CON_OUTDATE",
+    "CUR_SIGN",
+    "OPDATE",
+    "OPMODE",
+    "gsUTime",
+    "gsCTime",
+    "mopdate",
+)
 AINDEXMEMBERSCITICS3_COLUMNS: tuple[str, ...] = (
     "OBJECT_ID",
     "S_INFO_WINDCODE",

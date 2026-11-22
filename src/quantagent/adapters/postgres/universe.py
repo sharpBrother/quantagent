@@ -222,9 +222,11 @@ _OBSERVED_SQL = assert_src_dml_sql(
 )
 
 # 成分表只取 family 对应的一张表。表名来自这里的常量，不接受外部输入。
+# citics1 用 ZL 表：中信一级的 canonical 来源（旧仓 AR-0038，2026-11-22 负责人裁定）。
+# 旧表 AINDEXMEMBERSCITICS 只保留采集，用于对账，不再参与股票池读取。
 _CONSTITUENT_TABLES: dict[str, str] = {
     "index": "AINDEXMEMBERS",
-    "citics1": "AINDEXMEMBERSCITICS",
+    "citics1": "AINDEXMEMBERSCITICSZL",
     "citics2": "AINDEXMEMBERSCITICS2",
     "citics3": "AINDEXMEMBERSCITICS3",
     "sw": "SWINDEXMEMBERS",

@@ -27,6 +27,8 @@ tables:
   - source: wind
     name: AINDEXMEMBERSCITICS3
   - source: wind
+    name: AINDEXMEMBERSCITICSZL
+  - source: wind
     name: ASHAREFINANCIALINDICATOR
   - source: wind
     name: AINDEXMEMBERSCITICS
