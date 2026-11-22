@@ -109,6 +109,7 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 | cutamp、tr_umr | ✅ 2024-01-05 全截面 golden：cutamp 5,076 只全部一致（278 只旧表多出：北交所旧代码 234、已退市 44）；tr_umr 4,861 只中 4,858 一致，3 只已知差异。cutamp 按旧仓 quicksort 并列顺序升 `v2`（[ADR](../adr/2026-11-22-cutamp-legacy-quicksort-order.md)），lake 已补 34 行 v2 | — |
 | 旧网关 golden（已有新端口的方法） | ✅ 股票池、成分池、ST、日行情、交易日历（8,770 天）、指数涨跌幅（`000985.CSI`、`h30269.CSI`）均与 wx2 一致（11-22）。`core/` 三个网关共 51 个公开读取方法，12 个无现役调用；其余多为择时/宏观研究线读取，随 P4 各线迁移、建端口时先做 golden | — |
 | `pit_grade` 木桶、长表写入校验 | ✅ 两层依赖图含 D 输出 D；写入拒绝 A–D 以外的等级与早于 `event_dt` 的 `knowledge_dt`（11-22）。写入时比对完整血缘需改接口，未做 | — |
+| `mart.forward_return` 股票 open-to-open | ✅ 代码与 wx2 对拍完成（11-22，29 个样本日 5D/10D，all_a 内差异全部登记核验；[ADR](../adr/2026-11-22-forward-return-open2open.md)）；尚未物化全历史 | 物化范围待定 |
 | `alpha_factory` 因子批量移植 | ⏳ | 量价等全截面 golden；基本面等四张财报表 |
 
 ### 下一步（按顺序）
