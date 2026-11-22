@@ -2,7 +2,7 @@
 title: 数据契约体系
 status: active
 created: 2026-09-16
-updated: 2026-09-18
+updated: 2026-11-21
 applies_to:
   - src/quantagent/contracts/
   - tests/contracts/
@@ -28,6 +28,10 @@ applies_to:
 
 三者合起来描述一个数据集的完整语义：**它长什么样**（schema）、**它什么时候
 能被知道**（visibility）、**它的键是什么**（temporal_kind 与键定义）。
+
+schema 的 `decimal` 列必须声明 `precision` 和 `scale`（最多 38 位）；校验只接受
+符合精度范围的 Python `Decimal`，不将浮点数隐式转换或四舍五入。分钟源镜像
+使用 `decimal(20,4)`，保持 MySQL 源数值精度。
 
 ## 每个数据集必须有什么
 

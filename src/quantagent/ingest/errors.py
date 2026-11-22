@@ -31,6 +31,10 @@ class SourceFetchError(IngestError):
     """源端拉取失败，或返回了无法按原生口径解释的值。"""
 
 
+class SourceNotReadyError(SourceFetchError):
+    """源数据尚未达到约定的出齐条件。"""
+
+
 class IngestStoppedError(IngestError):
     """按请求在已提交页之后停止；不能继续执行后续表。"""
 

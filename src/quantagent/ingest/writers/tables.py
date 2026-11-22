@@ -61,6 +61,8 @@ FORBIDDEN_SRC_WRITE_TARGETS: frozenset[str] = frozenset(
         "src_jydb._batch",
         "src_suntime._batch",
         "src_macro._batch",
+        "src_minprice._batch",
+        "src_minprice.lake_partition",
         "src.tushare.fund_share",
         "src.tushare.tushare_ths_industry_mapping_citics",
         "src_tushare.fund_share",
@@ -70,7 +72,9 @@ FORBIDDEN_SRC_WRITE_TARGETS: frozenset[str] = frozenset(
 
 
 # profile 只决定调度注册；目标权限由表白名单决定，不再按机器划分。
-_ALL_WRITABLE_SCHEMAS = frozenset(spec.pg_schema for spec in ALLOWED_SRC_WRITE_TARGETS.values())
+_ALL_WRITABLE_SCHEMAS = frozenset(spec.pg_schema for spec in ALLOWED_SRC_WRITE_TARGETS.values()) | {
+    "src_minprice"
+}
 PROFILE_WRITABLE_SCHEMAS: dict[str, frozenset[str]] = {
     "office": _ALL_WRITABLE_SCHEMAS,
     "local": _ALL_WRITABLE_SCHEMAS,

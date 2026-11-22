@@ -20,6 +20,7 @@ from quantagent.adapters.postgres.wind_index_description_columns import (
     INDEX_DESCRIPTION_WIND_SYNC,
 )
 from quantagent.adapters.postgres.wind_large_columns import LARGE_WIND_SYNC
+from quantagent.cli.minprice import minprice_app
 from quantagent.ingest.errors import IngestError
 from quantagent.ingest.jobs.jin10_ism_details import ingest_jin10_ism_details
 from quantagent.ingest.jobs.jin10_ism_legacy import ingest_jin10_ism_legacy
@@ -45,6 +46,7 @@ macro_app = typer.Typer(help="宏观公开数据源。", no_args_is_help=True)
 ingest_app.add_typer(tushare_app, name="tushare")
 ingest_app.add_typer(wind_app, name="wind")
 ingest_app.add_typer(macro_app, name="macro")
+ingest_app.add_typer(minprice_app, name="minprice")
 
 _YMD_LEN = 8
 

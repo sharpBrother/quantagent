@@ -23,7 +23,7 @@ VisibilityRuleName = Literal[
     "ingest_time",
 ]
 SchemaLayer = Literal["pg", "ops", "lake"]
-ColumnDtype = Literal["date", "datetime", "string", "bool", "int64", "float64", "bytes"]
+ColumnDtype = Literal["date", "datetime", "string", "bool", "int64", "float64", "bytes", "decimal"]
 DatasetUsage = Literal["default", "evaluation_only"]
 
 # 分组净值里多空组合的哨兵编号。不是缺失填充，是一种组合身份。
@@ -103,6 +103,17 @@ class ColumnSpec(BaseModel):
     dtype: ColumnDtype
     nullable: bool = False
     description: str = ""
+    precision: int | None = Field(default=None, ge=1, le=38)
+    scale: int | None = Field(default=None, ge=0, le=38)
+
+    @model_validator(mode="after")
+    def _decimal_shape(self) -> Self:
+        if self.dtype == "decimal":
+            if self.precision is None or self.scale is None or self.scale > self.precision:
+                raise ValueError("decimal 必须指定 precision 和不大于 precision 的 scale")
+        elif self.precision is not None or self.scale is not None:
+            raise ValueError("precision 与 scale 只用于 decimal")
+        return self
 
 
 class DatasetSchemaSpec(BaseModel):

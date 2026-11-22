@@ -1,5 +1,5 @@
 ---
-title: A 股 1 分钟行情接入方案（已定，未实施）
+title: A 股 1 分钟行情接入方案
 status: active
 created: 2026-11-21
 updated: 2026-11-21
@@ -16,7 +16,21 @@ applies_to:
 # A 股 1 分钟行情接入方案
 
 选型与理由见 [ADR](../adr/2026-11-21-minute-bars-in-parquet.md)。本文写怎么做。
-**方案已定，尚未实施**；标"待探查"的项在第 1 步核实后回填本文。
+**实施中**；标"待探查"的项在第 1 步核实后回填本文。
+
+2026-11-21 负责人决定不再以 Wind 日行情对账作为迁入条件；保留源值，
+成交量统一为手、成交额统一为元。MySQL 只用于历史回填；新增日行情取东财，
+详见 [来源裁定](../adr/2026-11-21-minute-bars-source-split.md)。只读探查发现源端有 561 张日表（2024-07-29 至
+2026-11-20），其中 2024-07-29 为空；2026-11-20 样本包含 09:30，
+单股有 241 行。源端样本字段为 `decimal(20,4)`。
+
+负责人指定修正 2025-10-28 一条负成交量/成交额记录，保留 MySQL 不变并在
+运行日志记录原值与摘要；这一分区存在单条源值例外，见
+[修正裁定](../adr/2026-11-21-minute-bar-negative-correction.md)。
+2025-11-26 一条负成交额亦按负责人要求修正，见
+[修正裁定](../adr/2026-11-21-minute-bar-november-negative-correction.md)。
+2025-12-08 一条负成交额亦按负责人要求修正，见
+[修正裁定](../adr/2026-11-22-minute-bar-december-negative-correction.md)。
 
 ## 1. 源端
 
@@ -44,9 +58,7 @@ applies_to:
 2. 列类型（decimal 还是 double，`vol` 是整数还是浮点）。
 3. `trade_time` 是 bar 终点（已确认）。待查：每股每天是 240 根（9:31–11:30、13:01–15:00）
    还是 241 根（含 9:30）；尾盘集合竞价怎么处理。
-4. 单位：`vol` 是股还是手，`amount` 是元还是千元。用 Wind `ASHAREEODPRICES` 对账：
-   日内 `sum(vol)` 对 `S_DQ_VOLUME`（手），`sum(amount)` 对 `S_DQ_AMOUNT`（千元），
-   最后一根 `close` 对 `S_DQ_CLOSE`。抽 20 个交易日 × 全市场。
+4. 单位：`vol` 为手，`amount` 为元；负责人已取消 Wind 日行情对账要求。
 5. 是否包含北交所、指数、ETF；停牌股是否有行。
 6. 当日表 15:30 左右出齐（已确认）。待查：历史表是否会被改写，以及出齐前表是否已存在且只有部分行。
 
@@ -76,7 +88,7 @@ var/lake/src/minprice/ashare_minute_bar/
 | `ts_code` | string | 源原样，不在 src 层转成 `asset_id` |
 | `trade_time` | timestamp（无时区，北京时间） | 源原样 |
 | `open`/`high`/`low`/`close` | 源端 decimal 保持同精度 decimal128；double 存 float64 | 不复权 |
-| `vol`/`amount` | 同上规则 | 单位不换算，单位写进 schema 契约 |
+| `vol`/`amount` | 同上规则 | 成交量为手、成交额为元，保留源值 |
 | `trade_date` | date | 由表名得出，用来分区和对齐日频数据 |
 
 行级不加 `_ingested_at`、`_batch_id`，这些在 manifest 里按天记录一次。
@@ -122,19 +134,19 @@ CREATE TABLE src_minprice.lake_partition (
    - `(ts_code, trade_time)` 无重复；
    - 所有 `trade_time` 的日期等于表名日期，时刻落在交易时段内；
    - 该日是交易日（经 `CalendarRepository`，不另写日历查询）；
-   - 价格有限且 > 0，`low <= open, close <= high`，`vol >= 0`、`amount >= 0`。
+   - 价格有限且 > 0，`low <= close <= high`、`low <= high`、`open <= high`；
+     开盘价低于最低价时，差额不得超过最低价的 0.5%（含边界），保留源值。
+     `vol >= 0`、`amount >= 0`。符合容差的记录在 run log 中列出代码、时间和价格。
 4. 统计但不阻断：每股 bar 数偏离标准值（240 或 241，待探查）的股票数与清单，写进 run log。
    缺 bar 就是缺，不补。
 5. 写到分区目录下的 `.staging-<uuid>.parquet`，DuckDB 回读，比对行数和 `content_digest`，
    一致后 rename 为 `part-<digest16>.parquet`，计算 `file_sha256`。
-6. 一个 PG 事务内：插入 `_batch` 行；新日直接插入 manifest；
-   修订日按主键删除旧行再插入新行，计入 `replaced`；回读比对后提交。
-7. 提交成功后把旧文件移进 `var/lake/src/minprice/.trash/`。提交状态未知时停止报告，
-   不重试、不移动文件。
+6. 一个 PG 事务内插入 `_batch` 和新日 manifest；回读比对后提交。
+   同一日已有不同内容时停止，不自动替换。提交状态未知时停止报告，不重试。
 
 写入保护沿用 §6：需要 `--write-db` 与 `QUANTAGENT_ALLOW_DB_WRITE=true`；
 目标白名单只有 `src_minprice.lake_partition`、`src_minprice._batch` 和上述数据集根目录；
-SQL 只有 `INSERT` 和按主键的 `DELETE`。
+SQL 只使用 `INSERT`。
 
 **残留文件**：分区目录里未被 manifest 引用的 `part-*` 和 `.staging-*` 由
 `ingest minprice verify` 列出，不自动删除。
@@ -144,8 +156,8 @@ SQL 只有 `INSERT` 和按主键的 `DELETE`。
 | 作业 | 内容 |
 |---|---|
 | 回填 | CLI `quantagent ingest minprice backfill --start --end`，按日期串行；manifest 已有且 digest 相同的日子跳过，可随时中断续跑 |
-| 日更 | Dagster asset，Mac `local` profile，交易日 16:00 运行，17:00 补跑一次。拉当日；再重拉最近 5 个交易日比对 digest，变化则替换 |
-| 校验 | `quantagent ingest minprice verify`：逐文件核对 `file_sha256` 与行数，列出残留文件；可选 `--reconcile` 跑第 1 节第 4 条的日行情对账 |
+| 日更 | Dagster asset，Mac `local` profile，交易日 16:00 运行，17:00 补跑一次，从东财拉当日；不再重拉 MySQL 历史表 |
+| 校验 | `quantagent ingest minprice verify`：逐文件核对 `file_sha256` 与行数，列出残留文件 |
 
 16:00 在源端 15:30 出齐后留半小时余量。表存在不等于已出齐，写入前先做完整性检查：
 当日最大 `trade_time` 为 15:00，且股票数不低于上一交易日的 95%。不满足则记
@@ -196,7 +208,7 @@ visibility:
 pit_recoverable: true
 ```
 
-- 第 1 节第 4 条对账通过后才写这份 YAML。对账不通过时先问，不降级写入。
+- 负责人已取消第 1 节第 4 条 Wind 对账要求；PIT 规则仍须满足项目的可见性契约。
 - 分钟数据派生的日频因子，`knowledge_dt` 由血缘推导，为 `trade_date` 收盘。
 - 盘中 `as_of` 不在本方案内，需要时另写 ADR。因为 `trade_time` 是 bar 终点，
   届时的规则是 `trade_time <= as_of`：终点时刻那根 bar 才算完成。
@@ -207,10 +219,10 @@ pit_recoverable: true
 |---|---|---|
 | 1 | 只读探查（第 1 节） | 本文"待探查"各项回填结论 |
 | 2 | 配置、依赖、迁移、schema 契约与 visibility YAML | `check contracts` 通过；迁移在本地执行 |
-| 3 | 源读取、写入、manifest、verify | 单元测试覆盖：重复键、错日期、坏价格、digest 不变跳过、修订替换、提交失败不移文件、残留文件不可见 |
+| 3 | 源读取、写入、manifest、verify | 单元测试覆盖：重复键、错日期、坏价格、digest 不变跳过、不同内容拒绝覆盖、提交失败不重试、残留文件不可见 |
 | 4 | port 与 adapter | 契约测试：缺 manifest 日报错、`as_of` 截止、footer 行数不符报错 |
 | 5 | 一个月样本实测 | 记录文件大小与下表耗时，定版 row group 与压缩参数 |
-| 6 | 全量回填与日更上线 | manifest 727 天齐全；`verify` 全部通过；roadmap 更新 |
+| 6 | 全量回填与日更上线 | 源端非空交易日均已登记、缺失日明确列出；`verify` 全部通过；roadmap 更新 |
 
 第 5 步的目标值（Mac mini，冷缓存）：
 

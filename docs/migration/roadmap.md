@@ -94,7 +94,7 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 | FRED/ALFRED | ✅ 15,824 个版本行，08:00 日更，分片取数（A 级） |
 | 金十 ISM、WGC | ⏸ 暂缓到 P4，交给 Codex 调研取数方式 |
 
-**A 股 1 分钟行情**：⏳ 方案已定、未实施（11-21）。MySQL `minprice` 按日分表，约 8.7 亿行，落 Parquet 源镜像，PG 只放分区清单。见 [ADR](../adr/2026-11-21-minute-bars-in-parquet.md) 与 [接入方案](minute-bar-ingest-plan.md)；第一步只读探查，需要先在 `.env` 配好 `QUANTAGENT_MINPRICE_MYSQL_*`。
+**A 股 1 分钟行情**：⏸ 回填停止（11-22）。MySQL 只用于历史回填，后续使用东财；PG 已执行 `0023_minprice_manifest.sql`。负责人裁定开盘价低于最低价不超过最低价的 0.5% 时保留原值并记录；2024-07-29 源表为空；2025-10-17 有 45 条负成交额，负责人决定暂时跳过。2025-10-28、2025-11-26 和 2025-12-08 的各一条负值已按负责人要求修正为 0，整日入库并校验，分别见 [10 月修正 ADR](../adr/2026-11-21-minute-bar-negative-correction.md)、[11 月修正 ADR](../adr/2026-11-21-minute-bar-november-negative-correction.md) 和 [12 月修正 ADR](../adr/2026-11-22-minute-bar-december-negative-correction.md)。已登记 332 个分区、414235180 行，连续历史至 2025-12-10；2025-12-11 因负成交额停止，当日未入库，日志在 `var/logs/minprice-backfill-5a94ebc91b.log`。源数据含三板做市指数，股票与指数范围需另行裁定。东财全市场在线验证未完成，日更调度默认停止。见 [来源 ADR](../adr/2026-11-21-minute-bars-source-split.md) 与 [接入方案](minute-bar-ingest-plan.md)。
 
 **其他**：JYDB 12 张、朝阳永续 7 张、Tushare 其余接口 ⏳ 未接（JYDB、朝阳在公司电脑上）；第四类运维表 ⏳ 未动。
 

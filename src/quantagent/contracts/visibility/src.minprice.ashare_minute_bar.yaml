@@ -1,0 +1,11 @@
+dataset: src.minprice.ashare_minute_bar
+doc_ref: docs/migration/minute-bar-ingest-plan.md
+temporal_kind: point_event
+event_field: trade_date
+visibility:
+  rule: same_day_close
+  grade: A
+  rationale: >
+    交易所分钟成交数据。旧仓 factor_min 按交易日取当日分钟表计算因子；
+    日频读取按收盘后整天可见，不把采集时间当可见日。
+pit_recoverable: true

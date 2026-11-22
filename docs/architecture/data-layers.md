@@ -119,7 +119,7 @@ PG 后丢弃。补偿只剩契约上的诚实标记：`pit_recoverable: false` �
 未来若某个数据集确需版本语义，走「新增旁表 + 契约声明」的扩展路径，**不改
 原生表**。
 
-### 例外：1 分钟行情放 Parquet（已定，未实施）
+### 例外：1 分钟行情放 Parquet（实施中）
 
 A 股 1 分钟行情约 8.7 亿行，按交易日追加，读取以全截面聚合为主。它作为源镜像
 落 `var/lake/src/minprice/ashare_minute_bar/`，按 `trade_date` 一天一个文件；
@@ -127,6 +127,8 @@ A 股 1 分钟行情约 8.7 亿行，按交易日追加，读取以全截面聚�
 只有这一个数据集例外。理由见
 [../adr/2026-11-21-minute-bars-in-parquet.md](../adr/2026-11-21-minute-bars-in-parquet.md)，
 做法见 [../migration/minute-bar-ingest-plan.md](../migration/minute-bar-ingest-plan.md)。
+历史回填从 MySQL 读取，新增日行情从东财读取，来源在清单里区分，见
+[来源裁定](../adr/2026-11-21-minute-bars-source-split.md)。
 
 ## Parquet Lakehouse
 
@@ -134,7 +136,7 @@ A 股 1 分钟行情约 8.7 亿行，按交易日追加，读取以全截面聚�
 
 ```
 var/lake/
-├── src/         源镜像例外，仅 minprice/ashare_minute_bar（已定，未实施）
+├── src/         源镜像例外，仅 minprice/ashare_minute_bar
 ├── std/         标准化
 ├── mart/        分析事实表
 │   ├── universe_member/  股票池成员区间表

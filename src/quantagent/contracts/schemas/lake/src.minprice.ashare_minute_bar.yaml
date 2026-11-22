@@ -1,0 +1,16 @@
+dataset: src.minprice.ashare_minute_bar
+layer: lake
+doc_ref: docs/migration/minute-bar-ingest-plan.md
+temporal_kind: point_event
+event_field: trade_date
+keys: [ts_code, trade_time]
+columns:
+  ts_code: {dtype: string, nullable: false, description: 源端证券代码}
+  trade_time: {dtype: datetime, nullable: false, description: 分钟线终点北京时间}
+  open: {dtype: decimal, precision: 20, scale: 4, nullable: false, description: 源端开盘价}
+  high: {dtype: decimal, precision: 20, scale: 4, nullable: false, description: 源端最高价}
+  low: {dtype: decimal, precision: 20, scale: 4, nullable: false, description: 源端最低价}
+  close: {dtype: decimal, precision: 20, scale: 4, nullable: false, description: 源端收盘价}
+  vol: {dtype: decimal, precision: 20, scale: 4, nullable: false, description: 成交量（手），保留源值}
+  amount: {dtype: decimal, precision: 20, scale: 4, nullable: false, description: 成交额（元），保留源值}
+  trade_date: {dtype: date, nullable: false, description: 根据日表名确定的交易日}

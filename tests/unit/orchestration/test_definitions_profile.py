@@ -15,13 +15,20 @@ _PREFIX_TO_SCHEMA = {
     "src_wind_": "src_wind",
     "src_tushare_": "src_tushare",
     "src_macro_": "src_macro",
+    "src_eastmoney_": "src_minprice",
 }
 # lake 产物，不写源 schema，不受 PROFILE_WRITABLE_SCHEMAS 约束。
 _LAKE_ASSETS = frozenset({"std_trade_calendar"})
 
 _EXPECTED_SCHEDULES = {
     "office": {"wind_source_daily_close", "wind_source_daily_morning"},
-    "local": {"tushare_daily_evening", "macro_daily_morning", "macro_wgc_sunday"},
+    "local": {
+        "tushare_daily_evening",
+        "macro_daily_morning",
+        "macro_wgc_sunday",
+        "minprice_first",
+        "minprice_retry",
+    },
 }
 
 
@@ -62,6 +69,8 @@ def test_every_registered_schedule_belongs_to_some_profile() -> None:
         "tushare_daily_evening",
         "macro_daily_morning",
         "macro_wgc_sunday",
+        "minprice_first",
+        "minprice_retry",
     }
 
 

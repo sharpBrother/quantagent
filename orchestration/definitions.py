@@ -14,17 +14,20 @@ from orchestration.assets.macro import (
     src_macro_gpr_daily,
     src_macro_wgc_gold_demand,
 )
+from orchestration.assets.minprice import src_eastmoney_minute
 from orchestration.assets.tr_umr import feature_pf_single_tr_umr
 from orchestration.assets.tushare import src_tushare_shibor, src_tushare_us_treasury_yield
 from orchestration.assets.wind import WIND_SOURCE_ASSETS, std_trade_calendar
 from orchestration.jobs.cutamp import feature_cutamp
 from orchestration.jobs.macro import macro_daily, macro_wgc_weekly
+from orchestration.jobs.minprice import minprice_daily
 from orchestration.jobs.tr_umr import feature_tr_umr
 from orchestration.jobs.tushare import tushare_daily
 from orchestration.jobs.wind import wind_source_daily, wind_source_refresh
 from orchestration.jobs.wind_initial import wind_initial_backfill
 from orchestration.resources.wind import TradeCalendarResource, WindIngestResource
 from orchestration.schedules.macro import macro_daily_morning, macro_wgc_sunday
+from orchestration.schedules.minprice import minprice_first, minprice_retry
 from orchestration.schedules.tushare import tushare_daily_evening
 from orchestration.schedules.wind import wind_source_daily_close, wind_source_daily_morning
 from quantagent.platform.config import get_settings
@@ -44,7 +47,13 @@ def _resources() -> dict[str, WindIngestResource | TradeCalendarResource]:
 # 各机队列独立，同一来源的自动采集只能在一台机器启用。
 PROFILE_SCHEDULES: dict[str, tuple[ScheduleDefinition, ...]] = {
     "office": (wind_source_daily_close, wind_source_daily_morning),
-    "local": (tushare_daily_evening, macro_daily_morning, macro_wgc_sunday),
+    "local": (
+        tushare_daily_evening,
+        macro_daily_morning,
+        macro_wgc_sunday,
+        minprice_first,
+        minprice_retry,
+    ),
 }
 
 
@@ -66,6 +75,7 @@ defs = Definitions(
         src_macro_wgc_gold_demand,
         feature_pf_single_cutamp,
         feature_pf_single_tr_umr,
+        src_eastmoney_minute,
     ],
     jobs=[
         wind_source_refresh,
@@ -76,6 +86,7 @@ defs = Definitions(
         macro_wgc_weekly,
         feature_cutamp,
         feature_tr_umr,
+        minprice_daily,
     ],
     schedules=list(schedules_for_profile(get_settings().profile)),
     resources=_resources(),

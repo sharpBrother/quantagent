@@ -49,6 +49,7 @@ sources = [
   "tushare>=1.4,<2",
   "requests>=2.32,<3",
   "pymssql>=2.3,<3",
+  "pymysql>=1.1,<2",
 ]
 # 绘图。旧仓 35+ 文件 import matplotlib 却从未声明，在此显式化。
 viz = [

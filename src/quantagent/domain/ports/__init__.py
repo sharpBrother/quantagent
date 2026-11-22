@@ -12,6 +12,7 @@ from quantagent.domain.ports.feature_metric import FeatureMetricRepository
 from quantagent.domain.ports.forward_return import ForwardReturnRepository
 from quantagent.domain.ports.group_nav import GroupNavRepository
 from quantagent.domain.ports.index_returns import IndexReturnRepository
+from quantagent.domain.ports.minute_bar import MinuteBarRepository
 from quantagent.domain.ports.prices import DailyPriceRepository
 from quantagent.domain.ports.st import StStatusRepository
 from quantagent.domain.ports.universe import UniverseRepository
@@ -24,6 +25,7 @@ __all__ = [
     "ForwardReturnRepository",
     "GroupNavRepository",
     "IndexReturnRepository",
+    "MinuteBarRepository",
     "StStatusRepository",
     "UniverseRepository",
 ]

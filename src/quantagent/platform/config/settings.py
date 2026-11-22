@@ -57,6 +57,12 @@ class Settings(BaseSettings):
     legacy_mssql_user: str = ""
     legacy_mssql_password: SecretStr = SecretStr("")
 
+    minprice_mysql_host: str = ""
+    minprice_mysql_port: int = Field(default=13306, ge=1, le=65535)
+    minprice_mysql_database: str = "minprice"
+    minprice_mysql_user: str = ""
+    minprice_mysql_password: SecretStr = SecretStr("")
+
     @model_validator(mode="after")
     def _relative_var_root_only_when_intended(self) -> Self:
         # 绝对路径允许（office 档位可能挂到共享盘）；相对路径必须相对仓库根
