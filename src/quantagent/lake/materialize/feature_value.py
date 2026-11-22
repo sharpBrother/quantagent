@@ -9,6 +9,8 @@ import pyarrow as pa
 
 from quantagent.contracts.loader import load_bundle
 from quantagent.contracts.pandera_schema import to_pandera
+from quantagent.domain.errors import FeatureLookupError
+from quantagent.domain.feature_lineage import PIT_GRADES
 from quantagent.lake.partitions import FROZEN_FEATURE_VALUE_LAYOUT, write_feature_value_parquet
 from quantagent.lake.partitions.layout import LakeLayoutError
 
@@ -21,9 +23,31 @@ if TYPE_CHECKING:
 DATASET = "feature.value"
 
 
+def _check_rows(rows: Sequence[FeatureValue]) -> None:
+    """写入前逐行校验，任一行不合法即整批拒绝，调用方不会得到半写的目录。
+
+    ``pit_grade`` 必须是 A–D 之一，大小写、空白都不宽容。``knowledge_dt`` 不得早于
+    ``event_dt``：因子值描述的是 ``event_dt`` 当日的截面，不可能在那之前可见。
+    """
+    for row in rows:
+        if row.pit_grade not in PIT_GRADES:
+            raise FeatureLookupError(
+                "因子行 pit_grade 非法，整批拒绝写入: "
+                f"event_dt={row.event_dt}, asset_id={row.asset_id}, "
+                f"feature_id={row.feature_id}, pit_grade={row.pit_grade!r}"
+            )
+        if row.knowledge_dt < row.event_dt:
+            raise FeatureLookupError(
+                "因子行 knowledge_dt 早于 event_dt，整批拒绝写入: "
+                f"event_dt={row.event_dt}, asset_id={row.asset_id}, "
+                f"feature_id={row.feature_id}, knowledge_dt={row.knowledge_dt}"
+            )
+
+
 def write_feature_values(rows: Sequence[FeatureValue], dest: Path) -> dict[str, int]:
     if not rows:
         raise LakeLayoutError("没有可写入的因子行")
+    _check_rows(rows)
     frame = pd.DataFrame(
         {
             "event_dt": [row.event_dt for row in rows],

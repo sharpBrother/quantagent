@@ -68,3 +68,4 @@ applies_to:
 |---|---|
 | 2026-09-19 | [因子多周期检验与三层准入](2026-09-19-factor-horizons-and-admission.md)（已裁定，待实现） |
 | 2026-11-22 | [cutamp 复现旧仓 quicksort 并列顺序，定义版本 v2](2026-11-22-cutamp-legacy-quicksort-order.md) |
+| 2026-11-22 | [中信一级行业成分改用 AINDEXMEMBERSCITICSZL](2026-11-22-citics-l1-members-zl.md) |

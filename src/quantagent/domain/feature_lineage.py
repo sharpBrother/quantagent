@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from datetime import date
 
 _GRADE_RANK = {"A": 0, "B": 1, "C": 2, "D": 3}
+# 合法 pit_grade 集合。写入路径校验与血缘推导共用，不另建一份。
+PIT_GRADES: frozenset[str] = frozenset(_GRADE_RANK)
 
 
 def derive_feature_lineage(
