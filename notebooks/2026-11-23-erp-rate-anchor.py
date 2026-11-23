@@ -52,6 +52,7 @@ CPI_STALE_DAYS = 120
 PCT_YEARS = 5
 PCT_YEARS_ALT = 6
 BAND = 0.10
+BAND_TOL = 1e-9  # 正好差 0.10 也调仓；留容差避免 0.7 - 0.6 < 0.1 的浮点误差
 HORIZONS = (1, 3, 6, 12)
 MIN_HISTORY = 36
 OOS_START = pd.Period("2012-12", "M")
@@ -78,6 +79,7 @@ PARAMS = {
     "pct_years": PCT_YEARS,
     "pct_years_alt": PCT_YEARS_ALT,
     "band": BAND,
+    "band_rule": "abs(desired - w) >= band - 1e-9",
     "horizons": HORIZONS,
     "min_history": MIN_HISTORY,
     "oos_start": str(OOS_START),
@@ -218,6 +220,27 @@ for t in open_idx:
     assert all(r.knowledge_dt < t.date() for r in rows)
     cpi_val.append(float(max(rows, key=lambda r: r.observation_date).value) if rows else np.nan)
 daily["pi_cn"] = cpi_val
+
+
+def monthly_asof(series_id: str) -> list[float]:
+    """信号日 as_of 下可见的最近一期月度观测；观测月距信号日超过 120 天视为缺失。"""
+    out = []
+    for t in open_idx:
+        rows = macro.list_observations(
+            as_of=t.date(),
+            start=t.date() - timedelta(days=CPI_STALE_DAYS),
+            end=t.date(),
+            series_ids=(series_id,),
+        )
+        rows = [r for r in rows if r.value is not None]
+        assert all(r.knowledge_dt < t.date() for r in rows)
+        out.append(float(max(rows, key=lambda r: r.observation_date).value) if rows else np.nan)
+    return out
+
+
+daily["r_de"] = monthly_asof("de_bund_10y")
+daily["r_jp"] = monthly_asof("jp_jgb_10y")
+log(f"德债有效 {daily['r_de'].notna().sum()} 天，日债有效 {daily['r_jp'].notna().sum()} 天")
 daily["r_cn_real"] = daily["r_cn"] - daily["pi_cn"]
 log(f"CPI 完成，有效 {daily['pi_cn'].notna().sum()} 天")
 
@@ -227,6 +250,8 @@ for code in INDICES:
     daily[f"U|{code}"] = ey - daily["r_us"]
     daily[f"Ur|{code}"] = ey - daily["r_us_real"]
     daily[f"Vr|{code}"] = ey - daily["r_cn_real"]
+    daily[f"Ude|{code}"] = ey - daily["r_de"]
+    daily[f"Ujp|{code}"] = ey - daily["r_jp"]
 for code, tr in INDICES.items():
     daily[f"ret|{code}"] = pct[tr].reindex(open_idx) / 100.0 if tr in pct else np.nan
 
@@ -293,7 +318,7 @@ def ratchet(
                 traded, w = tgt, tgt
             else:
                 desired = max(w, tgt) if tgt >= 0.5 else min(w, tgt)
-                if abs(desired - w) > BAND:
+                if abs(desired - w) >= BAND - BAND_TOL:
                     traded, w = abs(desired - w), desired
         weights.append(w)
         trades.append(traded)
@@ -302,7 +327,7 @@ def ratchet(
 
 
 # 规则自检：负责人给的例子（目标升了就加，回落到 0.5 以上不减，跌破 0.5 才减）。
-# 收益记 0，仓位不漂移。"超过 10%" 是严格大于：差恰好 0.10 不调仓。
+# 收益记 0，仓位不漂移。正好差 0.10 也调仓（负责人 2026-11-23 裁定）。
 _days = pd.bdate_range("2024-01-01", periods=10)
 _check = ratchet(
     pd.Series([0.60, 0.70, 0.75, 0.60, 0.55, 0.45, 0.30, 0.38, 0.52, 0.58], index=_days),
@@ -310,10 +335,10 @@ _check = ratchet(
     lag=0,
 )
 assert _check["w"].round(2).tolist() == [
-    0.60, 0.60, 0.75, 0.75, 0.75, 0.45, 0.30, 0.30, 0.52, 0.52
+    0.60, 0.70, 0.70, 0.70, 0.70, 0.45, 0.30, 0.30, 0.52, 0.52
 ], _check
-# 0.6→0.7 差恰好 0.10，不调；0.75 加仓；回落到 0.6、0.55 不减；跌破 0.5 到 0.45 才减；
-# 0.30→0.38 不加；回到 0.52 加仓；0.58 与 0.52 差 0.06，不调。
+# 0.6→0.7 差正好 0.10，加仓；0.75 与 0.70 差 0.05，不调；回落到 0.6、0.55 不减；
+# 跌破 0.5 到 0.45 才减；0.30→0.38 不加；回到 0.52 加仓；0.58 与 0.52 差 0.06，不调。
 
 
 def perf_daily(
@@ -580,7 +605,14 @@ log("稳健性完成")
 # 月频只做样本内回归（样本太短，不做样本外）。
 
 # %%
-REAL_SIGNALS = {"U_us": "U", "V_cn": "V", "Vr_cn_real": "Vr", "EY": "ey"}
+REAL_SIGNALS = {
+    "U_us": "U",
+    "U_de": "Ude",
+    "U_jp": "Ujp",
+    "V_cn": "V",
+    "Vr_cn_real": "Vr",
+    "EY": "ey",
+}
 real_pcts = {
     name: rolling_percentile(daily[f"{col}|{MAIN}"], PCT_YEARS) for name, col in REAL_SIGNALS.items()
 }
@@ -612,6 +644,24 @@ real_in_sample = pd.DataFrame(real_in_sample)
 print(real_in_sample.round(3).to_string(index=False))
 print(pd.concat([panel["Vr"], x_main[["V", "U", "G"]]], axis=1).dropna().corr().round(2))
 
+# 第四部分月频：同一样本（G_de、G_jp 都可见）比较 V + G_x
+panel["G_de"] = panel["r_de"] - panel["r_cn"]
+panel["G_jp"] = panel["r_jp"] - panel["r_cn"]
+panel["G_us"] = panel["r_us"] - panel["r_cn"]
+placebo_mask = panel[["G_de", "G_jp", "G_us"]].notna().all(axis=1)
+foreign_rows = []
+for h in HORIZONS:
+    y = panel[f"fwd{h}|{MAIN}"][placebo_mask]
+    for g in ("G_us", "G_de", "G_jp"):
+        fit, n = nw_ols(y, pd.concat([x_main["V"], panel[g]], axis=1)[placebo_mask], h)
+        foreign_rows.append(
+            {"h": h, "G": g, "coef_V": fit.params["V"], "t_V": fit.tvalues["V"],
+             "coef_G": fit.params[g], "t_G": fit.tvalues[g], "r2": fit.rsquared, "n": n}
+        )
+foreign_in_sample = pd.DataFrame(foreign_rows)
+print(foreign_in_sample.round(3).to_string(index=False))
+print(panel.loc[placebo_mask, ["r_us", "r_de", "r_jp", "r_cn"]].corr().round(2))
+
 # %% [markdown]
 # ## 落盘：结果表、pit_report、run log
 
@@ -641,7 +691,8 @@ pit_report = {
     "untrusted_ratio": 0.0,
     "notes": [
         "美债名义利率按信号日前一个自然日截止（跨时区），可见性契约未改。",
-        "美国序列按 as-of 取最近一期，超过 7 个自然日视为缺失；中国 CPI 超过 120 天视为缺失。",
+        "美国序列按 as-of 取最近一期，超过 7 个自然日视为缺失；中国 CPI 与德债、日债月度序列超过 120 天视为缺失。",
+        "德债、日债为 OECD 月均，超精度值按 8 位量化（ADR 2026-11-23-fred-oecd-yield-rounding）。",
         "现金按上一交易日 10Y 国债收益率 act/365 计息，不含久期损益。",
         "Wind 源镜像跟随源端修订，估值与中债为当前版本，不是当时版本。",
     ],
@@ -662,6 +713,7 @@ results = {
     "corr": corr.reset_index(names="var"),
     "real_compare": real_compare,
     "real_in_sample": real_in_sample,
+    "foreign_in_sample": foreign_in_sample,
 }
 output_digest = digest_json({k: json.loads(v.to_json(orient="records")) for k, v in results.items()})
 
