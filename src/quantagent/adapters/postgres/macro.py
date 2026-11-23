@@ -46,6 +46,9 @@ class _Source:
     cutoff_column: str
     statement: str
     fixed_params: tuple[object, ...]
+    # 源端口径与领域单位之间的固定换算，只用于 published。目前只有 PPI 的
+    # “上年同月=100”转同比（−100）；kind 不是 published 时值必须为 0。
+    value_offset: Decimal = Decimal(0)
 
 
 def _point_sql(schema: str, table: str, date_col: str, value_col: str, where: str) -> str:
@@ -127,6 +130,36 @@ _SOURCES: Mapping[str, _Source] = {
         statement=_PUBLISHED_SQL,
         fixed_params=(110255493,),
     ),
+    # 源端 DataValue 是“上年同月=100”的指数，减 100 才是同比百分数。
+    "cn_ppi_yoy_nbs": _Source(
+        dataset="src.jydb.c_ed_macroindicatordata",
+        kind="published",
+        cutoff_column="InfoPublDate",
+        statement=_PUBLISHED_SQL,
+        fixed_params=(110002644,),
+        value_offset=Decimal(-100),
+    ),
+    "cn_cpi_nonfood_yoy_nbs": _Source(
+        dataset="src.jydb.c_ed_macroindicatordata",
+        kind="published",
+        cutoff_column="InfoPublDate",
+        statement=_PUBLISHED_SQL,
+        fixed_params=(191001482,),
+    ),
+    "cn_ibo_7d": _Source(
+        dataset="src.jydb.c_ed_macroindicatordata",
+        kind="published",
+        cutoff_column="InfoPublDate",
+        statement=_PUBLISHED_SQL,
+        fixed_params=(601230002,),
+    ),
+    "cn_usdcny_fix": _Source(
+        dataset="src.jydb.c_ed_macroindicatordata",
+        kind="published",
+        cutoff_column="InfoPublDate",
+        statement=_PUBLISHED_SQL,
+        fixed_params=(110253785,),
+    ),
     "de_bund_10y": _Source(
         dataset="src.macro.fred_observation_vintage",
         kind="vintage",
@@ -142,6 +175,20 @@ _SOURCES: Mapping[str, _Source] = {
         fixed_params=("IRLTLT01JPM156N",),
     ),
 }
+
+
+def _assert_offset_only_published(sources: Mapping[str, _Source]) -> None:
+    """value_offset 只在 published 读取路径上应用；其他 kind 带上它会被静默忽略。
+
+    这是 ``_SOURCES`` 的静态配置错误（写代码时的手误），不是运行时数据问题，
+    所以抛 ValueError 而不是 MacroLookupError；在模块加载时暴露，不等到读数据。
+    """
+    for series_id, source in sources.items():
+        if source.kind != "published" and source.value_offset != Decimal(0):
+            raise ValueError(f"宏观序列 {series_id} 的 value_offset 只支持 published 源")
+
+
+_assert_offset_only_published(_SOURCES)
 
 
 class PostgresMacroRepository:
@@ -208,7 +255,9 @@ class PostgresMacroRepository:
                 cur.execute(
                     source.statement, (start, end, cutoff.on_or_before, *source.fixed_params)
                 )
-                versions = _published_versions(series_id, cur.fetchall())
+                versions = _published_versions(
+                    series_id, cur.fetchall(), value_offset=source.value_offset
+                )
             else:
                 cur.execute(
                     source.statement, (start, end, cutoff.on_or_before, *source.fixed_params)
@@ -246,7 +295,9 @@ def _point_version(series_id: str, row: object) -> MacroVersion:
     )
 
 
-def _published_versions(series_id: str, rows: Iterable[object]) -> list[MacroVersion]:
+def _published_versions(
+    series_id: str, rows: Iterable[object], *, value_offset: Decimal
+) -> list[MacroVersion]:
     """同一观测的多个发布版本按发布日排队：前一版在下一版发布前一天失效。
 
     对应 pit-rules“同指标同期取最晚发布”：截止日可见的是发布日不晚于截止日的最后一版。
@@ -275,7 +326,7 @@ def _published_versions(series_id: str, rows: Iterable[object]) -> list[MacroVer
                 MacroVersion(
                     series_id=series_id,
                     observation_date=obs,
-                    value=value,
+                    value=None if value is None else value + value_offset,
                     visible_from=visible_from,
                     visible_to=visible_to,
                 )

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from datetime import date
     from decimal import Decimal
 
-# 单位全部是百分数（2.5 表示 2.5%；CPI 同比 2.5 表示上涨 2.5%）。
+# 除特别注明外单位是百分数（2.5 表示 2.5%；CPI 同比 2.5 表示上涨 2.5%）。
 # cn_cgb_10y：中债国债到期收益率 10 年（旧仓 ERP 的无风险利率口径）。
 # us_ust_10y：美国财政部公布的 10 年期名义国债收益率，按美国交易日，严格早于 as_of 可见。
 # us_tips_10y：10 年期 TIPS 实际收益率（FRED DFII10），按 ALFRED 首发版本可见。
@@ -24,6 +24,15 @@ if TYPE_CHECKING:
 # cn_cpi_yoy_nbs：国家统计局 CPI 当期同比（聚源 C_ED_MacroIndicatorData 指标 110255493），
 #   月频，观测日是月末（EndDate）；按 InfoPublDate 的日期当天可见。发布日从 2007-02 起，
 #   更早月份不可见；源镜像数值为当前版本。
+# cn_ppi_yoy_nbs：国家统计局 PPI 当期同比（聚源 C_ED_MacroIndicatorData 指标 110002644），
+#   月频，观测日是月末（EndDate）；源端口径是“上年同月=100”，读取时减 100 转成同比
+#   百分数。按 InfoPublDate 的日期当天可见，发布日从 2007-02 起。
+# cn_cpi_nonfood_yoy_nbs：国家统计局 CPI 非食品当期同比（聚源指标 191001482），
+#   口径与 cn_cpi_yoy_nbs 相同：月频，观测日是月末，按 InfoPublDate 日期当天可见。
+# cn_ibo_7d：银行间同业拆借加权利率 7 天（聚源指标 601230002），日频，百分数，
+#   观测日即交易日，按发布当天可见。
+# cn_usdcny_fix：美元兑人民币中间价（聚源指标 110253785），日频，
+#   **单位是人民币每美元，不是百分数**；按发布当天可见。
 # de_bund_10y、jp_jgb_10y：德国、日本 10 年期国债收益率（OECD MEI 月均，FRED
 #   IRLTLT01DEM156N、IRLTLT01JPM156N），观测日是月初，ALFRED 版本从 2013-06 起。
 MacroSeriesId = Literal[
@@ -32,6 +41,10 @@ MacroSeriesId = Literal[
     "us_tips_10y",
     "cn_cpi_yoy",
     "cn_cpi_yoy_nbs",
+    "cn_ppi_yoy_nbs",
+    "cn_cpi_nonfood_yoy_nbs",
+    "cn_ibo_7d",
+    "cn_usdcny_fix",
     "de_bund_10y",
     "jp_jgb_10y",
 ]

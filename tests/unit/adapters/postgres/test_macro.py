@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
 
-from quantagent.adapters.postgres.macro import PostgresMacroRepository, load_macro_visibilities
+from quantagent.adapters.postgres.macro import (
+    _SOURCES,
+    PostgresMacroRepository,
+    _assert_offset_only_published,
+    load_macro_visibilities,
+)
 from quantagent.contracts.loader import load_bundle
 from quantagent.domain.errors import MacroLookupError, PitUnsupportedError
 
@@ -229,3 +235,58 @@ def test_nbs_cpi_fallback_contract_fails_closed() -> None:
             end=date(2026, 10, 31),
             series_ids=("cn_cpi_yoy_nbs",),
         )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("value", "expected"), [(Decimal("105.7"), Decimal("5.7")), (None, None)]
+)
+def test_nbs_ppi_converts_year_ago_index_to_yoy(
+    value: Decimal | None, expected: Decimal | None
+) -> None:
+    # 聚源 110002644 是“上年同月=100”，领域单位是同比百分数，读取时减 100。
+    repo, cur = _repo([(date(2026, 10, 31), date(2026, 11, 9), value, 0)])
+    rows = repo.list_observations(
+        as_of=date(2026, 11, 20),
+        start=date(2006, 1, 1),
+        end=date(2026, 11, 20),
+        series_ids=("cn_ppi_yoy_nbs",),
+    )
+    _statement, params = cur.execute.call_args.args
+    assert params[-1] == 110002644
+    assert [(r.value, r.knowledge_dt) for r in rows] == [(expected, date(2026, 11, 9))]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("series_id", "indicator_code", "value", "expected"),
+    [
+        ("cn_cpi_nonfood_yoy_nbs", 191001482, Decimal("1.5"), Decimal("1.5")),
+        ("cn_ibo_7d", 601230002, Decimal("1.3059"), Decimal("1.3059")),
+        ("cn_usdcny_fix", 110253785, Decimal("6.7131"), Decimal("6.7131")),
+    ],
+)
+def test_other_jydb_series_keep_source_value(
+    series_id: str, indicator_code: int, value: Decimal, expected: Decimal
+) -> None:
+    # 这三个序列源端口径与领域单位一致，value_offset 为 0，值原样返回。
+    repo, cur = _repo([(date(2026, 11, 20), date(2026, 11, 20), value, 0)])
+    rows = repo.list_observations(
+        as_of=date(2026, 11, 20),
+        start=date(2026, 11, 20),
+        end=date(2026, 11, 20),
+        series_ids=(series_id,),
+    )
+    _statement, params = cur.execute.call_args.args
+    assert params[-1] == indicator_code
+    assert [(r.value, r.knowledge_dt) for r in rows] == [(expected, date(2026, 11, 20))]
+
+
+@pytest.mark.unit
+def test_value_offset_on_non_published_source_fails_closed() -> None:
+    # 静态配置错误：offset 只有 published 读取路径会用，其他 kind 带上它会被静默忽略。
+    drifted = replace(_SOURCES["us_tips_10y"], value_offset=Decimal(-100))
+    with pytest.raises(ValueError, match="value_offset"):
+        _assert_offset_only_published({"us_tips_10y": drifted})
+    # 现有登记表全部合规，模块加载不报错。
+    _assert_offset_only_published(_SOURCES)
