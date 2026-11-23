@@ -252,6 +252,8 @@ for code in INDICES:
     daily[f"Vr|{code}"] = ey - daily["r_cn_real"]
     daily[f"Ude|{code}"] = ey - daily["r_de"]
     daily[f"Ujp|{code}"] = ey - daily["r_jp"]
+    # 负责人原口径：任一利率缺失即缺失（np.maximum 传播 NaN，不用另一个顶替）
+    daily[f"Mx|{code}"] = ey - np.maximum(daily["r_us"], daily["r_cn"])
 for code, tr in INDICES.items():
     daily[f"ret|{code}"] = pct[tr].reindex(open_idx) / 100.0 if tr in pct else np.nan
 
@@ -370,7 +372,7 @@ def perf_daily(
     return out
 
 
-SIGNALS = {"U_us": "U", "V_cn": "V", "Ur_tips": "Ur", "EY": "ey"}
+SIGNALS = {"U_us": "U", "V_cn": "V", "Max_us_cn": "Mx", "Ur_tips": "Ur", "EY": "ey"}
 cash = cash_accrual(daily["r_cn"])
 strategy_runs: dict[tuple[str, int, int], pd.DataFrame] = {}
 baseline_rows = []
@@ -446,18 +448,30 @@ for code in INDICES:
 
 
 def predictors(code: str) -> pd.DataFrame:
+    g = panel["r_us"] - panel["r_cn"]
     return pd.DataFrame(
         {
             "EY": panel[f"ey|{code}"],
             "V": panel[f"V|{code}"],
             "U": panel[f"U|{code}"],
-            "G": panel["r_us"] - panel["r_cn"],
+            "G": g,
             "U_real": panel[f"Ur|{code}"],
+            "Mx": panel[f"Mx|{code}"],
+            "Gp": g.clip(lower=0),
+            "Gm": g.clip(upper=0),
         }
     )
 
 
-MODELS = {"M_EY": ["EY"], "M1_V": ["V"], "M2_U": ["U"], "M2r_Ureal": ["U_real"], "M3_V+G": ["V", "G"]}
+MODELS = {
+    "M_EY": ["EY"],
+    "M1_V": ["V"],
+    "M2_U": ["U"],
+    "M2r_Ureal": ["U_real"],
+    "M3_V+G": ["V", "G"],
+    "M6_Max": ["Mx"],
+    "M7_V+G+G-": ["V", "Gp", "Gm"],
+}
 
 
 def nw_ols(y: pd.Series, x: pd.DataFrame, h: int):
@@ -538,6 +552,14 @@ log("月频预测完成")
 
 # %%
 x_main = predictors(MAIN)
+# 倒挂月份：第五部分的有效样本
+inverted = x_main["G"] > 0
+episodes = (inverted != inverted.shift()).cumsum()[inverted]
+inversion_spells = [
+    {"start": str(g.index[0]), "end": str(g.index[-1]), "months": len(g)}
+    for _k, g in episodes.groupby(episodes)
+]
+print("中美利差倒挂月份段:", inversion_spells)
 robust = []
 
 
@@ -589,7 +611,7 @@ for h in HORIZONS:
 placebo = pd.DataFrame(placebo)
 persistence = {
     n: float(sm.OLS(s.iloc[1:].to_numpy(), sm.add_constant(s.iloc[:-1].to_numpy())).fit().params[1])
-    for n, s in ((n, x_main[n].dropna()) for n in x_main.columns)
+    for n, s in ((n, x_main[n].dropna()) for n in ("EY", "V", "U", "G", "U_real", "Mx"))
 }
 corr = x_main.corr()
 print(robust[robust["model"] == "M3_V+G"].round(3).to_string(index=False))
@@ -610,6 +632,7 @@ REAL_SIGNALS = {
     "U_de": "Ude",
     "U_jp": "Ujp",
     "V_cn": "V",
+    "Max_us_cn": "Mx",
     "Vr_cn_real": "Vr",
     "EY": "ey",
 }
@@ -729,6 +752,7 @@ for name, frame in results.items():
 (out_dir / "summary.json").write_text(
     json.dumps(
         {"params": PARAMS, "pit_report": pit_report, "persistence_ar1": persistence,
+         "inversion_spells": inversion_spells,
          "input_digest": input_digest, "output_digest": output_digest, "research_only": True,
          "no_database_write": True, "production_qualified": False},
         ensure_ascii=False, indent=2, default=str,
