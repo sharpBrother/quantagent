@@ -68,6 +68,12 @@ SUBPERIODS = {
     "2021-01..2024-09": ("2021-01-01", "2024-09-30"),
     "2024-10..": ("2024-10-01", "2099-12-31"),
 }
+# 第六部分：国家统计局 CPI 口径的分段。A 段起点 None 表示从该窗口的共同起点开始。
+NBS_SEGMENTS = {
+    "A": (None, "2018-06-03"),
+    "B": ("2018-06-04", "2025-07-30"),
+    "C": ("2025-07-31", "2099-12-31"),
+}
 N_SIM = 1000
 SEED = 20261123
 PARAMS = {
@@ -88,6 +94,8 @@ PARAMS = {
     "subperiods": SUBPERIODS,
     "n_sim": N_SIM,
     "seed": SEED,
+    "nbs_cpi_series": "cn_cpi_yoy_nbs",
+    "nbs_segments": NBS_SEGMENTS,
 }
 
 started = time.monotonic()
@@ -224,8 +232,12 @@ for t in open_idx:
 daily["pi_cn"] = cpi_val
 
 
-def monthly_asof(series_id: str) -> list[float]:
-    """信号日 as_of 下可见的最近一期月度观测；观测月距信号日超过 120 天视为缺失。"""
+def monthly_asof(series_id: str, *, strict: bool = True) -> list[float]:
+    """信号日 as_of 下可见的最近一期月度观测；观测月距信号日超过 120 天视为缺失。
+
+    ``strict=True`` 要求可见日严格早于信号日（ALFRED 版本表）；聚源带发布时刻的源按
+    ``InfoPublDate`` 的日期当天可见（09:30 发布，T 日收盘信号可用），用 ``strict=False``。
+    """
     out = []
     for t in open_idx:
         rows = macro.list_observations(
@@ -235,7 +247,10 @@ def monthly_asof(series_id: str) -> list[float]:
             series_ids=(series_id,),
         )
         rows = [r for r in rows if r.value is not None]
-        assert all(r.knowledge_dt < t.date() for r in rows)
+        if strict:
+            assert all(r.knowledge_dt < t.date() for r in rows)
+        else:
+            assert all(r.knowledge_dt <= t.date() for r in rows)
         out.append(float(max(rows, key=lambda r: r.observation_date).value) if rows else np.nan)
     return out
 
@@ -245,6 +260,12 @@ daily["r_jp"] = monthly_asof("jp_jgb_10y")
 log(f"德债有效 {daily['r_de'].notna().sum()} 天，日债有效 {daily['r_jp'].notna().sum()} 天")
 daily["r_cn_real"] = daily["r_cn"] - daily["pi_cn"]
 log(f"CPI 完成，有效 {daily['pi_cn'].notna().sum()} 天")
+
+# 第六部分：国家统计局 CPI（聚源）。发布当天即可见，所以用非 strict 的可见口径。
+daily["pi_nbs"] = monthly_asof("cn_cpi_yoy_nbs", strict=False)
+nbs_last = daily["pi_nbs"].last_valid_index()
+log(f"国家统计局 CPI 有效 {daily['pi_nbs'].notna().sum()} 天，最后有效日 {nbs_last.date()}")
+daily["r_cn_real_nbs"] = daily["r_cn"] - daily["pi_nbs"]
 
 for code in INDICES:
     ey = daily[f"ey|{code}"]
@@ -256,6 +277,7 @@ for code in INDICES:
     daily[f"Ujp|{code}"] = ey - daily["r_jp"]
     # 负责人原口径：任一利率缺失即缺失（np.maximum 传播 NaN，不用另一个顶替）
     daily[f"Mx|{code}"] = ey - np.maximum(daily["r_us"], daily["r_cn"])
+    daily[f"Vn|{code}"] = ey - daily["r_cn_real_nbs"]
 for code, tr in INDICES.items():
     daily[f"ret|{code}"] = pct[tr].reindex(open_idx) / 100.0 if tr in pct else np.nan
 
@@ -636,12 +658,15 @@ REAL_SIGNALS = {
     "V_cn": "V",
     "Max_us_cn": "Mx",
     "Vr_cn_real": "Vr",
+    "Vn_cn_real_nbs": "Vn",
     "EY": "ey",
 }
 real_pcts = {
     name: rolling_percentile(daily[f"{col}|{MAIN}"], PCT_YEARS) for name, col in REAL_SIGNALS.items()
 }
 real_start = max(p.first_valid_index() for p in real_pcts.values())
+# Vn 的起点约 2012-02，早于 Vr，共同起点仍由 Vr（OECD CPI）决定
+assert real_start == pd.Timestamp("2018-06-04"), real_start
 real_ret = daily[f"ret|{MAIN}"].loc[real_start:]
 real_rows = [{"signal": "buy_hold"} | perf_daily(real_ret.iloc[1:], rf=cash)]
 for name, p in real_pcts.items():
@@ -688,6 +713,158 @@ print(foreign_in_sample.round(3).to_string(index=False))
 print(panel.loc[placebo_mask, ["r_us", "r_de", "r_jp", "r_cn"]].corr().round(2))
 
 # %% [markdown]
+# ## 第六部分：国家统计局 CPI（聚源）
+#
+# π_NBS 取聚源指标 110255493（国家统计局 CPI 当期同比），观测日是月末，按
+# `InfoPublDate` 的日期当天可见，即 `knowledge_dt <= 信号日`；与 OECD 序列严格早于
+# 信号日不同。发布日从 2007-02 起，更早的月份不可见。
+
+# %%
+def series_by_month(series_id: str) -> pd.Series:
+    """as_of=AS_OF 下整段读一条月频序列，按月份对齐（观测日可能是月初或月末）。"""
+    rows = macro.list_observations(as_of=AS_OF, start=START, end=AS_OF, series_ids=(series_id,))
+    s = pd.Series(
+        {pd.Period(r.observation_date, "M"): float(r.value) for r in rows if r.value is not None}
+    )
+    return s.sort_index()
+
+
+# 数据核对：只描述两条 CPI 在重叠月份上的差异，不判读。
+cpi_diff = pd.concat(
+    [series_by_month("cn_cpi_yoy").rename("oecd"), series_by_month(PARAMS["nbs_cpi_series"]).rename("nbs")],
+    axis=1,
+).dropna()
+cpi_diff["diff"] = cpi_diff["nbs"] - cpi_diff["oecd"]
+nbs_vs_oecd = pd.DataFrame(
+    [
+        {
+            "overlap_months": len(cpi_diff),
+            "diff_months": int((cpi_diff["diff"].abs() > 1e-9).sum()),
+            "max_abs_diff": float(cpi_diff["diff"].abs().max()),
+            "max_diff_month": str(cpi_diff["diff"].abs().idxmax()),
+        }
+    ]
+)
+print(nbs_vs_oecd.round(3).to_string(index=False))
+print("差异最大的 10 个月:")
+print(cpi_diff.loc[cpi_diff["diff"].abs().sort_values(ascending=False).index[:10]].round(3).to_string())
+
+# 日频策略：与第一部分同规则（5 年窗口、T+1 成交），6 年窗口作敏感性。
+NBS_SIGNALS = {"U_us": "U", "V_cn": "V", "Max_us_cn": "Mx", "Vn_cn_real_nbs": "Vn", "EY": "ey"}
+nbs_rows = []
+nbs_windows: dict[int, tuple[pd.Timestamp, pd.Series]] = {}
+for years in (PCT_YEARS, PCT_YEARS_ALT):
+    pcts = {name: rolling_percentile(daily[f"{col}|{MAIN}"], years) for name, col in NBS_SIGNALS.items()}
+    start = max(p.first_valid_index() for p in pcts.values())
+    ret = daily[f"ret|{MAIN}"].loc[start:]
+    nbs_windows[years] = (start, ret)
+    bh = perf_daily(ret.iloc[1:], rf=cash)
+    nbs_rows.append({"pct_years": years, "signal": "buy_hold", "start": str(start.date())} | bh)
+    for name, p in pcts.items():
+        run = ratchet(p.loc[start:], ret, lag=1, cash=cash)
+        strategy_runs[(f"nbs_{name}", years, 1)] = run
+        nbs_rows.append(
+            {"pct_years": years, "signal": name, "start": str(start.date())}
+            | perf_daily(run["ret"], run, rf=cash)
+        )
+nbs_compare = pd.DataFrame(nbs_rows)
+print(nbs_compare.round(3).to_string(index=False))
+
+# 分段：同一条连续回测按 NBS_SEGMENTS 切片。
+nbs_seg_rows = []
+for years, (start, ret) in nbs_windows.items():
+    ref = strategy_runs[("nbs_U_us", years, 1)]
+    for seg, (lo, hi) in NBS_SEGMENTS.items():
+        seg_lo = start if lo is None else lo
+        r = ret.loc[seg_lo:hi].loc[ref.index[1] :]
+        nbs_seg_rows.append(
+            {"pct_years": years, "segment": seg, "signal": "buy_hold"} | perf_daily(r, rf=cash)
+        )
+        for name in NBS_SIGNALS:
+            run = strategy_runs[(f"nbs_{name}", years, 1)].loc[seg_lo:hi]
+            nbs_seg_rows.append(
+                {"pct_years": years, "segment": seg, "signal": name}
+                | perf_daily(run["ret"], run, rf=cash)
+            )
+nbs_segments = pd.DataFrame(nbs_seg_rows)
+print(
+    nbs_segments[["pct_years", "segment", "signal", "ann_return", "sharpe_excess", "max_dd", "avg_w"]]
+    .round(3)
+    .to_string(index=False)
+)
+
+# 月频样本内：样本限定在 Vn、V、U、EY、G 都可见的月份。
+panel["Vn"] = panel[f"Vn|{MAIN}"]
+nbs_x = pd.concat([panel["Vn"], x_main[["V", "U", "EY", "G"]]], axis=1)
+nbs_mask = nbs_x.notna().all(axis=1)
+NBS_IN_MODELS = {"Vn": ["Vn"], "V": ["V"], "U": ["U"], "EY": ["EY"], "Vn+G": ["Vn", "G"]}
+nbs_in_sample = []
+for h in HORIZONS:
+    y = panel[f"fwd{h}|{MAIN}"]
+    for name, cols in NBS_IN_MODELS.items():
+        fit, n = nw_ols(y[nbs_mask], nbs_x.loc[nbs_mask, cols], h)
+        for col in cols:
+            nbs_in_sample.append(
+                {"h": h, "model": name, "var": col, "coef": fit.params[col],
+                 "t_nw": fit.tvalues[col], "r2": fit.rsquared, "n": n}
+            )
+nbs_in_sample = pd.DataFrame(nbs_in_sample)
+print(nbs_in_sample.round(3).to_string(index=False))
+
+
+# 月频样本外：与原 oos_forecasts 的区别是训练与预测都限定在同一样本（mask 月份）内。
+NBS_OOS_MODELS = {"M_EY": ["EY"], "M1_V": ["V"], "M2_U": ["U"], "M_Vn": ["Vn"]}
+
+
+def nbs_oos_forecasts(h: int) -> pd.DataFrame:
+    y = panel[f"fwd{h}|{MAIN}"]
+    realized = {p: (entry[periods[i + h]] if i + h < len(periods) else None) for i, p in enumerate(periods)}
+    out = []
+    for i, p in enumerate(periods):
+        if p < OOS_START or np.isnan(y.iloc[i]) or not bool(nbs_mask.iloc[i]):
+            continue
+        t = panel["signal_dt"].iloc[i]
+        # 只用信号日已实现、且落在同一样本内的月份训练
+        train = [
+            q for q in periods[:i]
+            if bool(nbs_mask.loc[q]) and realized[q] is not None and realized[q] <= t
+        ]
+        y_train = y.loc[train].dropna()
+        if len(y_train) < MIN_HISTORY:
+            continue
+        row = {"period": p, "y": y.iloc[i], "M0": y_train.mean()}
+        for name, cols in NBS_OOS_MODELS.items():
+            data = pd.concat([y.loc[train].rename("y"), nbs_x.loc[train, cols]], axis=1).dropna()
+            x_now = nbs_x.loc[[p], cols]
+            if len(data) < MIN_HISTORY or x_now.isna().any(axis=None):
+                row[name] = np.nan
+                continue
+            fit = sm.OLS(data["y"], sm.add_constant(data[cols])).fit()
+            row[name] = float(np.asarray(fit.predict(sm.add_constant(x_now, has_constant="add")))[0])
+        out.append(row)
+    return pd.DataFrame(out).set_index("period")
+
+
+nbs_oos = []
+for h in HORIZONS:
+    c = nbs_oos_forecasts(h).dropna()
+    span = {"n": len(c), "first_period": str(c.index[0]), "last_period": str(c.index[-1])}
+    for name in NBS_OOS_MODELS:
+        r2 = 1 - ((c["y"] - c[name]) ** 2).sum() / ((c["y"] - c["M0"]) ** 2).sum()
+        t, p = clark_west(c["y"], c["M0"], c[name], h)
+        nbs_oos.append(
+            {"h": h, "model": name, "vs": "M0", "r2_oos": r2, "cw_t": t, "cw_p": p} | span
+        )
+    # 实际利率口径相对名义口径：只报 R²_OS，不做检验
+    r2 = 1 - ((c["y"] - c["M_Vn"]) ** 2).sum() / ((c["y"] - c["M1_V"]) ** 2).sum()
+    nbs_oos.append(
+        {"h": h, "model": "M_Vn", "vs": "M1_V", "r2_oos": r2, "cw_t": np.nan, "cw_p": np.nan} | span
+    )
+nbs_oos = pd.DataFrame(nbs_oos)
+print(nbs_oos.round(3).to_string(index=False))
+log("国家统计局 CPI 检验完成")
+
+# %% [markdown]
 # ## 落盘：结果表、pit_report、run log
 
 # %%
@@ -698,6 +875,7 @@ datasets = (
     "src.tushare.us_treasury_yield",
     "src.macro.fred_observation_vintage",
     "src.wind.aindexeodprices",
+    "src.jydb.c_ed_macroindicatordata",
     "std.trade_calendar",
 )
 inputs = [
@@ -720,6 +898,8 @@ pit_report = {
         "德债、日债为 OECD 月均，超精度值按 8 位量化（ADR 2026-11-23-fred-oecd-yield-rounding）。",
         "现金按上一交易日 10Y 国债收益率 act/365 计息，不含久期损益。",
         "Wind 源镜像跟随源端修订，估值与中债为当前版本，不是当时版本。",
+        "国家统计局 CPI（聚源 110255493）按 InfoPublDate 日期当天可见，源镜像数值为当前版本；"
+        "观测月末距信号日超过 120 天视为缺失。",
     ],
 }
 
@@ -739,6 +919,11 @@ results = {
     "real_compare": real_compare,
     "real_in_sample": real_in_sample,
     "foreign_in_sample": foreign_in_sample,
+    "nbs_vs_oecd": nbs_vs_oecd,
+    "nbs_compare": nbs_compare,
+    "nbs_segments": nbs_segments,
+    "nbs_in_sample": nbs_in_sample,
+    "nbs_oos": nbs_oos,
 }
 output_digest = digest_json({k: json.loads(v.to_json(orient="records")) for k, v in results.items()})
 
