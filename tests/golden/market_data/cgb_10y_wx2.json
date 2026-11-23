@@ -1,0 +1,115 @@
+{
+ "provenance": {
+  "source": "wx2 (legacy MSSQL, TDS 7.0), 只读 SELECT",
+  "old_method": "core/market_data_service.py MarketDataService.get_china_cgb_10y_yield_curve（引擎注入，旧代码原样运行）",
+  "filter": "CBONDCURVECNBD B_ANAL_CURVENUMBER=1232, B_ANAL_CURVETYPE=2, B_ANAL_CURVETERM=10",
+  "range": [
+   "20020101",
+   "20261120"
+  ],
+  "captured_on": "2026-11-23",
+  "digest": "每年取 'TRADE_DT|yield' 行，yield 量化到 4 位小数（与 PG numeric(20,4) 一致），按 TRADE_DT 升序以 '\\n' 连接后 sha256。"
+ },
+ "by_year": {
+  "2002": {
+   "count": 248,
+   "sha256": "d499ac71578e6c264e59830a8b487839911294bd7d13b72ca159e544618d0eb4"
+  },
+  "2003": {
+   "count": 245,
+   "sha256": "96e14fd0f9247d3d0d6ee2913096f453a89dec3f712c734da1980c50b4e9d112"
+  },
+  "2004": {
+   "count": 251,
+   "sha256": "4880c13719276cd4e334c61cc0749bedba10fac33f7d48f52c6e7a9f90b37cf2"
+  },
+  "2005": {
+   "count": 251,
+   "sha256": "debd65e4349a0c2368f2f0b58883b5eb01bf38f769b2c6111bdc20cdfa7c4979"
+  },
+  "2006": {
+   "count": 251,
+   "sha256": "349434d52dfbab0a74e2581fc71271b9ba70d1069392f203953e59e731042d3c"
+  },
+  "2007": {
+   "count": 249,
+   "sha256": "c3afa592005b5ae21a53d5314cc1e6d0de9d19492833e22c7c929e0a6a34be05"
+  },
+  "2008": {
+   "count": 251,
+   "sha256": "b47e68ff2101a832c8849965365265daee95e46a0b2ab5b28fd89a8f91854b6f"
+  },
+  "2009": {
+   "count": 250,
+   "sha256": "05c2c7c0aea674ea3ed5eac28f09fd7bfefd1a24725ad179a75748be9dde2a4b"
+  },
+  "2010": {
+   "count": 250,
+   "sha256": "6c5d52ab31458afc089c2a8a58651ff39be3072ff692876dba537bdf859c1bc6"
+  },
+  "2011": {
+   "count": 250,
+   "sha256": "56e0c07a819a8f581af17b7a1395a272d587d28392f60ee247de916f1c2b8ef4"
+  },
+  "2012": {
+   "count": 249,
+   "sha256": "07100f9accdb0f0463c87bc1e2d40bfeb983590942ef1d98b2b28624aa96effb"
+  },
+  "2013": {
+   "count": 250,
+   "sha256": "0372e7085d547ec44eeecc758644ece5042468c38eb1dc6c68fe29275cd16239"
+  },
+  "2014": {
+   "count": 250,
+   "sha256": "8535802d0a89e616f065caa1ea6f3571896b86bb0d9262fff347b3f40f029da1"
+  },
+  "2015": {
+   "count": 249,
+   "sha256": "c61cce6a8158a84150a63a262be8d5c096f2eb95af685946125f6f9db1a93c33"
+  },
+  "2016": {
+   "count": 251,
+   "sha256": "8bcc11f6092b19bd52e15a1cffd83247749a549415f499c4bd89901154713e21"
+  },
+  "2017": {
+   "count": 251,
+   "sha256": "c0324bf967b7fb9aafc50384077bb17787e60cfe67d4529abc97b107cbb0ff09"
+  },
+  "2018": {
+   "count": 252,
+   "sha256": "4746a6ef31569148e515427db98cdbd600e0501766c7d3f81bca6ac9666b09c6"
+  },
+  "2019": {
+   "count": 250,
+   "sha256": "e051f141293b61af73b01d8cd5168508a10fb057394dfec8c27ea1cd07f99260"
+  },
+  "2020": {
+   "count": 249,
+   "sha256": "40e362082bf4e478635c0cd4e33de757b18cd5ab5386203a0e459498b4628fc6"
+  },
+  "2021": {
+   "count": 250,
+   "sha256": "89dc7fcaf8a597b7ddbe2062a8b0a4e94de3d0d5470635c98d1433cab3daf171"
+  },
+  "2022": {
+   "count": 250,
+   "sha256": "aa0c2e4c0f9b02e793f0ba5da14f64da9ddbfa066a2b9ed5a82e92f3ece23771"
+  },
+  "2023": {
+   "count": 250,
+   "sha256": "1214de6888f66b4b6d6b7ff642fb14047fdbbd4fb58d08db5eb55f952dfbb304"
+  },
+  "2024": {
+   "count": 251,
+   "sha256": "dd73195b01f6b6a9e8664a7303c0b9ad843ddb1063a79ec0536bf64e581b5dc9"
+  },
+  "2025": {
+   "count": 248,
+   "sha256": "2455df26ffd357333d1d3c2f4b252897637b27564c44f70a2e0c8291bbbd29d1"
+  },
+  "2026": {
+   "count": 219,
+   "sha256": "c0c8ddbeb0f973d4e8d40351190241e69f9a2bd67847050fa3af8620a1618225"
+  }
+ }
+}
