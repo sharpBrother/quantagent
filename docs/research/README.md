@@ -14,3 +14,5 @@ applies_to:
 
 - [A 股股债利差的利率锚](erp-rate-anchor.md)：美元口径的优势来自哪里；中国实际利率口径。
 - [利率锚阶段性报告](erp-rate-anchor-interim-report.md)：供外部评审的阶段总结与待答问题。
+- [第二阶段计划](erp-phase2-plan.md)：P0 max 归因与 P1 估值因子稳健性的事先方案。
+- [报告一：max 口径超额收益归因](erp-max-attribution.md)：优势来自 2022 年一次切换与仓位规则，安慰剂下不显著。
