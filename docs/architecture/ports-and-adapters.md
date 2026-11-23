@@ -2,7 +2,7 @@
 title: 端口与适配器
 status: active
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-11-23
 applies_to:
   - src/quantagent/domain/ports/
   - src/quantagent/adapters/
@@ -97,8 +97,9 @@ flowchart TB
 | `AssetIdentityRepository` | 资产基础信息、代码映射、生命周期 |
 | `UniverseRepository` | 股票池成分与生效区间 |
 | `PriceRepository` | 行情与复权因子 |
+| `IndexValuationRepository` | 指数日频估值（`AINDEXVALUATION`，目前只读 `PE_TTM`）。源表含非交易日行，原样返回 |
 | `FundamentalRepository` | 财务与一致预期，按 `period_end` 与版本 |
-| `MacroRepository` | 宏观序列 |
+| `MacroRepository` | 宏观序列。领域序列 ID（`cn_cgb_10y`、`us_ust_10y`、`us_tips_10y`）到源表的映射只在 `adapters/postgres/macro.py`；有修订的源（ALFRED）返回 `as_of` 当时生效的版本，版本选择在 `domain/macro` |
 | `FeatureRepository` | 因子长表读写 |
 | `SignalRepository` | 信号与回测结果 |
 | `PortfolioRepository` | 组合权重与持仓 |

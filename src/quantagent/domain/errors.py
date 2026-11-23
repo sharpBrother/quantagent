@@ -33,3 +33,7 @@ class InvalidQueryError(DomainError):
 
 class PriceLookupError(DomainError):
     """行情行缺失键、日期非法，或同一交易日同一代码出现多行。"""
+
+
+class MacroLookupError(DomainError):
+    """宏观观测缺键、日期非法，或同一观测有多个同时生效的版本。"""

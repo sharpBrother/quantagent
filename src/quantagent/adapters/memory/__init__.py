@@ -9,6 +9,8 @@ from quantagent.adapters.memory.feature_value import MemoryFeatureRepository
 from quantagent.adapters.memory.forward_return import MemoryForwardReturnRepository
 from quantagent.adapters.memory.group_nav import MemoryGroupNavRepository
 from quantagent.adapters.memory.index_returns import MemoryIndexReturnRepository
+from quantagent.adapters.memory.index_valuation import MemoryIndexValuationRepository
+from quantagent.adapters.memory.macro import MemoryMacroRepository
 from quantagent.adapters.memory.prices import MemoryDailyPriceRepository
 from quantagent.adapters.memory.st import MemoryStStatusRepository
 from quantagent.adapters.memory.universe_member import MemoryUniverseRepository
@@ -21,6 +23,8 @@ __all__ = [
     "MemoryForwardReturnRepository",
     "MemoryGroupNavRepository",
     "MemoryIndexReturnRepository",
+    "MemoryIndexValuationRepository",
+    "MemoryMacroRepository",
     "MemoryStStatusRepository",
     "MemoryUniverseRepository",
 ]
