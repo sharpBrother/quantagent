@@ -1,0 +1,117 @@
+{
+  "as_of": "2026-11-20",
+  "boundary": {
+    "no_database_write": true,
+    "production_qualified": false,
+    "research_only": true
+  },
+  "cash_legs": {
+    "cash_10y": "主口径：r = 上一交易日 cn_cgb_10y（百分点）；当日现金收益 = r / 100 × 相邻交易日自然日数 / 365（act/365，不含久期损益）",
+    "cash_ibo7d": "同业拆借 7 天：r = 上一交易日 cn_ibo_7d（asof 对齐、7 天过期）；当日现金收益 = r / 100 × 相邻交易日自然日数 / 365"
+  },
+  "cost_bps": [
+    0,
+    5
+  ],
+  "cost_rule": "单边成本，按成交日扣：ret_net = ret - bps / 1e4 × turnover",
+  "execution": {
+    "first_day": "起点当天无持仓、无收益（w 与 ret 为 NaN），首个目标在下一交易日成交",
+    "lag": 1,
+    "rule": "T 日收盘出信号，T+1 收盘成交；当日收益按前一日收盘仓位计算，随后仓位随收益漂移"
+  },
+  "index": {
+    "name": "中证全指",
+    "return_wind_code": "h00985.CSI",
+    "valuation_wind_code": "000985.CSI"
+  },
+  "inputs": [
+    {
+      "dataset": "std.trade_calendar",
+      "key": "trade_calendar",
+      "series_id": "SSE",
+      "stale_days": null,
+      "visible": "交易所交易日历；as_of 及之前已确定的交易日可见（is_open=True）",
+      "wind_code": null
+    },
+    {
+      "dataset": "src.wind.aindexvaluation",
+      "key": "pe_ttm",
+      "series_id": null,
+      "stale_days": 0,
+      "visible": "信号日 T 收盘后当日公开的 PE_TTM（same_day_close）；不得用 OPDATE 或 _ingested_at 当可见日",
+      "wind_code": "000985.CSI"
+    },
+    {
+      "dataset": "src.wind.cbondcurvecnbd",
+      "key": "r_cn",
+      "series_id": "cn_cgb_10y",
+      "stale_days": 0,
+      "visible": "信号日 T 收盘公布的 10 年期国债到期收益率（曲线 1232、类型 2、期限 10 年，same_day_close）",
+      "wind_code": null
+    },
+    {
+      "dataset": "src.tushare.us_treasury_yield",
+      "key": "r_us",
+      "series_id": "us_ust_10y",
+      "stale_days": 7,
+      "visible": "观测日严格早于信号日 T 的最近一期；A 股 T 日收盘时 T 日美债尚未收盘",
+      "wind_code": null
+    },
+    {
+      "dataset": "src.jydb.c_ed_macroindicatordata",
+      "key": "ibo_7d",
+      "series_id": "cn_ibo_7d",
+      "stale_days": 7,
+      "visible": "银行间同业拆借加权利率 7 天（聚源指标 601230002）；日频单版本、发布当天可见，as_of=AS_OF 整段读一次再 asof 对齐与逐日读等价",
+      "wind_code": null
+    },
+    {
+      "dataset": "src.wind.aindexeodprices",
+      "key": "index_return",
+      "series_id": null,
+      "stale_days": 0,
+      "visible": "全收益指数当日收盘涨跌幅（same_day_close）；策略 T+1 收盘成交，收益口径与指数一致",
+      "wind_code": "h00985.CSI"
+    }
+  ],
+  "mappings": {
+    "F3": {
+      "band": 0.0,
+      "band_rule": "band=0 且无单向约束，目标即可成交仓位，每日对齐",
+      "band_tol": 1e-09,
+      "name": "连续映射（报告一的 F3）",
+      "one_way": false,
+      "target": "分位"
+    },
+    "R0": {
+      "band": 0.1,
+      "band_rule": "abs(desired - w) >= band - band_tol 才调仓",
+      "band_tol": 1e-09,
+      "name": "原规则（单向约束 + 阈值）",
+      "one_way": true,
+      "one_way_rule": "分位 >= 0.5 只加仓、< 0.5 只减仓（目标越界时取当前仓位）",
+      "target": "分位"
+    },
+    "cash_leg_in_data": "cash_10y"
+  },
+  "percentile": {
+    "comparison": "<= 当日值",
+    "min_window": "不满窗口不出信号（NaN），不做短窗口替代",
+    "statistic": "窗口内 <= 当日值的有效观测占比",
+    "window_days": 1826,
+    "window_kind": "自然日滚动窗口，取信号日及之前窗口内的全部有效日值",
+    "years": 5
+  },
+  "signals": {
+    "definition": {
+      "EY": "100 / PE_TTM（PE_TTM <= 0 视为无定义，不参与分位）",
+      "M": "EY - max(r_US, r_CN)",
+      "U": "EY - r_US",
+      "V": "EY - r_CN"
+    },
+    "missing_rule": "任一输入缺失即该信号缺失，不填充、不补前值、不跨日池化",
+    "start_rule": "2010-10-13 = 上游运行的共同起点。四个信号（EY/V/U/M）的首个 5 年分位日都是2009-12-31，但上游运行还把 TIPS 实际利率（Ur_tips）计入共同起点，它的首个分位日是 2010-10-13。冻结窗口必须与已发布结果一致：ratchet 的单向约束依赖此前仓位历史，切片更早会改变仓位路径。",
+    "unit": "利率与利差单位为百分点"
+  },
+  "start": "2010-10-13"
+}

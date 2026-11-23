@@ -1,0 +1,73 @@
+{
+  "boundary": {
+    "no_database_write": true,
+    "production_qualified": false,
+    "research_only": true
+  },
+  "bundle_id": "erp_rate_anchor/candidates_2026-11-24",
+  "config_sha256": "60185a6ac1fb82d1f26139ed163f5d57bd56d45a6bc0779676b58eb56cb74b13",
+  "created": "2026-11-24",
+  "files": [
+    {
+      "bytes": 4597,
+      "path": "config.json",
+      "sha256": "60185a6ac1fb82d1f26139ed163f5d57bd56d45a6bc0779676b58eb56cb74b13"
+    },
+    {
+      "bytes": 1323989,
+      "columns": [
+        "trade_dt",
+        "r_cn",
+        "r_us",
+        "r_us_obs_dt",
+        "ibo_7d",
+        "ey",
+        "V",
+        "U",
+        "M",
+        "pct_EY",
+        "r0_target_EY",
+        "r0_w_EY",
+        "f3_w_EY",
+        "pct_V",
+        "r0_target_V",
+        "r0_w_V",
+        "f3_w_V",
+        "pct_U",
+        "r0_target_U",
+        "r0_w_U",
+        "f3_w_U",
+        "pct_M",
+        "r0_target_M",
+        "r0_w_M",
+        "f3_w_M"
+      ],
+      "path": "data/signals_daily.csv",
+      "rows": 3915,
+      "sha256": "68c0d12a27786433b4448f09105a51344219075a588f7e6856f560512cc95353"
+    }
+  ],
+  "freeze_window": {
+    "end": "2026-11-20",
+    "start": "2010-10-13"
+  },
+  "purpose": "报告三的候选口径，供 web 前瞻记录复现与追加。",
+  "research_line": "erp_rate_anchor",
+  "source_runs": [
+    {
+      "input_digest": "5c33455d3361485496497597d90972a63c96b4cab818e91c95d9104c5dcb86c0",
+      "line": "erp_max_attribution",
+      "output_digest": "2e08c71aee5b1f4f63f0d5ef3af193447c89a686da16a8ad3ab33677a4cd3a24",
+      "path": "var/research/erp_max_attribution/ae2a020e869945bc87294275e9e14580/summary.json",
+      "run_id": "ae2a020e869945bc87294275e9e14580"
+    },
+    {
+      "input_digest": "94a84fa9b2e1bec8fdd48b81a91d27f2c07da74b16471e12f34f046f51052d43",
+      "line": "erp_rate_anchor",
+      "output_digest": "f90f30cd6feee75503e3807071276deb6184f1af1282354682be63b45aa71a8b",
+      "path": "var/research/erp_rate_anchor/05cf3475b6354fa8be2c4d3f7bab942f/summary.json",
+      "run_id": "05cf3475b6354fa8be2c4d3f7bab942f"
+    }
+  ],
+  "superseded_by": null
+}
