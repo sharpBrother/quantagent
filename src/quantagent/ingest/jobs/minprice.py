@@ -54,6 +54,22 @@ _APPROVED_NEGATIVE_VOLUME = {
     date(2026, 7, 15): (("920112.BJ", Decimal("28")), ("920168.BJ", Decimal("-53"))),
     date(2026, 7, 17): (("920121.BJ", Decimal("2063")),),
     date(2026, 7, 22): (("603869.SH", Decimal("-22")), ("920108.BJ", Decimal("19"))),
+    date(2026, 7, 24): (("920112.BJ", Decimal("-12")),),
+    date(2026, 7, 28): (("920370.BJ", Decimal("129")),),
+    date(2026, 8, 4): (("920395.BJ", Decimal("91")),),
+    date(2026, 8, 17): (("920121.BJ", Decimal("1462")), ("920679.BJ", Decimal("10"))),
+    date(2026, 8, 20): (("920146.BJ", Decimal("37")), ("920395.BJ", Decimal("-42"))),
+    date(2026, 8, 24): (
+        ("920168.BJ", Decimal("378")),
+        ("920275.BJ", Decimal("-62")),
+        ("920679.BJ", Decimal("-37")),
+    ),
+    date(2026, 9, 10): (("920177.BJ", Decimal("971")),),
+    date(2026, 9, 15): (
+        ("920121.BJ", Decimal("205")),
+        ("920166.BJ", Decimal("2")),
+        ("920168.BJ", Decimal("542")),
+    ),
 }
 _PREVIOUSLY_APPROVED_DATES = frozenset(
     {

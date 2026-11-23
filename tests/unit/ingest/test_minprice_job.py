@@ -195,6 +195,7 @@ def test_january_21_excludes_affected_stocks_and_corrects_index(
         (date(2026, 6, 8), "920608.BJ", "-51"),
         (date(2026, 6, 22), "920855.BJ", "-7"),
         (date(2026, 7, 8), "920132.BJ", "-56"),
+        (date(2026, 7, 24), "920112.BJ", "-12"),
     ],
 )
 def test_approved_negative_volume_corrected_after_daily_check(
@@ -260,6 +261,9 @@ def test_approved_negative_volume_corrected_after_daily_check(
         (date(2026, 7, 9), "920422.BJ", "337"),
         (date(2026, 7, 14), "920422.BJ", "11"),
         (date(2026, 7, 17), "920121.BJ", "2063"),
+        (date(2026, 7, 28), "920370.BJ", "129"),
+        (date(2026, 8, 4), "920395.BJ", "91"),
+        (date(2026, 9, 10), "920177.BJ", "971"),
     ],
 )
 def test_corrects_approved_positive_amount_and_negative_volume(
@@ -365,3 +369,196 @@ def test_july_6_corrects_two_rows_with_distinct_amount_signs(monkeypatch, tmp_pa
         ("920455.BJ", "-41.0000"),
         ("920541.BJ", "391.0000"),
     }
+
+
+def test_august_17_corrects_two_positive_amount_rows(monkeypatch, tmp_path):
+    # 同日两条正成交额的 -1 手记录，均按负责人裁定把成交量和成交额置 0。
+    rows = [
+        (code, datetime(2026, 8, 17, 15), *[Decimal("10")] * 4, Decimal("-1"), Decimal(amount))
+        for code, amount in (("920121.BJ", "1462"), ("920679.BJ", "10"))
+    ]
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
+    captured = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.stage_partition",
+        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+    )
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
+    logs = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
+    )
+    settings = Settings(var_root=tmp_path, allow_db_write=True)
+    pg = MagicMock()
+    pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
+    assert (
+        ingest_day(
+            MagicMock(),
+            pg,
+            trade_date=date(2026, 8, 17),
+            settings=settings,
+            paths=resolve_var_paths(settings, repo_root=tmp_path),
+            calendar=MagicMock(),
+            write_db=True,
+        )
+        == "inserted"
+    )
+    assert all(r["vol"] == 0 and r["amount"] == 0 for r in captured[0].to_pylist())
+    assert {(r["ts_code"], r["amount_before"]) for r in logs[0].source_corrections} == {
+        ("920121.BJ", "1462.0000"),
+        ("920679.BJ", "10.0000"),
+    }
+    assert logs[0].input_digest != logs[0].output_digest
+
+
+def test_august_20_corrects_two_rows_with_distinct_amount_signs(monkeypatch, tmp_path):
+    # 同日两条 -1 手记录：正成交额直接置 0，负成交额仍须通过日成交额对比。
+    day = date(2026, 8, 20)
+    rows = [
+        (code, datetime(2026, 8, 20, 9, 30), *[Decimal("10")] * 4, Decimal("1"), Decimal("1000"))
+        for code in ("920146.BJ", "920395.BJ")
+    ] + [
+        (
+            "920146.BJ",
+            datetime(2026, 8, 20, 15),
+            *[Decimal("10")] * 4,
+            Decimal("-1"),
+            Decimal("37"),
+        ),
+        (
+            "920395.BJ",
+            datetime(2026, 8, 20, 15),
+            *[Decimal("10")] * 4,
+            Decimal("-1"),
+            Decimal("-42"),
+        ),
+    ]
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
+    captured = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.stage_partition",
+        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+    )
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
+    logs = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
+    )
+    prices = MagicMock()
+    prices.list_prices.return_value = [SimpleNamespace(wind_code="920395.BJ", amount=Decimal("1"))]
+    settings = Settings(var_root=tmp_path, allow_db_write=True)
+    pg = MagicMock()
+    pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
+    kwargs = {
+        "trade_date": day,
+        "settings": settings,
+        "paths": resolve_var_paths(settings, repo_root=tmp_path),
+        "calendar": MagicMock(),
+        "daily_prices": prices,
+        "write_db": True,
+    }
+    assert ingest_day(MagicMock(), pg, **kwargs) == "inserted"
+    corrected = [r for r in captured[0].to_pylist() if r["trade_time"].hour == 15]
+    assert len(corrected) == 2 and all(r["vol"] == 0 and r["amount"] == 0 for r in corrected)
+    assert {(r["ts_code"], r["amount_before"]) for r in logs[0].source_corrections} == {
+        ("920146.BJ", "37.0000"),
+        ("920395.BJ", "-42.0000"),
+    }
+    assert all(r["vol_before"] == "-1.0000" for r in logs[0].source_corrections)
+    prices.list_prices.return_value = [SimpleNamespace(wind_code="920395.BJ", amount=Decimal("2"))]
+    with pytest.raises(SourceFetchError, match="未通过成交额对比"):
+        ingest_day(MagicMock(), pg, **kwargs)
+
+
+def test_august_24_corrects_three_rows_mixed_amount_signs(monkeypatch, tmp_path):
+    # 首个三条 -1 手记录的交易日：正成交额直接置 0，两条负成交额分别过日行情对比。
+    day = date(2026, 8, 24)
+    fixes = (("920168.BJ", "378"), ("920275.BJ", "-62"), ("920679.BJ", "-37"))
+    rows = [
+        (code, datetime(2026, 8, 24, 9, 30), *[Decimal("10")] * 4, Decimal("1"), Decimal("1000"))
+        for code, _ in fixes
+    ] + [
+        (code, datetime(2026, 8, 24, 15), *[Decimal("10")] * 4, Decimal("-1"), Decimal(amount))
+        for code, amount in fixes
+    ]
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
+    captured = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.stage_partition",
+        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+    )
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
+    logs = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
+    )
+    prices = MagicMock()
+    prices.list_prices.return_value = [
+        SimpleNamespace(wind_code=code, amount=Decimal("1")) for code in ("920275.BJ", "920679.BJ")
+    ]
+    settings = Settings(var_root=tmp_path, allow_db_write=True)
+    pg = MagicMock()
+    pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
+    kwargs = {
+        "trade_date": day,
+        "settings": settings,
+        "paths": resolve_var_paths(settings, repo_root=tmp_path),
+        "calendar": MagicMock(),
+        "daily_prices": prices,
+        "write_db": True,
+    }
+    assert ingest_day(MagicMock(), pg, **kwargs) == "inserted"
+    corrected = [r for r in captured[0].to_pylist() if r["trade_time"].hour == 15]
+    assert len(corrected) == 3 and all(r["vol"] == 0 and r["amount"] == 0 for r in corrected)
+    assert {(r["ts_code"], r["amount_before"]) for r in logs[0].source_corrections} == {
+        (code, f"{Decimal(amount):.4f}") for code, amount in fixes
+    }
+    assert sorted(logs[0].excluded_codes) == []
+    prices.list_prices.return_value = [
+        SimpleNamespace(wind_code="920275.BJ", amount=Decimal("1")),
+        SimpleNamespace(wind_code="920679.BJ", amount=Decimal("2")),
+    ]
+    with pytest.raises(SourceFetchError, match="未通过成交额对比"):
+        ingest_day(MagicMock(), pg, **kwargs)
+
+
+def test_september_15_corrects_three_positive_amount_rows(monkeypatch, tmp_path):
+    # 三条正成交额的 -1 手记录，均按负责人惯例指示把成交量和成交额置 0。
+    day = date(2026, 9, 15)
+    fixes = (("920121.BJ", "205"), ("920166.BJ", "2"), ("920168.BJ", "542"))
+    rows = [
+        (code, datetime(2026, 9, 15, 15), *[Decimal("10")] * 4, Decimal("-1"), Decimal(amount))
+        for code, amount in fixes
+    ]
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
+    captured = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.stage_partition",
+        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+    )
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
+    logs = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
+    )
+    settings = Settings(var_root=tmp_path, allow_db_write=True)
+    pg = MagicMock()
+    pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
+    assert (
+        ingest_day(
+            MagicMock(),
+            pg,
+            trade_date=day,
+            settings=settings,
+            paths=resolve_var_paths(settings, repo_root=tmp_path),
+            calendar=MagicMock(),
+            write_db=True,
+        )
+        == "inserted"
+    )
+    assert all(r["vol"] == 0 and r["amount"] == 0 for r in captured[0].to_pylist())
+    assert {(r["ts_code"], r["amount_before"]) for r in logs[0].source_corrections} == {
+        (code, f"{Decimal(amount):.4f}") for code, amount in fixes
+    }
+    assert logs[0].excluded_codes == []
+    assert logs[0].input_digest != logs[0].output_digest
