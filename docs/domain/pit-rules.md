@@ -2,7 +2,7 @@
 title: PIT 规则体系
 status: active
 created: 2026-09-16
-updated: 2026-11-17
+updated: 2026-11-23
 applies_to:
   - src/quantagent/contracts/visibility/
   - src/quantagent/domain/pit/
@@ -72,7 +72,7 @@ YAML**，也**不得作为 PIT 查询的数据集**（fail-closed 仍然成立�
 | 业绩预告/快报/朝阳利润 `fin_*` | `declare_date` | `source_field` `field=declare_date` |
 | Wind 预告 `ASHAREPROFITNOTICE` | `S_PROFITNOTICE_DATE` | `source_field` `field=S_PROFITNOTICE_DATE` |
 | 聚源宏观（除货币供应） | `InfoPublDate <= as_of`；空发布日不可见；同指标同期取最晚发布 | `source_field` `field=InfoPublDate` |
-| 货币供应 `ED_MoneySupply` | **不用** `InfoPublDate`，可见日 = `EndDate` 次月 15 日 | `fixed_lag` 或等价推导，grade B |
+| 货币供应 `ED_MoneySupply` | 旧仓不用 `InfoPublDate`，统一取 `EndDate` 次月 15 日 | 2026-11-23 负责人改判：`InfoPublDate` 非空用它（A），为空用 `EndDate` 次月 15 日（`fixed_lag` fallback，B），见 [ADR](../adr/2026-11-23-ed-moneysupply-visibility.md) |
 | 中长期贷款余额空发布日 | 次月 20 日 | 仅该指标；其余 JY 空发布日仍不可见 |
 | Tushare `shibor` / `us_treasury_yield` | `trade_date <= as_of` | `same_day_close`，`event_field=trade_date` |
 | Tushare `eco_cal` | `event_date <= as_of` | `source_field` `field=event_date` |
