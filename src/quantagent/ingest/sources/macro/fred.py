@@ -27,7 +27,7 @@ import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from decimal import Decimal, InvalidOperation
+from decimal import ROUND_HALF_EVEN, Decimal, InvalidOperation
 from itertools import pairwise
 from typing import Any, NamedTuple, Protocol
 
@@ -43,8 +43,20 @@ FRED_VINTAGE_DATES_URL = "https://api.stlouisfed.org/fred/series/vintagedates"
 # CPALTT01CNM659N 是 OECD MEI 中国 CPI 同比（月频），作中国实际利率的通胀代理（2026-11-23
 # 负责人同意，见 docs/research/erp-rate-anchor.md）。可见日仍取 ALFRED 首个 realtime_start；
 # 该序列 ALFRED 版本从 2013-06 起，源端停在 2025-04。
-# 德国、日本 10 年期（IRLTLT01DEM156N、IRLTLT01JPM156N）有超过 8 位小数的值，待裁定后再加。
-FRED_SERIES: tuple[str, ...] = ("DFII10", "T10YIE", "CPIAUCSL", "CPALTT01CNM659N")
+# IRLTLT01DEM156N、IRLTLT01JPM156N 是 OECD 德国、日本 10 年期国债收益率（月均），作利率锚的
+# 安慰剂（负责人 2026-11-23 同意）。源端有浮点表示残留的超精度值，按 _ROUND_8DP_SERIES 处理。
+FRED_SERIES: tuple[str, ...] = (
+    "DFII10",
+    "T10YIE",
+    "CPIAUCSL",
+    "CPALTT01CNM659N",
+    "IRLTLT01DEM156N",
+    "IRLTLT01JPM156N",
+)
+# 允许超过 8 位小数时按 ROUND_HALF_EVEN 量化到 8 位的序列（docs/adr/2026-11-23-fred-oecd-yield-rounding.md）。
+# 这两条的超精度值是浮点表示残留（如 '5.1739999999999995'），量化后即源端本意。
+# 其余序列仍然超精度即报错：源端格式变了要停下来看。
+_ROUND_8DP_SERIES: frozenset[str] = frozenset({"IRLTLT01DEM156N", "IRLTLT01JPM156N"})
 
 # 与 0018_macro_source_tables.sql 的 source 列配套。契约 yaml 的 source 描述已与此一致。
 SOURCE_LABEL = "fred.series_observations"
@@ -486,7 +498,7 @@ def _to_row(item: object, *, series_id: str) -> dict[str, object]:
         "observation_date": _iso_date(item.get("date"), field="date"),
         "realtime_start": _iso_date(item.get("realtime_start"), field="realtime_start"),
         "realtime_end": _iso_date(item.get("realtime_end"), field="realtime_end"),
-        "value": _parse_value(item.get("value")),
+        "value": _parse_value(item.get("value"), round_8dp=series_id in _ROUND_8DP_SERIES),
         "source": SOURCE_LABEL,
     }
 
@@ -500,8 +512,11 @@ def _iso_date(raw: object, *, field: str) -> date:
         raise SourceFetchError(f"FRED {field} 不是合法日期: {raw!r}") from exc
 
 
-def _parse_value(raw: object) -> Decimal | None:
-    """``"."`` 与空串记 NULL；其余必须是有限值、不超过 8 位小数、在 DECIMAL(18,8) 范围内。"""
+def _parse_value(raw: object, *, round_8dp: bool = False) -> Decimal | None:
+    """``"."`` 与空串记 NULL；其余必须是有限值、不超过 8 位小数、在 DECIMAL(18,8) 范围内。
+
+    ``round_8dp`` 只给 ``_ROUND_8DP_SERIES``：超过 8 位小数时按 ROUND_HALF_EVEN 量化，不报错。
+    """
     if raw is None:
         return None
     if not isinstance(raw, str):
@@ -516,11 +531,11 @@ def _parse_value(raw: object) -> Decimal | None:
     if not parsed.is_finite():
         raise SourceFetchError(f"FRED value 必须是有限值: {text!r}")
     try:
-        quantized = parsed.quantize(_VALUE_QUANTUM)
+        quantized = parsed.quantize(_VALUE_QUANTUM, rounding=ROUND_HALF_EVEN)
     except InvalidOperation:
         raise SourceFetchError(f"FRED value 超出 DECIMAL(18,8): {text!r}") from None
-    if quantized != parsed:
-        # 不四舍五入。超精度说明源端格式变了，停下来看，而不是静默截断。
+    if quantized != parsed and not round_8dp:
+        # 默认不四舍五入。超精度说明源端格式变了，停下来看，而不是静默截断。
         raise SourceFetchError(f"FRED value 超过 8 位小数: {text!r}")
     if quantized.copy_abs() >= _VALUE_ABS_LIMIT:
         raise SourceFetchError(f"FRED value 超出 DECIMAL(18,8): {text!r}")

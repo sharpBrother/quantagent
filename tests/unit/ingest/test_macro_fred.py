@@ -514,6 +514,34 @@ def test_invalid_values_fail_without_rounding(raw: str) -> None:
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("5.1739999999999995", "5.17400000"),
+        ("7.052380952", "7.05238095"),
+        ("0.000000005", "0.00000000"),  # 半数向偶数舍入
+        ("0.000000015", "0.00000002"),
+    ],
+)
+def test_oecd_yield_series_round_half_even_to_eight_places(raw: str, expected: str) -> None:
+    fred = FakeFred([seg("2024-01-01", "2024-01-02", "9999-12-31", raw)])
+    value = fetch_observation_vintages("IRLTLT01DEM156N", api_key=_KEY, http=fred).rows[0]["value"]
+    assert isinstance(value, Decimal)
+    assert value == Decimal(expected)
+    assert value.as_tuple().exponent == -8
+
+
+@pytest.mark.unit
+def test_rounding_whitelist_does_not_extend_to_other_series() -> None:
+    fred = FakeFred([seg("2024-01-01", "2024-01-02", "9999-12-31", "5.1739999999999995")])
+    with pytest.raises(SourceFetchError, match="超过 8 位小数"):
+        fetch_observation_vintages("CPALTT01CNM659N", api_key=_KEY, http=fred)
+    fred = FakeFred([seg("2024-01-01", "2024-01-02", "9999-12-31", "NaN")])
+    with pytest.raises(SourceFetchError):
+        fetch_observation_vintages("IRLTLT01JPM156N", api_key=_KEY, http=fred)
+
+
+@pytest.mark.unit
 def test_largest_allowed_value_is_kept() -> None:
     # DECIMAL(18,8) 的上界之内：整数部分 10 位减一。
     fred = FakeFred([seg("2024-01-01", "2024-01-02", "9999-12-31", "9999999999")])
@@ -619,7 +647,14 @@ def test_row_maps_to_native_columns_with_dates_decimals_and_source_label() -> No
 @pytest.mark.unit
 def test_spec_keys_are_series_date_and_realtime_start() -> None:
     assert FRED_OBSERVATION_VINTAGE.keys == ("series_id", "observation_date", "realtime_start")
-    assert FRED_SERIES == ("DFII10", "T10YIE", "CPIAUCSL", "CPALTT01CNM659N")
+    assert FRED_SERIES == (
+        "DFII10",
+        "T10YIE",
+        "CPIAUCSL",
+        "CPALTT01CNM659N",
+        "IRLTLT01DEM156N",
+        "IRLTLT01JPM156N",
+    )
     assert FRED_OBSERVATION_VINTAGE.dataset == "src.macro.fred_observation_vintage"
 
 

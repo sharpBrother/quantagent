@@ -110,3 +110,20 @@ def test_china_cpi_reads_oecd_series_from_alfred() -> None:
     _statement, params = cur.execute.call_args.args
     assert params[-1] == "CPALTT01CNM659N"
     assert [(r.value, r.knowledge_dt) for r in rows] == [(Decimal("-0.8"), date(2024, 2, 20))]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("series_id", "fred_id"),
+    [("de_bund_10y", "IRLTLT01DEM156N"), ("jp_jgb_10y", "IRLTLT01JPM156N")],
+)
+def test_oecd_yields_read_from_alfred(series_id: str, fred_id: str) -> None:
+    repo, cur = _repo([])
+    repo.list_observations(
+        as_of=date(2024, 3, 1),
+        start=date(2024, 1, 1),
+        end=date(2024, 1, 31),
+        series_ids=(series_id,),
+    )
+    _statement, params = cur.execute.call_args.args
+    assert params[-1] == fred_id

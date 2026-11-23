@@ -99,7 +99,7 @@ flowchart TB
 | `PriceRepository` | 行情与复权因子 |
 | `IndexValuationRepository` | 指数日频估值（`AINDEXVALUATION`，目前只读 `PE_TTM`）。源表含非交易日行，原样返回 |
 | `FundamentalRepository` | 财务与一致预期，按 `period_end` 与版本 |
-| `MacroRepository` | 宏观序列。领域序列 ID（`cn_cgb_10y`、`us_ust_10y`、`us_tips_10y`、`cn_cpi_yoy`）到源表的映射只在 `adapters/postgres/macro.py`；有修订的源（ALFRED）返回 `as_of` 当时生效的版本，版本选择在 `domain/macro` |
+| `MacroRepository` | 宏观序列。领域序列 ID（`cn_cgb_10y`、`us_ust_10y`、`us_tips_10y`、`cn_cpi_yoy`、`de_bund_10y`、`jp_jgb_10y`）到源表的映射只在 `adapters/postgres/macro.py`；有修订的源（ALFRED）返回 `as_of` 当时生效的版本，版本选择在 `domain/macro` |
 | `FeatureRepository` | 因子长表读写 |
 | `SignalRepository` | 信号与回测结果 |
 | `PortfolioRepository` | 组合权重与持仓 |

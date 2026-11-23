@@ -48,7 +48,7 @@ CLI 回填和 Dagster 日更调用同一个 `ingest` 作业，复用 PostgreSQL 
 | 数据源 | 目标表 | 存量 | 日更 |
 |---|---|---|---|
 | Tushare `shibor`、`us_tycr` | `src_tushare.shibor`、`src_tushare.us_treasury_yield`（已建，长表） | 按日期分段拉取，与 `wx2` 校对期限、精度和空值 | 重查近期区间，追加新日期，缺期单独报告 |
-| FRED／ALFRED `DFII10`、`T10YIE`、`CPIAUCSL`；2026-11-23 起加 OECD 中国 CPI 同比 `CPALTT01CNM659N`（ALFRED 版本从 2013-06 起，源端停在 2025-04） | `src_macro.macro_fred_observation` + 新增版本表 | 按序列补齐研究期和预热期，取全部官方历史版本 | 按 `realtime_start` 发现新增和对旧观测的修订 |
+| FRED／ALFRED `DFII10`、`T10YIE`、`CPIAUCSL`；2026-11-23 起加 OECD 中国 CPI 同比 `CPALTT01CNM659N`（ALFRED 版本从 2013-06 起，源端停在 2025-04）与德债、日债 10 年期 `IRLTLT01DEM156N`、`IRLTLT01JPM156N`（超精度值按 8 位量化，见 [ADR](../adr/2026-11-23-fred-oecd-yield-rounding.md)） | `src_macro.macro_fred_observation` + 新增版本表 | 按序列补齐研究期和预热期，取全部官方历史版本 | 按 `realtime_start` 发现新增和对旧观测的修订 |
 | 金十美国 ISM PMI | `src_macro.macro_jin10_usa_ism_pmi`（需补 `period_end`） | 对账历史接口与日历详情的交接期，保留统计期和源事件身份 | 发现新发布，复查近期事件的修订 |
 | GPR `gprd_act` | `src_macro.macro_gpr_daily` | 下载历史序列，核实可证实的文件版本 | 检查文件摘要，逐次登记可证实的版本 |
 | WGC `WORLD/BARS` | `src_macro.macro_wgc_gold_demand` | 主报告归档匹配季度、发布日期和对应数值 | 检查主报告目录，按报告版本追加 |
