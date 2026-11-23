@@ -68,6 +68,8 @@ dev = [
   "jupytext>=1.16,<2",
   "types-pyyaml",
   "pandas-stubs",
+  # 研究脚本的 SPA 检验与平稳自助法（docs/research/erp-phase2-plan.md）
+  "arch>=7,<9",
 ]
 
 [project.scripts]
