@@ -132,6 +132,13 @@ def _check_schema_visibility_alignment(
             schema_path,
             f"visibility.field={vis_field} 不是 schema 中的列",
         )
+    fallback = visibility.visibility.fallback
+    if fallback is not None and fallback.field is not None and fallback.field not in schema.columns:
+        report.add(
+            schema.dataset,
+            schema_path,
+            f"visibility.fallback.field={fallback.field} 不是 schema 中的列",
+        )
 
 
 def _check_reads(schema: DatasetSchemaSpec, bundle: ContractBundle, report: CheckReport) -> None:

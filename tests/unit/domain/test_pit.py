@@ -13,6 +13,7 @@ from quantagent.domain.pit import (
     is_cutoff_visible,
     is_point_event_visible,
     pit_cutoff,
+    resolve_row_visibility,
     visible_event_on_or_before,
 )
 
@@ -204,3 +205,88 @@ def test_source_field_fallback_is_fail_closed() -> None:
     )
     with pytest.raises(PitUnsupportedError, match="fallback"):
         pit_cutoff(contract, as_of=date(2024, 1, 10))
+
+
+def _jydb_money_supply() -> VisibilityContract:
+    return VisibilityContract.model_validate(
+        {
+            "dataset": "src.jydb.ed_moneysupply",
+            "doc_ref": "docs/migration/jydb-ingest-plan.md",
+            "temporal_kind": "period_with_revision",
+            "period_fields": ["EndDate"],
+            "visibility": {
+                "rule": "source_field",
+                "field": "InfoPublDate",
+                "date_only": True,
+                "fallback_mode": "earliest",
+                "grade": "A",
+                "rationale": "货币供应取发布日与次月 15 日中较早者",
+                "fallback": {
+                    "rule": "fixed_lag",
+                    "field": "EndDate",
+                    "lag_n": 15,
+                    "lag_unit": "calendar_day",
+                    "grade": "B",
+                    "rationale": "次月 15 日是制度性保守可见日",
+                },
+            },
+            "pit_recoverable": True,
+        }
+    )
+
+
+@pytest.mark.unit
+def test_timestamp_cutoff_is_marked_date_only() -> None:
+    contract = VisibilityContract.model_validate(
+        {
+            "dataset": "src.jydb.c_ed_macroindicatordata",
+            "doc_ref": "docs/migration/jydb-ingest-plan.md",
+            "temporal_kind": "period_with_revision",
+            "period_fields": ["IndicatorCode", "EndDate"],
+            "visibility": {
+                "rule": "source_field",
+                "field": "InfoPublDate",
+                "date_only": True,
+                "grade": "A",
+                "rationale": "发布日期带时刻，按日期比较，当天可见",
+            },
+            "pit_recoverable": True,
+        }
+    )
+    cutoff = pit_cutoff(contract, as_of=date(2024, 1, 10))
+    assert cutoff.column == "InfoPublDate"
+    assert cutoff.date_only is True
+    assert cutoff.on_or_before == date(2024, 1, 10)
+    assert cutoff.fallback is None
+
+
+@pytest.mark.unit
+def test_earliest_fallback_picks_earlier_branch_and_grade() -> None:
+    contract = _jydb_money_supply()
+    cutoff = pit_cutoff(contract, as_of=date(2024, 2, 20))
+    assert cutoff.date_only is True
+    assert cutoff.fallback is not None
+    assert cutoff.fallback.column == "EndDate"
+    assert cutoff.fallback.lag_days == 15
+    # 2024-01 月末 + 15 天 = 02-15；发布日 02-12 更早，采用 A。
+    primary = resolve_row_visibility(
+        cutoff, primary=date(2024, 2, 12), fallback=date(2024, 1, 31)
+    )
+    assert (primary.visible_on, primary.grade) == (date(2024, 2, 12), "A")
+    # 发布日 02-28 晚于 02-15，采用 B。
+    fallback = resolve_row_visibility(
+        cutoff, primary=date(2024, 2, 28), fallback=date(2024, 1, 31)
+    )
+    assert (fallback.visible_on, fallback.grade) == (date(2024, 2, 15), "B")
+    # 发布日为空时只看 fallback。
+    missing = resolve_row_visibility(cutoff, primary=None, fallback=date(2024, 1, 31))
+    assert (missing.visible_on, missing.grade) == (date(2024, 2, 15), "B")
+    assert not primary.is_visible(as_of=date(2024, 2, 11))
+    assert primary.is_visible(as_of=date(2024, 2, 12))
+
+
+@pytest.mark.unit
+def test_earliest_fallback_rejects_non_month_end_anchor() -> None:
+    cutoff = pit_cutoff(_jydb_money_supply(), as_of=date(2024, 2, 20))
+    with pytest.raises(PitUnsupportedError, match="不是月末"):
+        resolve_row_visibility(cutoff, primary=None, fallback=date(2024, 1, 30))

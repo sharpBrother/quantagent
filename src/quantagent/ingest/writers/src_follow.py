@@ -88,7 +88,9 @@ def business_columns(spec: SrcTableWriteSpec) -> tuple[str, ...]:
     return tuple(
         name
         for name in spec.native_columns
-        if name not in _SYSTEM_COLUMNS and name not in spec.keys
+        if name not in _SYSTEM_COLUMNS
+        and name not in spec.system_columns
+        and name not in spec.keys
     )
 
 
@@ -106,6 +108,7 @@ def write_src_follow(
     store: SrcWriteStore | None = None,
     window_start: str | None = None,
     window_end: str | None = None,
+    source_cursor: str | None = None,
     now: Callable[[], datetime] | None = None,
 ) -> SrcFollowWriteResult:
     """``write_db`` 默认由调用方传 False。真写必须同时打开环境写闸。
@@ -162,6 +165,7 @@ def write_src_follow(
         payload_digest=digest,
         started_at=started_at,
         finished_at=finished_at,
+        source_cursor=source_cursor,
     )
     dml_count = _apply(spec, store, plan, batch_id=batch_id, ingested_at=finished_at)
     _verify(spec, store, plan, batch_id=batch_id)

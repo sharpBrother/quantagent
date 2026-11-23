@@ -22,6 +22,7 @@ VisibilityRuleName = Literal[
     "fixed_lag",
     "ingest_time",
 ]
+FallbackMode = Literal["if_null", "earliest"]
 SchemaLayer = Literal["pg", "ops", "lake"]
 ColumnDtype = Literal["date", "datetime", "string", "bool", "int64", "float64", "bytes", "decimal"]
 DatasetUsage = Literal["default", "evaluation_only"]
@@ -49,6 +50,11 @@ class VisibilitySpec(BaseModel):
     lag_unit: Literal["trading_day", "calendar_day"] | None = None
     # 严格早于 as_of：截止日为 as_of 前一天。用于源端按「早于当日才可见」发布的数据集。
     strict: bool = False
+    # 截止列是 timestamp 时按日期比较（发布当天可见），读取路径必须对列做 date 转换。
+    date_only: bool = False
+    # if_null：主字段为空才用 fallback（尚未实现，保持 fail-closed）。
+    # earliest：主字段与 fallback 推断日取较早者，逐行决定可见日与等级。
+    fallback_mode: FallbackMode = "if_null"
     fallback: VisibilitySpec | None = None
 
     @model_validator(mode="after")
@@ -65,6 +71,13 @@ class VisibilitySpec(BaseModel):
         if self.fallback is not None and _GRADE_RANK[self.fallback.grade] < _GRADE_RANK[self.grade]:
             # 推断可见日不可能比原生字段更可信；允许同级或更差。
             raise ValueError("fallback 的 grade 不得高于主规则")
+        if self.fallback_mode == "earliest":
+            if self.rule != "source_field" or self.strict:
+                raise ValueError("fallback_mode=earliest 只允许非 strict 的 source_field 主规则")
+            if self.fallback is None or self.fallback.rule != "fixed_lag":
+                raise ValueError("fallback_mode=earliest 需要 fixed_lag fallback")
+            if not self.fallback.field or self.fallback.lag_unit != "calendar_day":
+                raise ValueError("fallback_mode=earliest 的 fixed_lag 必须指定 field 与 calendar_day")
         return self
 
 

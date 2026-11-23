@@ -24,6 +24,8 @@ from quantagent.cli.minprice import minprice_app
 from quantagent.ingest.errors import IngestError
 from quantagent.ingest.jobs.jin10_ism_details import ingest_jin10_ism_details
 from quantagent.ingest.jobs.jin10_ism_legacy import ingest_jin10_ism_legacy
+from quantagent.ingest.jobs.jydb_paged import DEFAULT_PAGE_SIZE as JYDB_DEFAULT_PAGE_SIZE
+from quantagent.ingest.jobs.jydb_paged import ingest_jydb_paged
 from quantagent.ingest.jobs.macro_fred import ingest_macro_fred
 from quantagent.ingest.jobs.macro_gpr import ingest_macro_gpr
 from quantagent.ingest.jobs.macro_wgc_html import ingest_wgc_html
@@ -42,9 +44,11 @@ from quantagent.platform.storage import detect_repo_root, resolve_var_paths
 ingest_app = typer.Typer(help="外部源采集到 PG 研究数据面。默认不写库。", no_args_is_help=True)
 tushare_app = typer.Typer(help="Tushare 源。", no_args_is_help=True)
 wind_app = typer.Typer(help="Wind wind_db 源。历史回填与日更共用。", no_args_is_help=True)
+jydb_app = typer.Typer(help="聚源 JYDB 源。首次回填与增量共用。", no_args_is_help=True)
 macro_app = typer.Typer(help="宏观公开数据源。", no_args_is_help=True)
 ingest_app.add_typer(tushare_app, name="tushare")
 ingest_app.add_typer(wind_app, name="wind")
+ingest_app.add_typer(jydb_app, name="jydb")
 ingest_app.add_typer(macro_app, name="macro")
 ingest_app.add_typer(minprice_app, name="minprice")
 
@@ -79,6 +83,52 @@ def wind_stop_after_page(
     stop_path.parent.mkdir(parents=True, exist_ok=True)
     stop_path.touch(exist_ok=True)
     typer.echo(f"已请求 {run_id} 提交当前页后停止；请在 Dagster 中确认作业结束。")
+
+
+@jydb_app.command("sync")
+def ingest_jydb(
+    table: Annotated[str, typer.Argument(help="聚源表名，必须是 JYDB_SPECS 白名单")],
+    write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
+    page_size: Annotated[int, typer.Option("--page-size", help="每页行数")] = JYDB_DEFAULT_PAGE_SIZE,
+    max_pages: Annotated[
+        int | None, typer.Option("--max-pages", help="最多扫描页数；默认干跑一页、真写全量")
+    ] = None,
+    from_cursor: Annotated[
+        str | None, typer.Option("--from-cursor", help="可选 (JSID, ID) 游标 JSON；默认最新成功游标")
+    ] = None,
+) -> None:
+    """从 JYDB 分页写入 src_jydb。<TABLE> 首次运行即全量回填，之后从游标增量。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    try:
+        result = ingest_jydb_paged(
+            settings=settings,
+            paths=paths,
+            table=table,
+            write_db=write_db,
+            page_size=page_size,
+            max_pages=max_pages,
+            from_cursor=from_cursor,
+        )
+    except (
+        IngestError,
+        WriteGateError,
+        ConfigError,
+        RunLogError,
+        ForbiddenSqlError,
+        TransactionUnknownError,
+        PostgresAdapterError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    mode = "wrote" if result.written else "dry-run"
+    typer.echo(
+        f"{mode} dataset={result.dataset} pages={result.pages} rows={result.row_count} "
+        f"inserted={result.inserted} replaced={result.replaced} skipped={result.skipped} "
+        f"metadata_skipped={result.metadata_skipped} dml={result.dml_count} "
+        f"batches={len(result.batch_ids)} cursor={result.source_cursor} "
+        f"digest={result.payload_digest}"
+    )
 
 
 @tushare_app.command("trade-cal")

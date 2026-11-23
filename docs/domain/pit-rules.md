@@ -124,8 +124,13 @@ visibility:
 ### source_field 加 fallback
 
 截止列是 ``visibility.field``（不是 ``event_field``），该列日期 ``<= as_of``。
-``as_of`` 当天可见，更晚不可见。主规则已实现；``fallback`` 尚未实现，查询
-路径遇到必须 fail-closed。``feature.value`` 的 field 是 ``knowledge_dt``：
+``as_of`` 当天可见，更晚不可见。``date_only: true`` 表示截止列是 timestamp，读取时必须
+``field::date <= as_of``，发布当天带时刻也可见。
+
+``fallback_mode: earliest`` 与 ``fixed_lag`` 的组合已实现，用于聚源货币供应：逐行取
+``LEAST(InfoPublDate::date, EndDate::date + 15)``，主字段为空时只用后一支，两个日期都空则不可见。
+返回行带可见日来源等级（A/B）；``EndDate`` 不是月末即报错。其余 ``if_null`` fallback
+仍未实现，查询路径必须 fail-closed。``feature.value`` 的 field 是 ``knowledge_dt``：
 因子截面日可以早于可见日，把 ``event_dt`` 当可见日会引入前视。
 
 ```yaml

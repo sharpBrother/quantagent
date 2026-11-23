@@ -1,0 +1,176 @@
+dataset: src.jydb.ed_moneysupply
+layer: pg
+doc_ref: docs/migration/jydb-ingest-plan.md
+temporal_kind: period_with_revision
+keys:
+  - ID
+reads: []
+period_fields:
+  - EndDate
+columns:
+  ID:
+    dtype: int64
+    nullable: false
+    description: 聚源源表主键
+  EndDate:
+    dtype: datetime
+    nullable: false
+    description: 统计期结束日；fallback 可见日锚点
+  InfoSource:
+    dtype: string
+    nullable: true
+    description: 信息来源
+  AdjustMark:
+    dtype: int64
+    nullable: true
+    description: 调整标记
+  DataType:
+    dtype: int64
+    nullable: true
+    description: 数据类型
+  ReportArea:
+    dtype: int64
+    nullable: true
+    description: 报告地区
+  M2:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: M2
+  M1:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: M1
+  M0:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: M0
+  DemandDeposits:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: 活期存款
+  QuasiMoney:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: 准货币
+  QMTimeDep:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: 准货币定期存款
+  QMSavingDep:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: 准货币储蓄存款
+  QMOtherDep:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: 准货币其他存款
+  NetIssueMonthly:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: 当月净投放
+  AvgOfferedRateMonthly:
+    dtype: decimal
+    precision: 19
+    scale: 8
+    nullable: true
+    description: 月均拆借利率
+  OfferedTurnoverMonthly:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: 当月拆借成交
+  M2GrowthYoY:
+    dtype: decimal
+    precision: 18
+    scale: 8
+    nullable: true
+    description: M2 同比
+  M1GrowthYoY:
+    dtype: decimal
+    precision: 18
+    scale: 8
+    nullable: true
+    description: M1 同比
+  M0GrowthYoY:
+    dtype: decimal
+    precision: 18
+    scale: 8
+    nullable: true
+    description: M0 同比
+  DemandDepositsGrowthYoY:
+    dtype: decimal
+    precision: 18
+    scale: 8
+    nullable: true
+    description: 活期存款同比
+  QuasiMoneyGrowthYoY:
+    dtype: decimal
+    precision: 18
+    scale: 8
+    nullable: true
+    description: 准货币同比
+  QMTimeDepGrowthYoY:
+    dtype: decimal
+    precision: 18
+    scale: 8
+    nullable: true
+    description: 准货币定期存款同比
+  QMSavingDepGrowthYoY:
+    dtype: decimal
+    precision: 18
+    scale: 8
+    nullable: true
+    description: 准货币储蓄存款同比
+  QMOtherDepGrowthYoY:
+    dtype: decimal
+    precision: 18
+    scale: 8
+    nullable: true
+    description: 准货币其他存款同比
+  Remarks:
+    dtype: string
+    nullable: true
+    description: 备注
+  XGRQ:
+    dtype: datetime
+    nullable: false
+    description: 源端修改日期；系统列，不参与业务修订判断
+  JSID:
+    dtype: int64
+    nullable: false
+    description: 源端同步序列；分页游标组成部分
+  InfoPublDate:
+    dtype: datetime
+    nullable: true
+    description: 源端发布时刻；主可见日，按日期比较
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间，不是 PIT 依据
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 主键与业务列的内容指纹

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from quantagent.adapters.postgres import jydb_columns as _jydb
 from quantagent.adapters.postgres import wind_bond_fx_columns as _bond_fx
 from quantagent.adapters.postgres import wind_first_batch_columns as _first_batch
 from quantagent.adapters.postgres import wind_index_description_columns as _index_description
@@ -31,11 +32,58 @@ class SrcTableWriteSpec:
     pg_table: str
     native_columns: tuple[str, ...]
     keys: tuple[str, ...]
+    # 源端系统列：版本序列与同步时间戳。它们变化不算业务修订，不进指纹与逐列比较。
+    system_columns: tuple[str, ...] = ()
 
     @property
     def qualified_table(self) -> str:
         return f"{self.pg_schema}.{self.pg_table}"
 
+
+# 聚源 JYDB P0/P1。主键一律是源端 ID；分页游标是 (JSID, ID)，
+# 所以 JSID 属于游标而不是业务列，和同步时间列一起排除在业务比较之外。
+JYDB_SPECS: dict[str, SrcTableWriteSpec] = {
+    "C_ED_MacroIndicatorData": SrcTableWriteSpec(
+        dataset="src.jydb.c_ed_macroindicatordata",
+        pg_schema="src_jydb",
+        pg_table="C_ED_MacroIndicatorData",
+        native_columns=_jydb.C_ED_MacroIndicatorData_COLUMNS,
+        keys=("ID",),
+        system_columns=("JSID", "UpdateTime"),
+    ),
+    "C_ED_IndicatorMain": SrcTableWriteSpec(
+        dataset="src.jydb.c_ed_indicatormain",
+        pg_schema="src_jydb",
+        pg_table="C_ED_IndicatorMain",
+        native_columns=_jydb.C_ED_IndicatorMain_COLUMNS,
+        keys=("ID",),
+        system_columns=("JSID", "UpdateTime", "InsertTime"),
+    ),
+    "ED_MoneySupply": SrcTableWriteSpec(
+        dataset="src.jydb.ed_moneysupply",
+        pg_schema="src_jydb",
+        pg_table="ED_MoneySupply",
+        native_columns=_jydb.ED_MoneySupply_COLUMNS,
+        keys=("ID",),
+        system_columns=("JSID", "XGRQ"),
+    ),
+    "C_IN_IndicatorDataV": SrcTableWriteSpec(
+        dataset="src.jydb.c_in_indicatordatav",
+        pg_schema="src_jydb",
+        pg_table="C_IN_IndicatorDataV",
+        native_columns=_jydb.C_IN_IndicatorDataV_COLUMNS,
+        keys=("ID",),
+        system_columns=("JSID", "UpdateTime"),
+    ),
+    "C_IN_IndicatorMain": SrcTableWriteSpec(
+        dataset="src.jydb.c_in_indicatormain",
+        pg_schema="src_jydb",
+        pg_table="C_IN_IndicatorMain",
+        native_columns=_jydb.C_IN_IndicatorMain_COLUMNS,
+        keys=("ID",),
+        system_columns=("JSID", "UpdateTime", "InsertTime"),
+    ),
+}
 
 TRADE_CAL = SrcTableWriteSpec(
     dataset="src.tushare.trade_cal",

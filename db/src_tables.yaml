@@ -93,6 +93,8 @@ tables:
   - source: jydb
     name: C_IN_IndicatorDataV
   - source: jydb
+    name: C_IN_IndicatorMain
+  - source: jydb
     name: ED_MoneySupply
   - source: jydb
     name: DZ_MainOperIncome

@@ -15,6 +15,7 @@ _PREFIX_TO_SCHEMA = {
     "src_wind_": "src_wind",
     "src_tushare_": "src_tushare",
     "src_macro_": "src_macro",
+    "src_jydb_": "src_jydb",
     "src_eastmoney_": "src_minprice",
 }
 # lake 产物，不写源 schema，不受 PROFILE_WRITABLE_SCHEMAS 约束。
@@ -28,6 +29,7 @@ _EXPECTED_SCHEDULES = {
         "macro_wgc_sunday",
         "minprice_first",
         "minprice_retry",
+        "jydb_daily_night",
     },
 }
 
@@ -71,6 +73,7 @@ def test_every_registered_schedule_belongs_to_some_profile() -> None:
         "macro_wgc_sunday",
         "minprice_first",
         "minprice_retry",
+        "jydb_daily_night",
     }
 
 

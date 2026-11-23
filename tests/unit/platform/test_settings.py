@@ -76,6 +76,20 @@ def test_wind_mssql_configured_requires_host_and_user() -> None:
 
 
 @pytest.mark.unit
+def test_jydb_mssql_configured_requires_host_database_and_user() -> None:
+    blank = Settings(_env_file=None)
+    assert blank.jydb_mssql_configured is False
+    assert blank.jydb_mssql_tds_version == "7.0"
+    filled = Settings(
+        _env_file=None,
+        jydb_mssql_host="127.0.0.1",
+        jydb_mssql_database="JYDB",
+        jydb_mssql_user="reader",
+    )
+    assert filled.jydb_mssql_configured is True
+
+
+@pytest.mark.unit
 def test_legacy_mssql_configured_requires_host_and_user() -> None:
     blank = Settings(_env_file=None)
     assert blank.legacy_mssql_configured is False

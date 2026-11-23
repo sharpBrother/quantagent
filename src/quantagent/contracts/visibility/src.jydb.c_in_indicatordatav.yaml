@@ -1,0 +1,15 @@
+dataset: src.jydb.c_in_indicatordatav
+doc_ref: docs/migration/jydb-ingest-plan.md
+temporal_kind: period_with_revision
+period_fields:
+  - IndicatorCode
+  - EndDate
+visibility:
+  rule: source_field
+  field: InfoPublDate
+  date_only: true
+  grade: A
+  rationale: >
+    聚源行业指标以源端发布时刻 InfoPublDate 为准。该列是 timestamp，按日期比较，
+    发布当天可见；空发布日不可见。长期贷款等单指标特例尚未实现，保持保守。
+pit_recoverable: true

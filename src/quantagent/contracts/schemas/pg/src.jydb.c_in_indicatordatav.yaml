@@ -1,0 +1,61 @@
+dataset: src.jydb.c_in_indicatordatav
+layer: pg
+doc_ref: docs/migration/jydb-ingest-plan.md
+temporal_kind: period_with_revision
+keys:
+  - ID
+reads: []
+period_fields:
+  - IndicatorCode
+  - EndDate
+columns:
+  ID:
+    dtype: int64
+    nullable: false
+    description: 聚源源表主键
+  IndicatorCode:
+    dtype: int64
+    nullable: true
+    description: 行业指标代码
+  InfoPublDate:
+    dtype: datetime
+    nullable: true
+    description: 源端发布时刻；PIT 可见日按日期比较，发布当天可见
+  BeginDate:
+    dtype: datetime
+    nullable: true
+    description: 统计期开始日
+  EndDate:
+    dtype: datetime
+    nullable: true
+    description: 统计期结束日
+  DataValue:
+    dtype: decimal
+    precision: 28
+    scale: 6
+    nullable: true
+    description: 指标值
+  PowerNumber:
+    dtype: int64
+    nullable: true
+    description: 源端数量级
+  UpdateTime:
+    dtype: datetime
+    nullable: true
+    description: 源端更新时间；系统列，不参与业务修订判断
+  JSID:
+    dtype: int64
+    nullable: false
+    description: 源端同步序列；分页游标组成部分
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间，不是 PIT 依据
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 主键与业务列的内容指纹

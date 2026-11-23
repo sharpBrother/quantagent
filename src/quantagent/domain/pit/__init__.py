@@ -5,16 +5,22 @@
 
 from quantagent.domain.pit.solve import (
     PitCutoff,
+    PitFallback,
+    RowPit,
     is_cutoff_visible,
     is_point_event_visible,
     pit_cutoff,
+    resolve_row_visibility,
     visible_event_on_or_before,
 )
 
 __all__ = [
     "PitCutoff",
+    "PitFallback",
+    "RowPit",
     "is_cutoff_visible",
     "is_point_event_visible",
     "pit_cutoff",
+    "resolve_row_visibility",
     "visible_event_on_or_before",
 ]

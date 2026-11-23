@@ -1,0 +1,22 @@
+dataset: src.jydb.ed_moneysupply
+doc_ref: docs/migration/jydb-ingest-plan.md
+temporal_kind: period_with_revision
+period_fields:
+  - EndDate
+visibility:
+  rule: source_field
+  field: InfoPublDate
+  date_only: true
+  fallback_mode: earliest
+  grade: A
+  rationale: >
+    货币供应逐行取 InfoPublDate 的日期与 EndDate 次月 15 日中较早者。
+    来自发布日为 A 级，来自次月 15 日为 B 级。见 docs/adr/2026-11-23-jydb-visibility.md。
+  fallback:
+    rule: fixed_lag
+    field: EndDate
+    lag_n: 15
+    lag_unit: calendar_day
+    grade: B
+    rationale: 次月 15 日是旧仓使用的制度性保守可见日；它晚于真实发布时才被采用。
+pit_recoverable: true

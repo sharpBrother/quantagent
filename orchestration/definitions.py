@@ -9,6 +9,13 @@ from __future__ import annotations
 from dagster import Definitions, ScheduleDefinition
 
 from orchestration.assets.cutamp import feature_pf_single_cutamp
+from orchestration.assets.jydb import (
+    src_jydb_c_ed_indicatormain,
+    src_jydb_c_ed_macroindicatordata,
+    src_jydb_c_in_indicatordatav,
+    src_jydb_c_in_indicatormain,
+    src_jydb_ed_moneysupply,
+)
 from orchestration.assets.macro import (
     src_macro_fred_observation_vintage,
     src_macro_gpr_daily,
@@ -19,6 +26,7 @@ from orchestration.assets.tr_umr import feature_pf_single_tr_umr
 from orchestration.assets.tushare import src_tushare_shibor, src_tushare_us_treasury_yield
 from orchestration.assets.wind import WIND_SOURCE_ASSETS, std_trade_calendar
 from orchestration.jobs.cutamp import feature_cutamp
+from orchestration.jobs.jydb import jydb_daily
 from orchestration.jobs.macro import macro_daily, macro_wgc_weekly
 from orchestration.jobs.minprice import minprice_daily
 from orchestration.jobs.tr_umr import feature_tr_umr
@@ -26,6 +34,7 @@ from orchestration.jobs.tushare import tushare_daily
 from orchestration.jobs.wind import wind_source_daily, wind_source_refresh
 from orchestration.jobs.wind_initial import wind_initial_backfill
 from orchestration.resources.wind import TradeCalendarResource, WindIngestResource
+from orchestration.schedules.jydb import jydb_daily_night
 from orchestration.schedules.macro import macro_daily_morning, macro_wgc_sunday
 from orchestration.schedules.minprice import minprice_first, minprice_retry
 from orchestration.schedules.tushare import tushare_daily_evening
@@ -53,6 +62,7 @@ PROFILE_SCHEDULES: dict[str, tuple[ScheduleDefinition, ...]] = {
         macro_wgc_sunday,
         minprice_first,
         minprice_retry,
+        jydb_daily_night,
     ),
 }
 
@@ -73,6 +83,11 @@ defs = Definitions(
         src_macro_fred_observation_vintage,
         src_macro_gpr_daily,
         src_macro_wgc_gold_demand,
+        src_jydb_c_ed_indicatormain,
+        src_jydb_c_ed_macroindicatordata,
+        src_jydb_c_in_indicatormain,
+        src_jydb_c_in_indicatordatav,
+        src_jydb_ed_moneysupply,
         feature_pf_single_cutamp,
         feature_pf_single_tr_umr,
         src_eastmoney_minute,
@@ -84,6 +99,7 @@ defs = Definitions(
         tushare_daily,
         macro_daily,
         macro_wgc_weekly,
+        jydb_daily,
         feature_cutamp,
         feature_tr_umr,
         minprice_daily,

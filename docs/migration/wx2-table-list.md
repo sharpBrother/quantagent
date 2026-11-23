@@ -95,7 +95,7 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 ## 范围与指针
 
 - 旧仓：`pycharm_workspace` @ `7c506d51160e57385fd85217edece815268ffd55`
-- 表数：**372**（数据字典 + `db/src_tables.yaml` 宏观表 + 运维表 + 现役代码出现但字典未收录的表）
+- 表数：**373**（数据字典 + `db/src_tables.yaml` 宏观表 + 运维表 + 现役代码出现但字典未收录的表）
 - 行数：未连 wx2，全部 **未查**
 - **不迁入。** visibility 从旧仓下游取数（`data_gateway` 等）反推后写入契约；缺证据、多网关冲突再问。上节映射表与 `strategy_etf_list*` 不配
 - 消费者 = 现役模块引用 ∪ 启用中的 `jobs.json` ∪ `data_registry`；采集写入不算消费者
@@ -106,12 +106,12 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 
 | 类别 | 张数 |
 |---|---:|
-| 1 源镜像 | 89 |
+| 1 源镜像 | 90 |
 | 2 可重算 | 73 |
 | 3 遗产冻结 | 0 |
 | 4 运维改造 | 26 |
 | 5 无消费者 | 184 |
-| 合计 | 372 |
+| 合计 | 373 |
 | 其中无需 PIT | 26 |
 
 第一批 `db/src_tables.yaml` 的 62 张仍全部落在类别 1。2026-11-22 新增 `AINDEXMEMBERSCITICSZL`（0025，中信一级成员 canonical 表）。2026-11-19 新增 `AINDEXDESCRIPTION`、`AINDEXDESCRIPTIONZL` 两张，`AINDEXINDUSTRIESCITICS` 改为视图（0020）。Tushare 宏观三张与
@@ -128,6 +128,7 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `C_ED_IndicatorMain` | 未查 | 1 源镜像 | 否 | 第一批 src_tables.yaml；现役：macro_regime/config/indicator_registry.yaml, scripts/macro_regime_revalidation/p0_evidence_pit_qualification.py | src_jydb.C_ED_IndicatorMain（第一批已收录，本清单不启动迁入） | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。 |
 | `C_ED_MacroIndicatorData` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：core/market_data_service.py, scripts/macro_regime_revalidation/industrial_value_added_p2_input_freeze.py, scripts/macro_regime_revalidation/macro_family_qualification.py 等11处 | src_jydb.C_ED_MacroIndicatorData（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `C_IN_IndicatorDataV` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：core/market_data_service.py, scripts/macro_regime_revalidation/macro_family_qualification.py, scripts/macro_style_evaluation_contract.py 等7处 | src_jydb.C_IN_IndicatorDataV（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
+| `C_IN_IndicatorMain` | 213 | 1 源镜像 | 否 | 负责人 2026-11-23 要求接入；行业指标目录，C_IN_IndicatorDataV 的身份映射 | src_jydb.C_IN_IndicatorMain（第一批已收录，本清单不启动迁入） | 无需 PIT 规则（指标目录，不参与 PIT 查询）。0027 建表，PK ID。 |
 | `CT_SystemConst` | 未查 | 1 源镜像 | 否 | 第一批 src_tables.yaml；现役：scripts/macro_regime_external_revenue_wiring.py | src_jydb.CT_SystemConst（第一批已收录，本清单不启动迁入） | 无需 PIT 规则（代码/身份映射，不参与 PIT 查询）。存量 pit_recoverable:false。 |
 | `DZ_MainOperIncome` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：scripts/macro_regime_external_revenue_wiring.py, scripts/macro_regime_walk_forward_evaluation.py, macro_regime/pools.py | src_jydb.DZ_MainOperIncome（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `ED_FixedInvestment` | 未查 | 1 源镜像 | 是 | src-plane 点名弱引用（data/test_task.py 等），第二批再评估 | src_jydb.ED_FixedInvestment（第二批评估，现不迁） | visibility 从旧仓下游取数反推；缺证据或冲突再问 |

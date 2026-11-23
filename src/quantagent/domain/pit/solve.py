@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+from calendar import monthrange
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import TYPE_CHECKING
@@ -31,17 +32,42 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
+class PitFallback:
+    """fallback_mode=earliest 的另一支可见日：源字段 + 固定自然日延迟。"""
+
+    column: str
+    lag_days: int
+    grade: str
+
+
+@dataclass(frozen=True)
 class PitCutoff:
     column: str
     on_or_before: date
     rule: str
     grade: str
+    # 主截止列是 timestamp；读取路径必须按 ::date 比较，否则当天带时刻的记录会被漏掉。
+    date_only: bool = False
+    fallback: PitFallback | None = None
+
+
+@dataclass(frozen=True)
+class RowPit:
+    """逐行求解结果：较早可见的那一支决定日期与等级。"""
+
+    visible_on: date | None
+    grade: str | None
+
+    def is_visible(self, *, as_of: date) -> bool:
+        return self.visible_on is not None and self.visible_on <= as_of
 
 
 def pit_cutoff(contract: VisibilityContract, *, as_of: date) -> PitCutoff:
     """给定契约与 ``as_of``，算出读取时应执行的截止列与截止日。"""
     if contract.visibility.fallback is not None:
-        raise PitUnsupportedError("source_field fallback 尚未实现，拒绝半套求解")
+        if contract.visibility.fallback_mode != "earliest":
+            raise PitUnsupportedError("source_field fallback 尚未实现，拒绝半套求解")
+        return _earliest_cutoff(contract, as_of=as_of)
     rule = contract.visibility.rule
     grade = contract.visibility.grade
     if rule == "same_day_close":
@@ -50,6 +76,7 @@ def pit_cutoff(contract: VisibilityContract, *, as_of: date) -> PitCutoff:
             on_or_before=as_of,
             rule=rule,
             grade=grade,
+            date_only=contract.visibility.date_only,
         )
     if rule == "source_field":
         # 严格截止：截止列是日期，``field < as_of`` 与 ``field <= as_of - 1 天`` 等价。
@@ -60,8 +87,56 @@ def pit_cutoff(contract: VisibilityContract, *, as_of: date) -> PitCutoff:
             on_or_before=on_or_before,
             rule=rule,
             grade=grade,
+            date_only=contract.visibility.date_only,
         )
     raise PitUnsupportedError(f"可见性规则尚未实现: {rule}")
+
+
+def _earliest_cutoff(contract: VisibilityContract, *, as_of: date) -> PitCutoff:
+    spec = contract.visibility
+    fallback = spec.fallback
+    if fallback is None or fallback.rule != "fixed_lag" or not fallback.field:
+        raise PitUnsupportedError("fallback_mode=earliest 缺少可求解的 fixed_lag")
+    if fallback.lag_n is None or fallback.lag_unit != "calendar_day":
+        raise PitUnsupportedError("fallback_mode=earliest 只支持按自然日固定延迟")
+    return PitCutoff(
+        column=_source_field_column(contract),
+        on_or_before=as_of,
+        rule=spec.rule,
+        grade=spec.grade,
+        date_only=spec.date_only,
+        fallback=PitFallback(
+            column=fallback.field,
+            lag_days=fallback.lag_n,
+            grade=fallback.grade,
+        ),
+    )
+
+
+def resolve_row_visibility(
+    cutoff: PitCutoff,
+    *,
+    primary: date | None,
+    fallback: date | None,
+) -> RowPit:
+    """逐行取主字段日期与 fallback 推断日中较早者，并保留可见日来源的等级。"""
+    if cutoff.fallback is None:
+        if primary is None:
+            return RowPit(visible_on=None, grade=None)
+        return RowPit(visible_on=primary, grade=cutoff.grade)
+    candidates: list[tuple[date, str]] = []
+    if primary is not None:
+        candidates.append((primary, cutoff.grade))
+    if fallback is not None:
+        if fallback.day != monthrange(fallback.year, fallback.month)[1]:
+            # 次月 15 日规则只为月末统计期定义；其他日期不得悄悄套用。
+            raise PitUnsupportedError(f"fallback 锚点不是月末，拒绝推断可见日: {fallback}")
+        candidates.append(
+            (fallback + timedelta(days=cutoff.fallback.lag_days), cutoff.fallback.grade)
+        )
+    if not candidates:
+        return RowPit(visible_on=None, grade=None)
+    return RowPit(*min(candidates, key=lambda item: (item[0], item[1])))
 
 
 def visible_event_on_or_before(contract: VisibilityContract, *, as_of: date) -> date:

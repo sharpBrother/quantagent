@@ -50,6 +50,14 @@ class Settings(BaseSettings):
     wind_mssql_user: str = ""
     wind_mssql_password: SecretStr = SecretStr("")
 
+    # 聚源 JYDB 只读源。旧仓 [jy2] 与 wx2 需 TDS 7.0 握手，源端未必支持新版本。
+    jydb_mssql_host: str = ""
+    jydb_mssql_port: int = Field(default=1433, ge=1, le=65535)
+    jydb_mssql_database: str = ""
+    jydb_mssql_user: str = ""
+    jydb_mssql_password: SecretStr = SecretStr("")
+    jydb_mssql_tds_version: str = "7.0"
+
     # 迁移期只读 wx2。读旧仓 get_daily_prices 的同一张表，不写入。
     legacy_mssql_host: str = ""
     legacy_mssql_port: int = Field(default=1433, ge=1, le=65535)
@@ -83,6 +91,10 @@ class Settings(BaseSettings):
     @property
     def wind_mssql_configured(self) -> bool:
         return bool(self.wind_mssql_host and self.wind_mssql_user)
+
+    @property
+    def jydb_mssql_configured(self) -> bool:
+        return bool(self.jydb_mssql_host and self.jydb_mssql_user and self.jydb_mssql_database)
 
     @property
     def legacy_mssql_configured(self) -> bool:

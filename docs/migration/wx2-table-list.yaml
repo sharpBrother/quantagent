@@ -6,8 +6,8 @@ row_count_note: 本机未连 SQL Server wx2，行数一律未查
 pit_note: 本清单不定版 visibility / 不写 PIT YAML，须负责人逐表确认后再配
 migrate_note: 清单为评审基线，不启动迁入；拟改名/改 schema 的表先改 DDL 再迁
 counts:
-  total: 372
-  c1: 89
+  total: 373
+  c1: 90
   c2: 73
   c3: 0
   c4: 26
@@ -81,6 +81,17 @@ tables:
   src_batch1: true
   origin: dictionary_manifest
   pit_required: true
+- name: C_IN_IndicatorMain
+  folder: jy
+  nature: vendor
+  row_count: 213
+  category: 1
+  reason: 负责人 2026-11-23 要求接入；行业指标目录，C_IN_IndicatorDataV 的身份映射
+  dest: src_jydb.C_IN_IndicatorMain（第一批已收录，本清单不启动迁入）
+  extra: 无需 PIT 规则（指标目录，不参与 PIT 查询）。0027 建表，PK ID。
+  src_batch1: true
+  origin: dictionary_manifest
+  pit_required: false
 - name: CT_SystemConst
   folder: jy
   nature: vendor
