@@ -113,3 +113,8 @@ a、b、c 都成立，判为"同样的结论成立"。
 - 新脚本 `notebooks/2026-11-24-erp-position-mapping.py`，复用 `erp_lib`。
 - 先断言：中证全指上，V 与 M 的 R0（现金用 10 年期国债、成本为 0）与报告一的逐日结果相等。
 - 落 run log 与 pit_report。实现交给 impl-deepseek，我负责审阅和复核。
+
+## 结果
+
+- 第一项：冻结包已建，`frozen/erp_rate_anchor/candidates_2026-11-24/`，由 `tests/contracts/test_frozen_bundles.py` 校验。
+- 第二项：见 [报告四](erp-position-mapping.md)。
