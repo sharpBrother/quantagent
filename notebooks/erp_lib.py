@@ -56,17 +56,22 @@ def ratchet(
     band: float = 0.10,
     band_tol: float = 1e-9,
     return_target: bool = False,
+    one_way: bool = True,
+    w0: float | None = None,
 ) -> pd.DataFrame:
     """``lag=1``：T 日信号 T+1 收盘成交；``lag=0``：T 日收盘成交（敏感性对照）。
 
     ``band``/``band_tol`` 原是脚本里的 ``BAND``/``BAND_TOL`` 常量，默认值即原值。
     ``return_target=True`` 时额外输出 ``target`` 列（成交日看到的目标），默认关闭，
     既有调用的输出与加参数前完全一致。
+
+    ``one_way=False`` 去掉“分位 ≥ 0.5 只加、< 0.5 只减”的单向约束，目标即可成交仓位。
+    ``w0`` 非 None 时是切片第一天之前的收盘仓位：第一天收益按它计算，之后照常漂移调仓。
     """
     dates = signal.index
     target = signal.shift(lag)  # 成交日看到的目标
     cash = pd.Series(0.0, index=dates) if cash is None else cash.reindex(dates)
-    w = np.nan
+    w = np.nan if w0 is None else float(w0)
     weights, trades, rets = [], [], []
     for i, d in enumerate(dates):
         r = ret.iloc[i]
@@ -85,7 +90,7 @@ def ratchet(
             if np.isnan(w):
                 traded, w = tgt, tgt
             else:
-                desired = max(w, tgt) if tgt >= 0.5 else min(w, tgt)
+                desired = (max(w, tgt) if tgt >= 0.5 else min(w, tgt)) if one_way else tgt
                 if abs(desired - w) >= band - band_tol:
                     traded, w = abs(desired - w), desired
         weights.append(w)
