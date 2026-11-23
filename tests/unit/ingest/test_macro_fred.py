@@ -619,7 +619,7 @@ def test_row_maps_to_native_columns_with_dates_decimals_and_source_label() -> No
 @pytest.mark.unit
 def test_spec_keys_are_series_date_and_realtime_start() -> None:
     assert FRED_OBSERVATION_VINTAGE.keys == ("series_id", "observation_date", "realtime_start")
-    assert FRED_SERIES == ("DFII10", "T10YIE", "CPIAUCSL")
+    assert FRED_SERIES == ("DFII10", "T10YIE", "CPIAUCSL", "CPALTT01CNM659N")
     assert FRED_OBSERVATION_VINTAGE.dataset == "src.macro.fred_observation_vintage"
 
 

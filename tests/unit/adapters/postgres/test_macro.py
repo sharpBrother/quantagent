@@ -96,3 +96,17 @@ def test_contract_cutoff_column_drift_fails() -> None:
             end=date(2024, 1, 2),
             series_ids=("cn_cgb_10y",),
         )
+
+
+@pytest.mark.unit
+def test_china_cpi_reads_oecd_series_from_alfred() -> None:
+    repo, cur = _repo([(date(2024, 1, 1), date(2024, 2, 20), None, Decimal("-0.8"))])
+    rows = repo.list_observations(
+        as_of=date(2024, 3, 1),
+        start=date(2024, 1, 1),
+        end=date(2024, 1, 31),
+        series_ids=("cn_cpi_yoy",),
+    )
+    _statement, params = cur.execute.call_args.args
+    assert params[-1] == "CPALTT01CNM659N"
+    assert [(r.value, r.knowledge_dt) for r in rows] == [(Decimal("-0.8"), date(2024, 2, 20))]

@@ -231,7 +231,7 @@ def ingest_us_treasury_yield(
 def ingest_macro_fred_command(
     series: Annotated[
         list[str] | None,
-        typer.Option("--series", help="序列号，可重复。默认 DFII10、T10YIE、CPIAUCSL 全部"),
+        typer.Option("--series", help="序列号，可重复。默认 FRED_SERIES 全部"),
     ] = None,
     write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
 ) -> None:

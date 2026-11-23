@@ -40,7 +40,11 @@ FRED_OBSERVATIONS_URL = "https://api.stlouisfed.org/fred/series/observations"
 FRED_VINTAGE_DATES_URL = "https://api.stlouisfed.org/fred/series/vintagedates"
 
 # 迁移与日更的全部序列。新增序列要先确认它的 PIT 口径与 visibility 规则。
-FRED_SERIES: tuple[str, ...] = ("DFII10", "T10YIE", "CPIAUCSL")
+# CPALTT01CNM659N 是 OECD MEI 中国 CPI 同比（月频），作中国实际利率的通胀代理（2026-11-23
+# 负责人同意，见 docs/research/erp-rate-anchor.md）。可见日仍取 ALFRED 首个 realtime_start；
+# 该序列 ALFRED 版本从 2013-06 起，源端停在 2025-04。
+# 德国、日本 10 年期（IRLTLT01DEM156N、IRLTLT01JPM156N）有超过 8 位小数的值，待裁定后再加。
+FRED_SERIES: tuple[str, ...] = ("DFII10", "T10YIE", "CPIAUCSL", "CPALTT01CNM659N")
 
 # 与 0018_macro_source_tables.sql 的 source 列配套。契约 yaml 的 source 描述已与此一致。
 SOURCE_LABEL = "fred.series_observations"

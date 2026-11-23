@@ -96,6 +96,13 @@ _SOURCES: Mapping[str, _Source] = {
         statement=_VINTAGE_SQL,
         fixed_params=("DFII10",),
     ),
+    "cn_cpi_yoy": _Source(
+        dataset="src.macro.fred_observation_vintage",
+        kind="vintage",
+        cutoff_column="realtime_start",
+        statement=_VINTAGE_SQL,
+        fixed_params=("CPALTT01CNM659N",),
+    ),
 }
 
 
