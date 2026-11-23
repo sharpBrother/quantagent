@@ -51,6 +51,8 @@ superseded_by: null
 |---|---|---|---|---|---|---|
 | P0 | `con_forecast_stk` | 个股一致预期（年度）；研究线估值陷阱检验要用，旧仓 `agent_style_rotation`、`alpha_factory`、`core/raw_loader` | 69,642,855 / 28.9 GB | 2006-01 – 2026-11 | 0006 已建，PK `id` | `source_field con_date`，A |
 | P0 | `con_forecast_roll_stk` | 个股滚动 12 个月一致预期；同上 | 17,410,992 / 4.0 GB | 2006-01 – 2026-11 | 0006 已建，PK `id` | 同上 |
+| P0 | `con_forecast_idx` | 指数一致预期（年度）；研究线宽基指数直接用 | 511,532 / 165 MB | 2006-01 – 2026-11 | **未建**，需新迁移 | `source_field con_date`，A |
+| P0 | `con_forecast_roll_idx` | 指数滚动 12 个月一致预期；研究线主用 | 127,883 / 48 MB | 2006-01 – 2026-11 | **未建**，需新迁移 | 同上 |
 | P1 | `rpt_earnings_adjust` | 卖方盈利预测调整（上调、下调）；旧仓 `core/raw_loader`、`enhanced_optimizer` | 3,397,832 / 1.0 GB | 2006-01 – 2026-11 | 0006 已建，PK `id` | 只建镜像，**不写契约** |
 | P2 | `FIN_APPO_RELE_DATE` | 定期报告预约披露日；旧仓 `strategy/growth_stock*.py` | 336,985 / 50 MB | — | 0006 已建，PK `ID` | `source_field DECLARE_DATE strict`（pit-rules 已钉） |
 | P2 | `der_prob_excess_stock` | 可能超预期提示；旧仓 `alpha_factory` | 108,663 / 24 MB | — | 0006 已建，PK `id` | 只建镜像，**不写契约**，见下 |
@@ -58,7 +60,8 @@ superseded_by: null
 
 排序理由：
 
-- P0 是研究线直接要用的。估值陷阱检验需要个股一致预期净利润，研究侧再按成分股聚合到指数。
+- P0 是研究线直接要用的。宽基指数直接读两张 `_idx` 表；中证红利 `000922` 不在指数表里，
+  要用个股表按成分聚合，所以个股表也放 P0。
 - P1 的调整表可以算盈利预测上调、下调的比例，也是估值陷阱检验的候选变量，量不大。
 - P2 只有旧仓策略在用，新仓还没有消费者。`der_diver_stk` 很大，排在最后。
 
@@ -69,7 +72,14 @@ superseded_by: null
 - 含中证全指（`000985`，2011-08 起）、沪深 300、中证 500、创业板指（`399006`，2010-06 起）、
   上证红利（`000015`）。**不含中证红利 `000922`。**
 - 入库时间特征与个股表相同：2022 年以前有事后回补，2023 年起当天 17 到 20 点入库。
-- 0006 没有建这张表，也不在 `db/src_tables.yaml` 第一批里。是否接入待负责人确认，确认前不要自行接入。
+- `con_forecast_roll_idx` 与 `con_forecast_roll_stk` 同构，每个 `(index_code, con_date)` 一行，
+  127,883 行、48 MB，27 个指数、覆盖与入库特征都和 `con_forecast_idx` 相同。
+  滚动 12 个月口径没有 `con_year` 年度切换带来的跳变，研究线以它为主。
+- 负责人 2026-11-24 确认两张 `_idx` 表都作为 P0 接入：
+  - 新迁移建表，列名、类型以源端为准，PK `id`，加 `(tmstamp, id)` 游标索引；
+  - 在 `db/src_tables.yaml` 第一批登记。
+- 源库里其他名字带 `idx` 的表（`der_diver_idx`、`der_con_dev_idx`、`der_const_adjust_idx`、
+  `der_adjust_speed_idx`、`qt_idx_constituents`、`qt_idx_daily` 等）没有消费者，不接。
 
 不同步：
 
@@ -124,7 +134,8 @@ superseded_by: null
      `con_forecast_stk` 有 7 千万行，旧仓每页 1000 行。回填期间不要占满源库，
      旧仓的三次定时同步可能还在用它。
 6. **可见性契约。** 写在 `contracts/visibility/src.suntime.*.yaml`，`doc_ref` 指向本文。
-   - `con_forecast_stk`、`con_forecast_roll_stk`、`der_diver_stk`：`source_field`、`field=con_date`、
+   - `con_forecast_stk`、`con_forecast_roll_stk`、`con_forecast_idx`、`con_forecast_roll_idx`、`der_diver_stk`：
+     `source_field`、`field=con_date`、
      非 strict、等级 A、`pit_recoverable: true`（见 [ADR](../adr/2026-11-24-suntime-visibility.md)）。
      rationale 写明三点：`con_date` 当天收盘后可见；2018 年以前的快照是供应商事后回补的；
      源端会改写历史行，数值为当前版本。`temporal_kind` 是每日快照，按
@@ -167,6 +178,7 @@ superseded_by: null
 1. `con_forecast_stk_ttm` 不同步，以后在 `features` 层重算。
 2. `rpt_earnings_adjust` 只建镜像，先不写可见性契约。
 3. 一致预期快照按旧仓口径：`con_date <= as_of`，等级 A，rationale 写明 2018 年以前是供应商回补。
+   两张 `_idx` 表同此规则，rationale 写明 2022 年以前是回补（指数表的回补持续到 2022 年）。
 4. 全量回填直接从源库读，不经 wx2。
 
 ## 遇到以下情况停下问负责人
