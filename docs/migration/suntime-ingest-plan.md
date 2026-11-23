@@ -42,9 +42,8 @@ superseded_by: null
   `tmstamp > last OR (tmstamp = last AND id > last_id)`。每页 1000 行，按 id 先删后插。
   源端改过的行会被覆盖，源端物理删除的行不会同步。和聚源的 `(JSID, ID)` 是同一个模式。
 - **中文字段编码：** 旧仓对 `stock_name`、`title`、`organ_name` 等中文列做
-  `x.encode('latin1').decode('gbk')`，说明源库的中文列是 GBK 编码，驱动按 latin1 读出来了。
-  新接入时要在连接层把编码处理对（比如 pymssql 的 `charset`），然后和 wx2 已解码的值逐行对拍。
-  不要照抄旧仓"解码失败就置 None"的做法：解码失败要报错停下。
+  `x.encode('latin1').decode('gbk')` 再解码。2026-11-24 源库核对：用 pymssql `charset="utf8"`
+  直接读出就是正确中文，不需要旧仓那套再解码。解码失败要报错停下，不要像旧仓那样置 None。
 
 ## 需求表与优先级
 
@@ -63,11 +62,14 @@ superseded_by: null
 - P1 的调整表可以算盈利预测上调、下调的比例，也是估值陷阱检验的候选变量，量不大。
 - P2 只有旧仓策略在用，新仓还没有消费者。`der_diver_stk` 很大，排在最后。
 
-**指数层一致预期源表不存在。** wx2 里只有 `con_forecast_citic`（中信行业指数一致预期，22 个指数代码），
-没有中证全指、沪深 300、中证红利、创业板指这些宽基指数。研究侧要用个股表
-（`con_forecast_stk`）、成分表（`src_wind.AINDEXMEMBERS`，已接入）和市值
-（`ASHAREEODDERIVATIVEINDICATOR`，已接入）自己聚合。同步时顺带在源库查一下
-有没有指数层一致预期表（表名可能含 `idx` 或 `index`），有就报告，不要自行接入。
+**指数层一致预期在源库里有，wx2 里没有。** 本文初稿根据 wx2 写成"不存在"，2026-11-24 源库核对后更正：
+`suntime_db.con_forecast_idx` 有 511,532 行，覆盖 27 个指数，约 165 MB。
+- 列与 `con_forecast_stk` 同构：`id`、`index_code`、`index_name`、`con_date`、`con_year` 加 `con_np`、`con_pe`、`con_eps` 等，
+  以及 `entrytime`、`updatetime`、`tmstamp`。PK `id`，`(index_code, con_date, con_year)` 唯一，游标列没有空值。
+- 含中证全指（`000985`，2011-08 起）、沪深 300、中证 500、创业板指（`399006`，2010-06 起）、
+  上证红利（`000015`）。**不含中证红利 `000922`。**
+- 入库时间特征与个股表相同：2022 年以前有事后回补，2023 年起当天 17 到 20 点入库。
+- 0006 没有建这张表，也不在 `db/src_tables.yaml` 第一批里。是否接入待负责人确认，确认前不要自行接入。
 
 不同步：
 
