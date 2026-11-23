@@ -71,10 +71,11 @@ YAML**，也**不得作为 PIT 查询的数据集**（fail-closed 仍然成立�
 | Wind 财报 / 财务指标 | `ANN_DT <= as_of`；空公告不可见；同报告期留最后一次 | `source_field` `field=ANN_DT`，**不加**法定披露日 fallback。调仓日当天公告可见 |
 | 业绩预告/快报/朝阳利润 `fin_*` | `declare_date` | `source_field` `field=declare_date` |
 | Wind 预告 `ASHAREPROFITNOTICE` | `S_PROFITNOTICE_DATE` | `source_field` `field=S_PROFITNOTICE_DATE` |
-| 聚源宏观（除货币供应） | `InfoPublDate <= as_of`；空发布日不可见；同指标同期取最晚发布 | `source_field` `field=InfoPublDate` |
-| 货币供应 `ED_MoneySupply` | 旧仓不用 `InfoPublDate`，统一取 `EndDate` 次月 15 日 | 2026-11-23 负责人改判：`InfoPublDate` 非空用它（A），为空用 `EndDate` 次月 15 日（`fixed_lag` fallback，B），见 [ADR](../adr/2026-11-23-ed-moneysupply-visibility.md) |
+| 聚源宏观（除货币供应） | `InfoPublDate <= as_of`；空发布日不可见；同指标同期取最晚发布 | `source_field` `field=InfoPublDate`。`InfoPublDate` 带时刻，按日期比较，发布当天可见（2026-11-23 裁定；旧仓按 0 点比较，当天 09:30 发布要到次日） |
+| 货币供应 `ED_MoneySupply` | 旧仓不用 `InfoPublDate`，统一取 `EndDate` 次月 15 日 | 2026-11-23 负责人改判：取 `InfoPublDate` 的日期与 `EndDate` 次月 15 日中较早者；来自 `InfoPublDate` 为 A，来自次月 15 日为 B。见 [ADR](../adr/2026-11-23-jydb-visibility.md) |
 | 中长期贷款余额空发布日 | 次月 20 日 | 仅该指标；其余 JY 空发布日仍不可见 |
-| Tushare `shibor` / `us_treasury_yield` | `trade_date <= as_of` | `same_day_close`，`event_field=trade_date` |
+| Tushare `shibor` | `trade_date <= as_of` | `same_day_close`，`event_field=trade_date` |
+| Tushare `us_treasury_yield` | 旧仓 `trade_date <= as_of` | 2026-11-23 改判：`source_field` `field=trade_date` `strict`，美国 T 日数据北京时间 T+1 可见，见 [ADR](../adr/2026-11-23-overseas-daily-next-day.md)。境外指数同此 |
 | Tushare `eco_cal` | `event_date <= as_of` | `source_field` `field=event_date` |
 | 金十 ISM | `publish_date < as_of`（不含当日） | `source_field` 或需严格小于；与 CPI/PPI 不同 |
 | 金十中国 CPI/PPI | 公布日对齐交易日，**含当日** | 与 ISM 分数据集，不要合成一条规则 |

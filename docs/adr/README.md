@@ -92,6 +92,8 @@ applies_to:
 |---|---|
 | 2026-09-19 | [因子多周期检验与三层准入](2026-09-19-factor-horizons-and-admission.md)（已裁定，待实现） |
 | 2026-11-22 | [cutamp 复现旧仓 quicksort 并列顺序，定义版本 v2](2026-11-22-cutamp-legacy-quicksort-order.md) |
-| 2026-11-23 | [货币供应 ED_MoneySupply 可见日：InfoPublDate 优先，空则期末次月 15 日](2026-11-23-ed-moneysupply-visibility.md) |
+| 2026-11-23 | [货币供应 ED_MoneySupply 可见日：InfoPublDate 优先，空则期末次月 15 日](2026-11-23-ed-moneysupply-visibility.md)（已被取代） |
+| 2026-11-23 | [聚源可见性：发布当天可见；货币供应取发布日与次月 15 日中较早者](2026-11-23-jydb-visibility.md) |
+| 2026-11-23 | [美国与境外市场日频数据次日可见](2026-11-23-overseas-daily-next-day.md) |
 | 2026-11-22 | [中信一级行业成分改用 AINDEXMEMBERSCITICSZL](2026-11-22-citics-l1-members-zl.md) |
 | 2026-11-22 | [股票前瞻收益按 open-to-open 落 mart，端点停牌不落行](2026-11-22-forward-return-open2open.md) |

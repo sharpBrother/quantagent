@@ -38,8 +38,9 @@ def test_cgb_10y_uses_legacy_curve_filter_and_same_day_cutoff() -> None:
 
 
 @pytest.mark.unit
-def test_us_treasury_reads_10y_maturity() -> None:
-    repo, cur = _repo([("20240102", Decimal("3.95"))])
+def test_us_treasury_reads_10y_maturity_visible_next_day() -> None:
+    # 美债按美国交易日，严格早于 as_of 才可见：as_of=01-02 只能看到 01-01 及以前。
+    repo, cur = _repo([("20240101", Decimal("3.95"))])
     repo.list_observations(
         as_of=date(2024, 1, 2),
         start=date(2024, 1, 1),
@@ -48,7 +49,7 @@ def test_us_treasury_reads_10y_maturity() -> None:
     )
     statement, params = cur.execute.call_args.args
     assert '"src_tushare"."us_treasury_yield"' in statement
-    assert params == ("20240101", "20240102", "10y")
+    assert params == ("20240101", "20240101", "10y")
 
 
 @pytest.mark.unit

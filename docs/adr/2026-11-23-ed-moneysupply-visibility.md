@@ -1,13 +1,13 @@
 ---
 title: 货币供应 ED_MoneySupply 可见日：InfoPublDate 优先，空则期末次月 15 日
-status: active
+status: superseded
 created: 2026-11-23
 updated: 2026-11-23
 applies_to:
   - src/quantagent/contracts/visibility/
   - docs/domain/pit-rules.md
 supersedes: null
-superseded_by: null
+superseded_by: adr/2026-11-23-jydb-visibility.md
 ---
 # 货币供应 ED_MoneySupply 可见日：InfoPublDate 优先，空则期末次月 15 日
 

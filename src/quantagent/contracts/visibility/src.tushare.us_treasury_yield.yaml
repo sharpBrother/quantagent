@@ -3,9 +3,12 @@ doc_ref: docs/migration/macro-source-ingest-plan.md
 temporal_kind: point_event
 event_field: trade_date
 visibility:
-  rule: same_day_close
+  rule: source_field
+  field: trade_date
+  strict: true
   grade: A
   rationale: >
-    美债收益率按美国交易日 trade_date 读取，旧仓下游 trade_date <= as_of（pit-rules 已钉死）。
-    美东收盘后公布，晚于北京时间同一交易日；跨时区消费的严格性由调用方 as_of 表达。
+    美债收益率按美国交易日 trade_date 读取。美东收盘在北京时间次日清晨，A 股收盘时当日美债尚未收盘，
+    所以 trade_date 严格早于 as_of 才可见（负责人 2026-11-23 裁定，见 docs/adr/2026-11-23-overseas-daily-next-day.md）。
+    旧仓下游 trade_date <= as_of 会提前一天，对拍差异以该 ADR 为解释。
 pit_recoverable: true

@@ -8,6 +8,7 @@ applies_to:
   - db/migrations/src/
   - src/quantagent/contracts/visibility/
   - src/quantagent/domain/pit/
+  - src/quantagent/contracts/spec.py
 supersedes: null
 superseded_by: null
 ---
@@ -47,14 +48,13 @@ superseded_by: null
 | P0 | `C_ED_MacroIndicatorData` | 中国 CPI（`IndicatorCode=110255493`）、PPI、PMI 等；旧仓 11 处 | 114,690 / 8 MB | 1978 – 2026-11 | 0005 已建，PK `ID` | `source_field InfoPublDate`，A |
 | P0 | `C_ED_IndicatorMain` | 宏观指标目录 | 92 / 40 KB | — | 0005 已建 | 不配（目录） |
 | P1 | `ED_MoneySupply` | M1、M2；旧仓 5 处 | 660 / 0.3 MB | 1952 – 2026-10 | 0005 已建 | 见下文专节 |
-| P1 | `C_IN_IndicatorDataV` | 行业指标（伦敦金、地产投资等）；旧仓 7 处 | 367,912 / 28 MB | 1876 – 2026-11 | 0005 已建 | `source_field InfoPublDate`，A |
+| P1 | `C_IN_IndicatorDataV` | 行业指标（伦敦金、地产投资、社融存量同比 `1530095585` 等）；旧仓 7 处 | 367,912 / 28 MB | 1876 – 2026-11 | 0005 已建 | `source_field InfoPublDate`，A |
 | P1 | `C_IN_IndicatorMain` | 行业指标目录（负责人 2026-11-23 要求接入） | 213 / 48 KB | — | **未建**，需新迁移 | 不配（目录） |
-| P1 | `ED_SocialFinancing` | 社融；旧仓 2 处 | 1,074 / 0.2 MB | 2002 – 2025-12 | 0005 已建 | **待裁定**，见"待裁定" |
 | P2 | `CT_SystemConst` | 系统常量 | 172,977 / 17 MB | — | 0005 已建 | 不配（代码表） |
 | P2 | `SecuMain` | 证券主表 | 788,079 / 200 MB | — | 0005 已建 | 不配 |
 | P2 | `SecuMainAll` | 证券码表总表 | 3,085,554 / 1 GB | — | 0005 已建，**无 PK** | 不配 |
 | P3 | `QT_GoldTradeMarket` | 上金所行情；黄金择时 | 127,936 / 42 MB | — | 0005 已建，**无 PK** | `same_day_close TradeDate` |
-| P3 | `QT_OSIndexQuote` | 境外、香港指数；大小盘轮动 | 5,830,149 / 1.5 GB | 1896 – 2026-11 | 0005 已建，**无 PK** | `same_day_close TradingDay`（跨时区，见下） |
+| P3 | `QT_OSIndexQuote` | 境外、香港指数；大小盘轮动 | 5,830,149 / 1.5 GB | 1896 – 2026-11 | 0005 已建，**无 PK** | `source_field TradingDay strict`：次日可见 |
 | P3 | `Bond_BondIndexQuote` | 债券指数；债券择时 | 10,971,808 / 1.7 GB | 1960 – 2026-11 | 0005 已建，**无 PK** | `same_day_close TradingDay` |
 | P3 | `DZ_MainOperIncome` | 主营构成；macro_regime 股票池 | 6,277,388 / 2.6 GB | 1998 – 2026-09 | 0005 已建 | 从旧仓 `macro_regime/pools.py` 反推（`InfoPublDate <= as_of`） |
 
@@ -71,6 +71,10 @@ superseded_by: null
   PMI 已在 `C_ED_MacroIndicatorData` 里，到 2026-10；`IN_ManufacturingPMI` 在 wx2 里停在 2024-08。
 - 无消费者，不迁：`Bond_BaseRateReference`、`C_ED_CustomsData`、`CT_Product`、
   `IN_MeansofProductionPI`、`QT_IndexQuote`。
+- `ED_SocialFinancing`：负责人 2026-11-23 决定不同步。旧仓只有 `macro_risk_revalidation/task0350`
+  的覆盖探查读它，没有策略或因子消费。旧仓 `macro_regime` 的社融指标
+  `social_financing_stock_yoy` 读的是 `C_IN_IndicatorDataV` 的 `1530095585`，随 P1 接入。
+  0005 建的空表留着，不写入。
 
 ## 写入语义（已裁定）
 
@@ -113,25 +117,32 @@ superseded_by: null
    目录类表不配。
 6. **可见性引擎。** 两处要补，都在 `domain/pit/`，现在会 fail-closed：
    - **时间戳截止列。** `InfoPublDate` 是 timestamp，`pit_cutoff` 目前只按日期列处理。
-     `C_ED_MacroIndicatorData` 有 12,357 行带时刻（比如 CPI 在 09:30 发布）。截止语义待裁定，
-     见"待裁定"第 1 条。裁定前不要实现。
-   - **`source_field` 加 `fixed_lag` fallback**，供 `ED_MoneySupply` 用。语义是逐行
-     `COALESCE(InfoPublDate 的日期, EndDate + 15 天) <= as_of`，可见日来自哪一支要带进返回行，
-     用于 `pit_grade`（A 或 B）。不是月末的 `EndDate` 报错。
-     其余规则类型仍然 fail-closed。domain 层要有单测，不依赖数据库。
+     已裁定按日期比较，发布当天可见：`InfoPublDate::date <= as_of`
+     （[ADR](../adr/2026-11-23-jydb-visibility.md) 第 1 条）。
+     `C_ED_MacroIndicatorData` 有 12,357 行带时刻，比如 CPI 在 09:30 发布。
+   - **`fallback_mode: earliest` 加 `fixed_lag` 后备**，供 `ED_MoneySupply` 用。
+     `VisibilitySpec` 加可选字段 `fallback_mode`（`if_null` 或 `earliest`，默认 `if_null`）。
+     求解语义见 ADR 第 2 条：逐行取 `LEAST(InfoPublDate::date, EndDate + 15)`。
+     可见日来自哪一支要带进返回行，用于确定 `pit_grade`（A 或 B）。`EndDate` 不是月末就报错。
+     其余规则类型与组合仍然 fail-closed。domain 层要有单测，不依赖数据库。
 7. **编排。** 新建 Dagster asset 和 schedule（参照 `orchestration/assets/tushare.py`）。
    放哪台机器，取决于哪台能连上聚源，由负责人定。同一来源的自动采集不得在两台机器上同时启用。
 8. **进度。** 完成后更新 `docs/migration/roadmap.md` 的"当前进度"。
 
-## ED_MoneySupply 可见性（已裁定）
+## 可见性要点（已裁定）
 
-见 [ADR](../adr/2026-11-23-ed-moneysupply-visibility.md)：
-
-- `InfoPublDate` 非空就用它，等级 A。
-- 为空就用 `EndDate` 次月 15 日，等级 B。
-
-注意：2000–2018 年月度行的 `InfoPublDate` 都是回补日，主要是 2019-05-17。
-按此规则，这段 M1、M2 要到回补日才可见。与旧仓 `macro_regime` 对拍时会有差异，以 ADR 为准。
+- **聚源 `InfoPublDate` 发布当天可见**（[ADR](../adr/2026-11-23-jydb-visibility.md)）。
+  旧仓按 0 点比较，当天带时刻发布的数据要到次日才可见。对拍时这些行会早一天，以 ADR 为准。
+- **`ED_MoneySupply`**：可见日取 `InfoPublDate` 的日期与 `EndDate` 次月 15 日中较早者。
+  来自 `InfoPublDate` 为 A，来自次月 15 日为 B。与旧仓（统一用次月 15 日）相比，
+  只有 2024 年以来 30 行会提前（实际发布在 12 日到 14 日）。
+- **境外与香港指数 `QT_OSIndexQuote`**：交易日 T 的数据在 T+1 可见
+  （[ADR](../adr/2026-11-23-overseas-daily-next-day.md)），契约写
+  `source_field field=TradingDay strict: true`。日、韩等早于 A 股收盘的市场也按次日处理，
+  偏保守，已接受。
+- **`C_IN_IndicatorDataV` 的中长期贷款 `1530094044`**：394 期里有 338 期发布日为空。
+  pit-rules 登记了它的特例"为空取次月 20 日"，但现有契约是表级规则，表达不了单个指标的特例。
+  本次不实现，这些行按表级规则不可见，偏保守。新仓目前没有它的消费者，以后要用再单独设计。
 
 ## 验收
 
@@ -147,17 +158,7 @@ superseded_by: null
 
 ## 待裁定（遇到就停下问负责人）
 
-1. **`InfoPublDate` 带时刻时，发布当天算不算可见？**
-   - pit-rules 写的是 `InfoPublDate <= as_of`。
-   - 旧仓实际传 `'YYYYMMDD'` 给 SQL Server 比较 datetime，日期按 0 点算，
-     所以 09:30 发布的数据要到次日才可见。
-   - 金十中国 CPI 与 Wind `ANN_DT` 的口径都是"含当日"。
-2. **`ED_SocialFinancing` 没有发布日字段。** 列里没有 `InfoPublDate`，pit-rules"聚源宏观用
-   InfoPublDate"对它不成立；旧仓消费者只做覆盖探查，没有给出可见日规则。
-   另外，wx2 中该表停在 2025-12，最后更新 2026-01-16，要查清是源端停更还是同步中断。
-3. **`QT_OSIndexQuote` 的跨时区问题。** 美股指数 `TradingDay` 当日的收盘晚于北京时间同日。
-   做法参照 `src.tushare.us_treasury_yield`：契约写 `same_day_close`，更严的截止由调用方的
-   `as_of` 表达。写进 rationale。
-4. **`pit_recoverable` 怎么填。** Wind 财报契约写的是 `true`，但源镜像是原地修订
-   （wx2 里每个 `(IndicatorCode, EndDate)` 只有一行，没有版本史）。聚源先与 Wind 保持一致，
-   这个不一致单独提给负责人。
+1. **`pit_recoverable` 怎么填。** 字段含义是"历史修订史能否恢复"。源镜像跟随源端原地覆盖，
+   wx2 里每个 `(IndicatorCode, EndDate)` 只有一行，回测时看到的是改后的值，按字面应为 `false`。
+   但 Wind 同类契约写的是 `true`。负责人裁定前，聚源先与 Wind 保持一致（`true`），
+   并在 rationale 写明"值为当前版本"。

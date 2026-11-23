@@ -103,9 +103,9 @@ calendar = LakeCalendarRepository(paths.lake / "std" / "trade_calendar")
 # %% [markdown]
 # ## 读取
 #
-# 估值、中债、美债、全收益指数都是 `same_day_close` 且无版本：以研究截止日整段
-# 读一次，再按信号日切 `观测日 <= 截止`，与逐日传 as_of 等价。TIPS 有版本，
-# 按每个信号日的 as_of 单独读取。
+# 估值、中债、全收益指数是 `same_day_close`，美债是严格早于 as_of，都没有版本：
+# 以研究截止日整段读一次，再按信号日切（同日类 `观测日 <= 信号日`，美债
+# `观测日 < 信号日`），与逐日传 as_of 等价。TIPS 有版本，按每个信号日的 as_of 单独读取。
 
 # %%
 open_days = [
@@ -157,7 +157,8 @@ log(f"全收益行 {len(ret_rows)}")
 # ## 日频面板（交易日）
 #
 # - EY、r_CN：信号日当天，同日对齐，不取前值（旧仓 ERP 口径）。
-# - r_US：观测日不晚于信号日前一个自然日的最近一期，过期超过 7 天即缺失。
+# - r_US：契约严格早于 as_of（美债 T 日收盘在北京时间 T+1 早上，ADR
+#   2026-11-23-overseas-daily-next-day），取观测日早于信号日的最近一期，过期超过 7 天即缺失。
 # - TIPS：信号日 as_of 下的最近一期（契约严格早于 as_of），同样 7 天过期。
 
 # %%
@@ -175,6 +176,7 @@ def asof_lookup(series: pd.Series, cutoffs: pd.DatetimeIndex) -> tuple[np.ndarra
     return vals, obs
 
 
+# 与契约 strict 一致：观测日 < 信号日，即 <= 信号日前一天
 us_cut = open_idx - pd.Timedelta(days=1)
 vals, obs = asof_lookup(r_us_raw, us_cut)
 stale = (us_cut - pd.DatetimeIndex(obs)) > pd.Timedelta(days=US_STALE_DAYS)
@@ -713,7 +715,7 @@ pit_report = {
     "worst_grade": max(i["grade"] for i in inputs),
     "untrusted_ratio": 0.0,
     "notes": [
-        "美债名义利率按信号日前一个自然日截止（跨时区），可见性契约未改。",
+        "美债名义利率严格早于信号日可见（契约 2026-11-23 改为 strict，旧仓同日可见）。",
         "美国序列按 as-of 取最近一期，超过 7 个自然日视为缺失；中国 CPI 与德债、日债月度序列超过 120 天视为缺失。",
         "德债、日债为 OECD 月均，超精度值按 8 位量化（ADR 2026-11-23-fred-oecd-yield-rounding）。",
         "现金按上一交易日 10Y 国债收益率 act/365 计息，不含久期损益。",
