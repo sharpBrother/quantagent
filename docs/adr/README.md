@@ -54,6 +54,7 @@ applies_to:
 | 2026-11-17 | [ST 状态按左闭右开区间判断](2026-11-17-st-status-half-open.md) |
 | 2026-11-17 | [执行机上的 Dagster 运行存储改用本地 SQLite](2026-11-17-dagster-local-run-storage.md) |
 | 2026-11-18 | [Tushare 源镜像同样全自动跟随源端](2026-11-18-tushare-mirror-follows-source.md) |
+| 2026-11-23 | [聚源与朝阳永续源镜像同样跟随源端修订](2026-11-23-jydb-suntime-mirror-follows-source.md) |
 | 2026-11-18 | [源端发布的版本可以落表，与采集批次 vintage 不同](2026-11-18-source-published-versions.md) |
 | 2026-11-18 | [GPR 日频采集的版本比较与数值口径](2026-11-18-gpr-daily-ingest.md) |
 | 2026-11-23 | [FRED 的 OECD 德债、日债收益率超精度值按 8 位小数量化](2026-11-23-fred-oecd-yield-rounding.md) |

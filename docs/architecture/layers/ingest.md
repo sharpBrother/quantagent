@@ -2,7 +2,7 @@
 title: ingest 层职责
 status: active
 created: 2026-09-16
-updated: 2026-11-17
+updated: 2026-11-23
 applies_to:
   - src/quantagent/ingest/
   - db/migrations/src/
@@ -50,7 +50,7 @@ applies_to:
 2. 目标表白名单写死在代码常量里，明确禁写的表要有显式拦截。
 3. SQL 动词白名单：禁止 `UPDATE` / `MERGE` / `TRUNCATE` / `DROP` / `ALTER`，
    默认 insert-only。
-4. 不覆盖既有行：遇到目标键已有行就报错退出，要替换必须显式传参指定范围。Wind 源镜像例外，见下文。
+4. 不覆盖既有行：遇到目标键已有行就报错退出，要替换必须显式传参指定范围。Wind、Tushare、聚源与朝阳永续源镜像例外，见下文与 [聚源、朝阳永续跟随源端](../../adr/2026-11-23-jydb-suntime-mirror-follows-source.md)。
 5. 写后回读：同一事务内回读比对行数与 digest，不一致立即回滚。
 6. 事务状态未知不重试：提交或回滚结果不确定时停下报告。
 
