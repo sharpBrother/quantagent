@@ -70,6 +70,29 @@ _APPROVED_NEGATIVE_VOLUME = {
         ("920166.BJ", Decimal("2")),
         ("920168.BJ", Decimal("542")),
     ),
+    date(2026, 9, 17): (("920242.BJ", Decimal("-3")),),
+    date(2026, 9, 28): (("920055.BJ", Decimal("168")),),
+    date(2026, 9, 30): (("920163.BJ", Decimal("-3")), ("920541.BJ", Decimal("-17"))),
+    date(2026, 10, 8): (
+        ("920033.BJ", Decimal("-29")),
+        ("920541.BJ", Decimal("-7")),
+        ("920781.BJ", Decimal("-17")),
+    ),
+    date(2026, 10, 12): (("920166.BJ", Decimal("404")), ("920541.BJ", Decimal("619"))),
+    date(2026, 10, 13): (("920069.BJ", Decimal("-44")), ("920080.BJ", Decimal("-41"))),
+    date(2026, 10, 14): (("920020.BJ", Decimal("13")),),
+    date(2026, 10, 19): (("920242.BJ", Decimal("20")),),
+    date(2026, 10, 21): (("920145.BJ", Decimal("18")), ("920957.BJ", Decimal("761"))),
+    date(2026, 10, 22): (("920751.BJ", Decimal("37")),),
+    date(2026, 10, 27): (
+        ("920027.BJ", Decimal("-53")),
+        ("920455.BJ", Decimal("-56")),
+        ("920675.BJ", Decimal("-31")),
+    ),
+    date(2026, 10, 29): (("920871.BJ", Decimal("37")),),
+    date(2026, 11, 3): (("920275.BJ", Decimal("-35")), ("920931.BJ", Decimal("263"))),
+    date(2026, 11, 11): (("920608.BJ", Decimal("-19")),),
+    date(2026, 11, 18): (("920121.BJ", Decimal("1775")),),
 }
 _PREVIOUSLY_APPROVED_DATES = frozenset(
     {
