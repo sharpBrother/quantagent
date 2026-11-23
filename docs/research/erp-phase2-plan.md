@@ -193,8 +193,8 @@ P1 结束时冻结候选口径（定义与配置 digest），之后每月追加�
 | 报告 | 文件 | 时点 |
 |---|---|---|
 | 报告一：max 口径超额收益归因与机制检验 | [erp-max-attribution.md](erp-max-attribution.md) | 2026-11-24 完成 |
-| 报告二：A 股估值因子的统计稳健性评估 | `docs/research/erp-valuation-robustness.md` | P1 完成 |
-| 报告三：下一阶段设计 | `docs/research/erp-next-stage-design.md` | 前两份完成后，按结果决定 |
+| 报告二：A 股估值因子的统计稳健性评估 | [erp-valuation-robustness.md](erp-valuation-robustness.md) | 2026-11-24 完成 |
+| 报告三：下一阶段设计 | [erp-next-stage-design.md](erp-next-stage-design.md) | 2026-11-24 完成，待负责人确认 |
 
 旧的研究笔记与阶段报告保留不动，只在末尾加指向新报告的链接。
 

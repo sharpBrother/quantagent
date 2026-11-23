@@ -424,4 +424,7 @@ A 段是 2012-02 至 2018-06-03，B 段是 2018-06-04 至 2025-07-30，C 段是 
 
 ## 后续
 
-第二阶段按 [计划](erp-phase2-plan.md) 进行，结果见 [报告一](erp-max-attribution.md)。
+第二阶段按 [计划](erp-phase2-plan.md) 进行，结果见 [报告一](erp-max-attribution.md)、
+[报告二](erp-valuation-robustness.md)，下一步见 [报告三](erp-next-stage-design.md)。
+报告二撤回了第六部分"同一样本里 V 与 EY 样本外四个期限都通过"这一条参考结论：
+它依赖 2007 年训练起点，2005 年起点下不成立。
