@@ -18,7 +18,15 @@ from datetime import UTC, date, datetime, timedelta
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-from scipy.stats import norm
+from erp_lib import (
+    asof_lookup,
+    cash_accrual,
+    clark_west,
+    nw_ols,
+    perf_daily,
+    ratchet,
+    rolling_percentile,
+)
 
 from quantagent.adapters.lake.trade_calendar import LakeCalendarRepository
 from quantagent.adapters.postgres.index_returns import PostgresIndexReturnRepository
@@ -52,7 +60,9 @@ CPI_STALE_DAYS = 120
 PCT_YEARS = 5
 PCT_YEARS_ALT = 6
 BAND = 0.10
-BAND_TOL = 1e-9  # 正好差 0.10 也调仓；留容差避免 0.7 - 0.6 < 0.1 的浮点误差
+# 正好差 0.10 也调仓；留容差避免 0.7 - 0.6 < 0.1 的浮点误差。
+# 计算已抽到 `erp_lib.ratchet`，其 band/band_tol 默认值就是这两个数。
+BAND_TOL = 1e-9
 HORIZONS = (1, 3, 6, 12)
 MIN_HISTORY = 36
 OOS_START = pd.Period("2012-12", "M")
@@ -183,13 +193,6 @@ for code in INDICES:
 daily["r_cn"] = r_cn_raw.reindex(open_idx)
 
 
-def asof_lookup(series: pd.Series, cutoffs: pd.DatetimeIndex) -> tuple[np.ndarray, np.ndarray]:
-    pos = series.index.searchsorted(cutoffs, side="right") - 1
-    vals = np.where(pos >= 0, series.to_numpy()[np.clip(pos, 0, None)], np.nan)
-    obs = np.where(pos >= 0, series.index.to_numpy()[np.clip(pos, 0, None)], np.datetime64("NaT", "ns"))
-    return vals, obs
-
-
 # 与契约 strict 一致：观测日 < 信号日，即 <= 信号日前一天
 us_cut = open_idx - pd.Timedelta(days=1)
 vals, obs = asof_lookup(r_us_raw, us_cut)
@@ -298,66 +301,6 @@ print("缺失（2005 年起）:\n", daily.loc["2005":].filter(regex=r"^(r_cn|r_u
 # 现金按上一交易日的 10 年期国债收益率计息（act/365，负责人 2026-11-23 裁定）。
 
 # %%
-def rolling_percentile(s: pd.Series, years: int) -> pd.Series:
-    """信号日及之前 ``years`` 年内全部有效日值中 ``<= 当日值`` 的比例；不满窗口不出信号。"""
-    valid = s.dropna()
-    window = pd.Timedelta(days=365 * years + years // 4)
-    if valid.empty:
-        return pd.Series(np.nan, index=s.index)
-    first = valid.index[0]
-    x = valid.to_numpy()
-    idx = valid.index
-    lo = idx.searchsorted(idx - window, side="right")
-    out = np.full(len(x), np.nan)
-    for i in range(len(x)):
-        if idx[i] - first < window:
-            continue
-        w = x[lo[i] : i + 1]
-        out[i] = np.mean(w <= x[i])
-    return pd.Series(out, index=idx).reindex(s.index)
-
-
-def cash_accrual(r_cn: pd.Series) -> pd.Series:
-    """第 t 日现金收益：上一交易日的 10Y 收益率按两交易日间的自然日数计息。"""
-    days = r_cn.index.to_series().diff().dt.days
-    return r_cn.shift(1) / 100.0 * days / 365.0
-
-
-def ratchet(
-    signal: pd.Series, ret: pd.Series, *, lag: int, cash: pd.Series | None = None
-) -> pd.DataFrame:
-    """``lag=1``：T 日信号 T+1 收盘成交；``lag=0``：T 日收盘成交（敏感性对照）。"""
-    dates = signal.index
-    target = signal.shift(lag)  # 成交日看到的目标
-    cash = pd.Series(0.0, index=dates) if cash is None else cash.reindex(dates)
-    w = np.nan
-    weights, trades, rets = [], [], []
-    for i, d in enumerate(dates):
-        r = ret.iloc[i]
-        c = cash.iloc[i]
-        # 当日收益按前一日收盘持仓计算，然后仓位漂移
-        if not np.isnan(w):
-            if np.isnan(r) or np.isnan(c):
-                raise RuntimeError(f"持仓期间缺收益或缺现金利率: {d.date()}")
-            port = w * r + (1 - w) * c
-            w = w * (1 + r) / (1 + port)
-        else:
-            port = np.nan
-        tgt = target.iloc[i]
-        traded = 0.0
-        if not np.isnan(tgt):
-            if np.isnan(w):
-                traded, w = tgt, tgt
-            else:
-                desired = max(w, tgt) if tgt >= 0.5 else min(w, tgt)
-                if abs(desired - w) >= BAND - BAND_TOL:
-                    traded, w = abs(desired - w), desired
-        weights.append(w)
-        trades.append(traded)
-        rets.append(port)
-    return pd.DataFrame({"w": weights, "turnover": trades, "ret": rets}, index=dates)
-
-
 # 规则自检：负责人给的例子（目标升了就加，回落到 0.5 以上不减，跌破 0.5 才减）。
 # 收益记 0，仓位不漂移。正好差 0.10 也调仓（负责人 2026-11-23 裁定）。
 _days = pd.bdate_range("2024-01-01", periods=10)
@@ -371,35 +314,6 @@ assert _check["w"].round(2).tolist() == [
 ], _check
 # 0.6→0.7 差正好 0.10，加仓；0.75 与 0.70 差 0.05，不调；回落到 0.6、0.55 不减；
 # 跌破 0.5 到 0.45 才减；0.30→0.38 不加；回到 0.52 加仓；0.58 与 0.52 差 0.06，不调。
-
-
-def perf_daily(
-    ret: pd.Series, extra: pd.DataFrame | None = None, rf: pd.Series | None = None
-) -> dict[str, float]:
-    ret = ret.dropna()
-    nav = (1 + ret).cumprod()
-    years = len(ret) / 244
-    ann = nav.iloc[-1] ** (1 / years) - 1
-    vol = ret.std() * np.sqrt(244)
-    out = {
-        "ann_return": ann,
-        "ann_vol": vol,
-        "sharpe_rf0": ann / vol if vol else np.nan,
-        "max_dd": (nav / nav.cummax() - 1).min(),
-        "calmar": ann / abs((nav / nav.cummax() - 1).min()),
-        "days": len(ret),
-    }
-    if rf is not None:
-        excess = ret - rf.reindex(ret.index)
-        out["sharpe_excess"] = excess.mean() / excess.std() * np.sqrt(244)
-    if extra is not None:
-        e = extra.loc[ret.index]
-        out |= {
-            "avg_w": e["w"].mean(),
-            "trades_per_year": (e["turnover"] > 0).sum() / years,
-            "turnover_per_year": e["turnover"].sum() / years,
-        }
-    return out
 
 
 SIGNALS = {"U_us": "U", "V_cn": "V", "Max_us_cn": "Mx", "Ur_tips": "Ur", "EY": "ey"}
@@ -504,14 +418,6 @@ MODELS = {
 }
 
 
-def nw_ols(y: pd.Series, x: pd.DataFrame, h: int):
-    data = pd.concat([y.rename("y"), x], axis=1).dropna()
-    fit = sm.OLS(data["y"], sm.add_constant(data[list(x.columns)])).fit(
-        cov_type="HAC", cov_kwds={"maxlags": max(h, 1)}
-    )
-    return fit, len(data)
-
-
 in_sample = []
 for code in INDICES:
     x_all = predictors(code)
@@ -553,13 +459,6 @@ def oos_forecasts(code: str, h: int) -> pd.DataFrame:
             row[name] = float(np.asarray(fit.predict(sm.add_constant(x_now, has_constant="add")))[0])
         out.append(row)
     return pd.DataFrame(out).set_index("period")
-
-
-def clark_west(y: pd.Series, f_small: pd.Series, f_large: pd.Series, h: int) -> tuple[float, float]:
-    f = (y - f_small) ** 2 - ((y - f_large) ** 2 - (f_small - f_large) ** 2)
-    fit = sm.OLS(f.to_numpy(), np.ones(len(f))).fit(cov_type="HAC", cov_kwds={"maxlags": max(h, 1)})
-    t = float(fit.tvalues[0])
-    return t, float(1 - norm.cdf(t))
 
 
 oos = []
