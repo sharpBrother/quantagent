@@ -74,6 +74,9 @@ NBS_SEGMENTS = {
     "B": ("2018-06-04", "2025-07-30"),
     "C": ("2025-07-31", "2099-12-31"),
 }
+# 第八部分：机制检验的期限与汇改后起点
+P8_HORIZONS = (3, 6, 12)
+P8_FX_POST = "2015-08"
 N_SIM = 1000
 SEED = 20261123
 PARAMS = {
@@ -96,6 +99,9 @@ PARAMS = {
     "seed": SEED,
     "nbs_cpi_series": "cn_cpi_yoy_nbs",
     "nbs_segments": NBS_SEGMENTS,
+    "p7_mix": "0.5*cpi_yoy_nbs + 0.5*ppi_yoy_nbs, same month",
+    "p8_policy_horizons": list(P8_HORIZONS),
+    "p8_fx_post": P8_FX_POST,
 }
 
 started = time.monotonic()
@@ -751,42 +757,58 @@ print(cpi_diff.loc[cpi_diff["diff"].abs().sort_values(ascending=False).index[:10
 
 # 日频策略：与第一部分同规则（5 年窗口、T+1 成交），6 年窗口作敏感性。
 NBS_SIGNALS = {"U_us": "U", "V_cn": "V", "Max_us_cn": "Mx", "Vn_cn_real_nbs": "Vn", "EY": "ey"}
-nbs_rows = []
-nbs_windows: dict[int, tuple[pd.Timestamp, pd.Series]] = {}
-for years in (PCT_YEARS, PCT_YEARS_ALT):
-    pcts = {name: rolling_percentile(daily[f"{col}|{MAIN}"], years) for name, col in NBS_SIGNALS.items()}
-    start = max(p.first_valid_index() for p in pcts.values())
-    ret = daily[f"ret|{MAIN}"].loc[start:]
-    nbs_windows[years] = (start, ret)
-    bh = perf_daily(ret.iloc[1:], rf=cash)
-    nbs_rows.append({"pct_years": years, "signal": "buy_hold", "start": str(start.date())} | bh)
-    for name, p in pcts.items():
-        run = ratchet(p.loc[start:], ret, lag=1, cash=cash)
-        strategy_runs[(f"nbs_{name}", years, 1)] = run
-        nbs_rows.append(
-            {"pct_years": years, "signal": name, "start": str(start.date())}
-            | perf_daily(run["ret"], run, rf=cash)
-        )
-nbs_compare = pd.DataFrame(nbs_rows)
-print(nbs_compare.round(3).to_string(index=False))
 
-# 分段：同一条连续回测按 NBS_SEGMENTS 切片。
-nbs_seg_rows = []
-for years, (start, ret) in nbs_windows.items():
-    ref = strategy_runs[("nbs_U_us", years, 1)]
-    for seg, (lo, hi) in NBS_SEGMENTS.items():
-        seg_lo = start if lo is None else lo
-        r = ret.loc[seg_lo:hi].loc[ref.index[1] :]
-        nbs_seg_rows.append(
-            {"pct_years": years, "segment": seg, "signal": "buy_hold"} | perf_daily(r, rf=cash)
-        )
-        for name in NBS_SIGNALS:
-            run = strategy_runs[(f"nbs_{name}", years, 1)].loc[seg_lo:hi]
-            nbs_seg_rows.append(
-                {"pct_years": years, "segment": seg, "signal": name}
+def compare_windows(
+    signals: dict[str, str], prefix: str
+) -> tuple[pd.DataFrame, dict[int, tuple[pd.Timestamp, pd.Series]]]:
+    """日频策略比较表：5 年为主、6 年作敏感性，从所有信号都出分位的共同起点算。
+
+    回测存进 ``strategy_runs[(f"{prefix}{name}", years, 1)]``，供分段表复用同一条连续回测。
+    """
+    rows = []
+    windows: dict[int, tuple[pd.Timestamp, pd.Series]] = {}
+    for years in (PCT_YEARS, PCT_YEARS_ALT):
+        pcts = {name: rolling_percentile(daily[f"{col}|{MAIN}"], years) for name, col in signals.items()}
+        start = max(p.first_valid_index() for p in pcts.values())
+        ret = daily[f"ret|{MAIN}"].loc[start:]
+        windows[years] = (start, ret)
+        bh = perf_daily(ret.iloc[1:], rf=cash)
+        rows.append({"pct_years": years, "signal": "buy_hold", "start": str(start.date())} | bh)
+        for name, p in pcts.items():
+            run = ratchet(p.loc[start:], ret, lag=1, cash=cash)
+            strategy_runs[(f"{prefix}{name}", years, 1)] = run
+            rows.append(
+                {"pct_years": years, "signal": name, "start": str(start.date())}
                 | perf_daily(run["ret"], run, rf=cash)
             )
-nbs_segments = pd.DataFrame(nbs_seg_rows)
+    return pd.DataFrame(rows), windows
+
+
+def segment_table(
+    signals: dict[str, str], prefix: str, windows: dict[int, tuple[pd.Timestamp, pd.Series]]
+) -> pd.DataFrame:
+    """同一条连续回测按 NBS_SEGMENTS 切片，A 段从该窗口的共同起点开始。"""
+    rows = []
+    for years, (start, ret) in windows.items():
+        ref = strategy_runs[(f"{prefix}{next(iter(signals))}", years, 1)]
+        for seg, (lo, hi) in NBS_SEGMENTS.items():
+            seg_lo = start if lo is None else lo
+            r = ret.loc[seg_lo:hi].loc[ref.index[1] :]
+            rows.append(
+                {"pct_years": years, "segment": seg, "signal": "buy_hold"} | perf_daily(r, rf=cash)
+            )
+            for name in signals:
+                run = strategy_runs[(f"{prefix}{name}", years, 1)].loc[seg_lo:hi]
+                rows.append(
+                    {"pct_years": years, "segment": seg, "signal": name}
+                    | perf_daily(run["ret"], run, rf=cash)
+                )
+    return pd.DataFrame(rows)
+
+
+nbs_compare, nbs_windows = compare_windows(NBS_SIGNALS, "nbs_")
+print(nbs_compare.round(3).to_string(index=False))
+nbs_segments = segment_table(NBS_SIGNALS, "nbs_", nbs_windows)
 print(
     nbs_segments[["pct_years", "segment", "signal", "ann_return", "sharpe_excess", "max_dd", "avg_w"]]
     .round(3)
@@ -797,45 +819,53 @@ print(
 panel["Vn"] = panel[f"Vn|{MAIN}"]
 nbs_x = pd.concat([panel["Vn"], x_main[["V", "U", "EY", "G"]]], axis=1)
 nbs_mask = nbs_x.notna().all(axis=1)
+
+def in_sample_table(x: pd.DataFrame, mask: pd.Series, models: dict[str, list[str]]) -> pd.DataFrame:
+    """月频样本内回归：所有模型同一样本，Newey-West 滞后期等于期限。"""
+    rows = []
+    for h in HORIZONS:
+        y = panel[f"fwd{h}|{MAIN}"]
+        for name, cols in models.items():
+            fit, n = nw_ols(y[mask], x.loc[mask, cols], h)
+            for col in cols:
+                rows.append(
+                    {"h": h, "model": name, "var": col, "coef": fit.params[col],
+                     "t_nw": fit.tvalues[col], "r2": fit.rsquared, "n": n}
+                )
+    return pd.DataFrame(rows)
+
+
 NBS_IN_MODELS = {"Vn": ["Vn"], "V": ["V"], "U": ["U"], "EY": ["EY"], "Vn+G": ["Vn", "G"]}
-nbs_in_sample = []
-for h in HORIZONS:
-    y = panel[f"fwd{h}|{MAIN}"]
-    for name, cols in NBS_IN_MODELS.items():
-        fit, n = nw_ols(y[nbs_mask], nbs_x.loc[nbs_mask, cols], h)
-        for col in cols:
-            nbs_in_sample.append(
-                {"h": h, "model": name, "var": col, "coef": fit.params[col],
-                 "t_nw": fit.tvalues[col], "r2": fit.rsquared, "n": n}
-            )
-nbs_in_sample = pd.DataFrame(nbs_in_sample)
+nbs_in_sample = in_sample_table(nbs_x, nbs_mask, NBS_IN_MODELS)
 print(nbs_in_sample.round(3).to_string(index=False))
 
 
-# 月频样本外：与原 oos_forecasts 的区别是训练与预测都限定在同一样本（mask 月份）内。
+# 月频样本外：与第二部分 oos_forecasts 的区别是训练与预测都限定在同一样本（mask 月份）内。
 NBS_OOS_MODELS = {"M_EY": ["EY"], "M1_V": ["V"], "M2_U": ["U"], "M_Vn": ["Vn"]}
 
 
-def nbs_oos_forecasts(h: int) -> pd.DataFrame:
+def sample_oos_forecasts(
+    x: pd.DataFrame, mask: pd.Series, models: dict[str, list[str]], h: int
+) -> pd.DataFrame:
+    """扩张窗口样本外预测，训练与预测都限定在 mask 月份内，且只用信号日已实现的样本。"""
     y = panel[f"fwd{h}|{MAIN}"]
     realized = {p: (entry[periods[i + h]] if i + h < len(periods) else None) for i, p in enumerate(periods)}
     out = []
     for i, p in enumerate(periods):
-        if p < OOS_START or np.isnan(y.iloc[i]) or not bool(nbs_mask.iloc[i]):
+        if p < OOS_START or np.isnan(y.iloc[i]) or not bool(mask.iloc[i]):
             continue
         t = panel["signal_dt"].iloc[i]
-        # 只用信号日已实现、且落在同一样本内的月份训练
         train = [
             q for q in periods[:i]
-            if bool(nbs_mask.loc[q]) and realized[q] is not None and realized[q] <= t
+            if bool(mask.loc[q]) and realized[q] is not None and realized[q] <= t
         ]
         y_train = y.loc[train].dropna()
         if len(y_train) < MIN_HISTORY:
             continue
         row = {"period": p, "y": y.iloc[i], "M0": y_train.mean()}
-        for name, cols in NBS_OOS_MODELS.items():
-            data = pd.concat([y.loc[train].rename("y"), nbs_x.loc[train, cols]], axis=1).dropna()
-            x_now = nbs_x.loc[[p], cols]
+        for name, cols in models.items():
+            data = pd.concat([y.loc[train].rename("y"), x.loc[train, cols]], axis=1).dropna()
+            x_now = x.loc[[p], cols]
             if len(data) < MIN_HISTORY or x_now.isna().any(axis=None):
                 row[name] = np.nan
                 continue
@@ -845,24 +875,282 @@ def nbs_oos_forecasts(h: int) -> pd.DataFrame:
     return pd.DataFrame(out).set_index("period")
 
 
-nbs_oos = []
-for h in HORIZONS:
-    c = nbs_oos_forecasts(h).dropna()
-    span = {"n": len(c), "first_period": str(c.index[0]), "last_period": str(c.index[-1])}
-    for name in NBS_OOS_MODELS:
-        r2 = 1 - ((c["y"] - c[name]) ** 2).sum() / ((c["y"] - c["M0"]) ** 2).sum()
-        t, p = clark_west(c["y"], c["M0"], c[name], h)
-        nbs_oos.append(
-            {"h": h, "model": name, "vs": "M0", "r2_oos": r2, "cw_t": t, "cw_p": p} | span
-        )
-    # 实际利率口径相对名义口径：只报 R²_OS，不做检验
-    r2 = 1 - ((c["y"] - c["M_Vn"]) ** 2).sum() / ((c["y"] - c["M1_V"]) ** 2).sum()
-    nbs_oos.append(
-        {"h": h, "model": "M_Vn", "vs": "M1_V", "r2_oos": r2, "cw_t": np.nan, "cw_p": np.nan} | span
-    )
-nbs_oos = pd.DataFrame(nbs_oos)
+def oos_table(
+    x: pd.DataFrame, mask: pd.Series, models: dict[str, list[str]], extra: tuple[str, str] | None
+) -> pd.DataFrame:
+    """相对 M0 的 R²_OS 与 Clark-West；``extra=(大模型, 嵌套小模型)`` 只报 R²_OS，不做检验。"""
+    rows = []
+    for h in HORIZONS:
+        c = sample_oos_forecasts(x, mask, models, h).dropna()
+        span = {"n": len(c), "first_period": str(c.index[0]), "last_period": str(c.index[-1])}
+        for name in models:
+            r2 = 1 - ((c["y"] - c[name]) ** 2).sum() / ((c["y"] - c["M0"]) ** 2).sum()
+            t, p = clark_west(c["y"], c["M0"], c[name], h)
+            rows.append(
+                {"h": h, "model": name, "vs": "M0", "r2_oos": r2, "cw_t": t, "cw_p": p} | span
+            )
+        if extra is not None:
+            large, small = extra
+            r2 = 1 - ((c["y"] - c[large]) ** 2).sum() / ((c["y"] - c[small]) ** 2).sum()
+            rows.append(
+                {"h": h, "model": large, "vs": small, "r2_oos": r2, "cw_t": np.nan, "cw_p": np.nan}
+                | span
+            )
+    return pd.DataFrame(rows)
+
+
+nbs_oos = oos_table(nbs_x, nbs_mask, NBS_OOS_MODELS, ("M_Vn", "M1_V"))
 print(nbs_oos.round(3).to_string(index=False))
 log("国家统计局 CPI 检验完成")
+
+# %% [markdown]
+# ## 第七部分：通胀代理
+#
+# 第六部分否定的是 CPI 同比这个代理。CPI 受食品价格主导，中证全指的盈利更贴近 PPI。
+# 主口径 π_mix = 0.5 × CPI + 0.5 × PPI，近似 GDP 平减指数；非食品 CPI 与 PPI 单独作稳健性。
+# 三个序列都是聚源源，按 `InfoPublDate` 日期当天可见（`knowledge_dt <= 信号日`）。
+
+# %%
+daily["pi_ppi"] = monthly_asof("cn_ppi_yoy_nbs", strict=False)
+daily["pi_core"] = monthly_asof("cn_cpi_nonfood_yoy_nbs", strict=False)
+
+
+def nbs_mix_asof(series_a: str, series_b: str) -> list[float]:
+    """两条月度序列同月都可见才出值：取交集里最大的观测月，各半加权；交集为空即缺失。
+
+    主口径要求两项通胀来自同一个月；各自取“最近一期”会把发布不同步的两个月拼在一起。
+    """
+    out = []
+    for t in open_idx:
+        rows = macro.list_observations(
+            as_of=t.date(),
+            start=t.date() - timedelta(days=CPI_STALE_DAYS),
+            end=t.date(),
+            series_ids=(series_a, series_b),
+        )
+        assert all(r.knowledge_dt <= t.date() for r in rows)
+        values: dict[str, dict[date, float]] = {series_a: {}, series_b: {}}
+        for r in rows:
+            if r.value is not None:
+                values[r.series_id][r.observation_date] = float(r.value)
+        common = sorted(values[series_a].keys() & values[series_b].keys())
+        out.append(
+            0.5 * (values[series_a][common[-1]] + values[series_b][common[-1]]) if common else np.nan
+        )
+    return out
+
+
+daily["pi_mix"] = nbs_mix_asof("cn_cpi_yoy_nbs", "cn_ppi_yoy_nbs")
+log(
+    f"通胀代理有效天数: PPI {daily['pi_ppi'].notna().sum()} "
+    f"非食品 {daily['pi_core'].notna().sum()} 混合 {daily['pi_mix'].notna().sum()}"
+)
+print(daily[["pi_ppi", "pi_core", "pi_mix"]].describe().T.round(3))
+for code in INDICES:
+    ey = daily[f"ey|{code}"]
+    daily[f"Vm|{code}"] = ey - (daily["r_cn"] - daily["pi_mix"])
+    daily[f"Vcore|{code}"] = ey - (daily["r_cn"] - daily["pi_core"])
+    daily[f"Vppi|{code}"] = ey - (daily["r_cn"] - daily["pi_ppi"])
+
+# 日频策略：做法与第六部分 nbs_compare / nbs_segments 完全相同。
+P7_SIGNALS = {
+    "U_us": "U",
+    "V_cn": "V",
+    "Max_us_cn": "Mx",
+    "Vn_cn_real_nbs": "Vn",
+    "Vm_mix": "Vm",
+    "Vcore_nonfood": "Vcore",
+    "Vppi": "Vppi",
+    "EY": "ey",
+}
+p7_compare, p7_windows = compare_windows(P7_SIGNALS, "p7_")
+print(p7_compare.round(3).to_string(index=False))
+p7_segments = segment_table(P7_SIGNALS, "p7_", p7_windows)
+print(
+    p7_segments[["pct_years", "segment", "signal", "ann_return", "sharpe_excess", "max_dd", "avg_w"]]
+    .round(3)
+    .to_string(index=False)
+)
+
+# 月频：样本限定在 Vm、Vcore、Vppi、Vn、V、U、EY、G 都可见的月份。
+# panel 在第二部分由 daily 取样建立，第七部分的日频列是后加的，要按信号日重新取样。
+def panel_col(col: str) -> pd.Series:
+    return pd.Series(
+        daily[col].reindex(panel["signal_dt"].to_numpy()).to_numpy(), index=panel.index
+    )
+
+
+panel["Vm"] = panel_col(f"Vm|{MAIN}")
+panel["Vcore"] = panel_col(f"Vcore|{MAIN}")
+panel["Vppi"] = panel_col(f"Vppi|{MAIN}")
+p7_x = pd.concat(
+    [panel[["Vm", "Vcore", "Vppi", "Vn"]], x_main[["V", "U", "EY", "G"]]], axis=1
+)
+p7_mask = p7_x.notna().all(axis=1)
+P7_IN_MODELS = {
+    "Vm": ["Vm"],
+    "Vcore": ["Vcore"],
+    "Vppi": ["Vppi"],
+    "Vn": ["Vn"],
+    "V": ["V"],
+    "U": ["U"],
+    "EY": ["EY"],
+    "Vm+G": ["Vm", "G"],
+}
+p7_in_sample = in_sample_table(p7_x, p7_mask, P7_IN_MODELS)
+print(p7_in_sample.round(3).to_string(index=False))
+
+P7_OOS_MODELS = {
+    "M_EY": ["EY"],
+    "M1_V": ["V"],
+    "M2_U": ["U"],
+    "M_Vn": ["Vn"],
+    "M_Vm": ["Vm"],
+    "M_Vcore": ["Vcore"],
+    "M_Vppi": ["Vppi"],
+}
+p7_oos = oos_table(p7_x, p7_mask, P7_OOS_MODELS, ("M_Vm", "M1_V"))
+print(p7_oos.round(3).to_string(index=False))
+log("通胀代理检验完成")
+
+# %% [markdown]
+# ## 第八部分：机制检验
+#
+# 月频、主口径 000985、Newey-West 滞后期等于期限。预期符号与判读标准写在研究笔记里。
+# 除声明的 mask 外不加样本限制，缺失由 `nw_ols` 的 dropna 处理。
+
+# %%
+# 8a Fed 模型分解：`fwd_h ~ EY + r_CN`（A）与加 r_US（B）。Fed 模型要求 r_CN 系数为负
+# 且与 EY 系数之和为 0，所以每个模型都报 Wald 检验 EY + r_CN = 0 的 p 值。
+p8a_x = pd.DataFrame({"EY": panel[f"ey|{MAIN}"], "r_cn": panel["r_cn"], "r_us": panel["r_us"]})
+p8a_rows = []
+for h in HORIZONS:
+    y = panel[f"fwd{h}|{MAIN}"]
+    for model, cols in (("A_ey_rcn", ["EY", "r_cn"]), ("B_ey_rcn_rus", ["EY", "r_cn", "r_us"])):
+        fit, n = nw_ols(y, p8a_x[cols], h)
+        wald_p = float(np.ravel(fit.t_test("EY + r_cn = 0").pvalue)[0])
+        for col in cols:
+            p8a_rows.append(
+                {"h": h, "model": model, "var": col, "coef": fit.params[col],
+                 "t_nw": fit.tvalues[col], "n": n, "wald_p_ey_plus_rcn": wald_p}
+            )
+p8a_fed = pd.DataFrame(p8a_rows)
+print(p8a_fed.round(3).to_string(index=False))
+
+# 8b 估值陷阱：EPS 用价格指数与 PE_TTM 反推（Wind PE 为当前版本，见 pit_report）。
+price_rows = index_returns.list_returns(
+    as_of=AS_OF, start=START, end=AS_OF, wind_codes=("000985.CSI",)
+)
+if not price_rows:
+    raise RuntimeError("000985.CSI 价格指数日涨跌幅没有数据，第八部分无法反推 EPS，停下不换代码")
+price_pct = pd.Series(
+    {
+        pd.Timestamp(r.trade_dt): (np.nan if r.pct_change is None else float(r.pct_change))
+        for r in price_rows
+    }
+).sort_index()
+px_first, px_last = price_pct.first_valid_index(), price_pct.last_valid_index()
+px_window = open_idx[(open_idx >= px_first) & (open_idx <= px_last)]
+px_missing = px_window.difference(price_pct.dropna().index)
+if len(px_missing):
+    raise RuntimeError(
+        f"价格指数从 {px_missing[0].date()} 起有 {len(px_missing)} 个交易日缺涨跌幅，不填充"
+    )
+price_level = (1 + price_pct.reindex(px_window) / 100).cumprod()
+log(f"价格指数 {px_first.date()}..{px_last.date()}，{len(px_window)} 个交易日，无缺日")
+
+pe_main = pe[MAIN].reindex(panel["signal_dt"].to_numpy())
+pe_ok = pe_main.where(pe_main > 0)
+eps = price_level.reindex(panel["signal_dt"].to_numpy()).to_numpy() / pe_ok.to_numpy()
+n_months = len(panel)
+g_fwd12 = np.full(n_months, np.nan)
+g_past12 = np.full(n_months, np.nan)
+for i in range(n_months):
+    if i + 12 < n_months and eps[i] > 0 and eps[i + 12] > 0:
+        g_fwd12[i] = 100.0 * np.log(eps[i + 12] / eps[i])
+    if i >= 12 and eps[i] > 0 and eps[i - 12] > 0:
+        g_past12[i] = 100.0 * np.log(eps[i] / eps[i - 12])
+panel["g_fwd12"] = g_fwd12
+panel["g_past12"] = g_past12
+panel["dr_cn12"] = panel["r_cn"] - panel["r_cn"].shift(12)
+
+fit_eps, n_eps = nw_ols(
+    panel["g_fwd12"], pd.DataFrame({"dr_cn12": panel["dr_cn12"], "g_past12": panel["g_past12"]}), 12
+)
+p8b_eps = pd.DataFrame(
+    [
+        {"var": col, "coef": fit_eps.params[col], "t_nw": fit_eps.tvalues[col],
+         "r2": fit_eps.rsquared, "n": n_eps}
+        for col in ("dr_cn12", "g_past12")
+    ]
+)
+print(p8b_eps.round(3).to_string(index=False))
+
+# D = 1{Δr_CN < 0}；Δr_CN 缺失时 D 保持缺失（不按 0 处理）。
+rate_down = panel["dr_cn12"]
+d_rate = pd.Series(
+    np.where(rate_down.isna(), np.nan, (rate_down < 0).astype(float)), index=panel.index, name="D"
+)
+v_sig = x_main["V"]
+p8b_x = pd.DataFrame({"V": v_sig, "D": d_rate, "VxD": v_sig * d_rate})
+p8b_rows = []
+for h in HORIZONS:
+    y = panel[f"fwd{h}|{MAIN}"]
+    fit, n = nw_ols(y, p8b_x, h)
+    for col in ("V", "D", "VxD"):
+        p8b_rows.append(
+            {"h": h, "var": col, "coef": fit.params[col], "t_nw": fit.tvalues[col], "n": n}
+        )
+p8b_interaction = pd.DataFrame(p8b_rows)
+print(p8b_interaction.round(3).to_string(index=False))
+
+
+# 8c 央行约束：因变量是同业拆借 7 天与 r_CN 未来 h 个月的变化，自变量 G 与当月水平。
+def month_mean(s: pd.Series) -> pd.Series:
+    """按观测日的自然月取均值；没有观测的月份保持缺失，不补前值、不跨月池化。"""
+    return s.groupby(s.index.to_period("M")).mean()
+
+
+# cn_ibo_7d 是日频、单版本（源端不改写历史值）、发布当天可见，所以 as_of=AS_OF 下
+# 整段读一次与逐日传 as_of 读等价：任何观测日在任何信号日上取到的都是同一版本。
+ibo_m = month_mean(point_series("cn_ibo_7d")).reindex(panel.index)
+policy = pd.DataFrame({"G": x_main["G"], "ibo_m": ibo_m, "r_cn": panel["r_cn"]})
+p8c_rows = []
+for h in P8_HORIZONS:
+    future = policy.shift(-h)
+    for dep, y_dep, lvl in (
+        ("d_ibo_7d", future["ibo_m"] - policy["ibo_m"], "ibo_m"),
+        ("d_r_cn", future["r_cn"] - policy["r_cn"], "r_cn"),
+    ):
+        x_dep = policy[["G", lvl]]
+        fit, n = nw_ols(y_dep, x_dep, h)
+        used = pd.concat([y_dep.rename("y"), x_dep], axis=1).dropna()
+        for var in ("G", lvl):
+            p8c_rows.append(
+                {"h": h, "dep": dep, "var": var, "coef": fit.params[var],
+                 "t_nw": fit.tvalues[var], "n": n, "first_period": str(used.index[0]),
+                 "last_period": str(used.index[-1])}
+            )
+p8c_policy = pd.DataFrame(p8c_rows)
+print(p8c_policy.round(3).to_string(index=False))
+
+# 8d 汇率：`cn_usdcny_fix`（人民币每美元）同样单版本、整段读一次，按自然月取均值。
+fx_m = month_mean(point_series("cn_usdcny_fix")).reindex(panel.index)
+p8d_rows = []
+for sample, lo in (("full", None), (f"post_{P8_FX_POST}", pd.Period(P8_FX_POST, "M"))):
+    sample_mask = pd.Series(True, index=panel.index) if lo is None else panel.index >= lo
+    for h in P8_HORIZONS:
+        dep = 100.0 * np.log(fx_m.shift(-h) / fx_m)
+        fit, n = nw_ols(dep[sample_mask], x_main.loc[sample_mask, ["G"]], h)
+        used = pd.concat([dep.rename("y"), x_main[["G"]]], axis=1)[sample_mask].dropna()
+        p8d_rows.append(
+            {"sample": sample, "h": h, "coef_G": fit.params["G"], "t_G": fit.tvalues["G"],
+             "r2": fit.rsquared, "n": n, "first_period": str(used.index[0]),
+             "last_period": str(used.index[-1])}
+        )
+p8d_fx = pd.DataFrame(p8d_rows)
+print(p8d_fx.round(3).to_string(index=False))
+log("机制检验完成")
 
 # %% [markdown]
 # ## 落盘：结果表、pit_report、run log
@@ -900,6 +1188,8 @@ pit_report = {
         "Wind 源镜像跟随源端修订，估值与中债为当前版本，不是当时版本。",
         "国家统计局 CPI（聚源 110255493）按 InfoPublDate 日期当天可见，源镜像数值为当前版本；"
         "观测月末距信号日超过 120 天视为缺失。",
+        "PPI 源端口径为上年同月=100，读取时减 100 转为同比。",
+        "第八部分的滚动 EPS 由价格指数与 PE_TTM 反推，Wind PE 为当前版本。",
     ],
 }
 
@@ -924,6 +1214,15 @@ results = {
     "nbs_segments": nbs_segments,
     "nbs_in_sample": nbs_in_sample,
     "nbs_oos": nbs_oos,
+    "p7_compare": p7_compare,
+    "p7_segments": p7_segments,
+    "p7_in_sample": p7_in_sample,
+    "p7_oos": p7_oos,
+    "p8a_fed": p8a_fed,
+    "p8b_eps": p8b_eps,
+    "p8b_interaction": p8b_interaction,
+    "p8c_policy": p8c_policy,
+    "p8d_fx": p8d_fx,
 }
 output_digest = digest_json({k: json.loads(v.to_json(orient="records")) for k, v in results.items()})
 
