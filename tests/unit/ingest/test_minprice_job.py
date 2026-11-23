@@ -184,3 +184,184 @@ def test_january_21_excludes_affected_stocks_and_corrects_index(
     assert len(logs[0].excluded_codes) == 67
     assert len(logs[0].source_corrections) == 3
     assert all(row["amount_after"] == "0.0000" for row in logs[0].source_corrections)
+
+
+@pytest.mark.parametrize(
+    ("day", "code", "negative"),
+    [
+        (date(2026, 1, 22), "002485.SZ", "-28"),
+        (date(2026, 3, 26), "920242.BJ", "-31"),
+        (date(2026, 4, 16), "920855.BJ", "-37"),
+        (date(2026, 6, 8), "920608.BJ", "-51"),
+        (date(2026, 6, 22), "920855.BJ", "-7"),
+        (date(2026, 7, 8), "920132.BJ", "-56"),
+    ],
+)
+def test_approved_negative_volume_corrected_after_daily_check(
+    monkeypatch, tmp_path, day, code, negative
+):
+    rows = [
+        (
+            code,
+            datetime.combine(day, datetime.min.time()).replace(hour=9, minute=30),
+            *[Decimal("10")] * 4,
+            Decimal("1"),
+            Decimal("1000"),
+        ),
+        (
+            code,
+            datetime.combine(day, datetime.min.time()).replace(hour=15),
+            *[Decimal("10")] * 4,
+            Decimal("-1"),
+            Decimal(negative),
+        ),
+    ]
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
+    captured = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.stage_partition",
+        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+    )
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
+    logs = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
+    )
+    prices = MagicMock()
+    prices.list_prices.return_value = [SimpleNamespace(wind_code=code, amount=Decimal("1"))]
+    settings = Settings(var_root=tmp_path, allow_db_write=True)
+    pg = MagicMock()
+    pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
+    kwargs = {
+        "trade_date": day,
+        "settings": settings,
+        "paths": resolve_var_paths(settings, repo_root=tmp_path),
+        "calendar": MagicMock(),
+        "daily_prices": prices,
+        "write_db": True,
+    }
+    assert ingest_day(MagicMock(), pg, **kwargs) == "inserted"
+    result = captured[0].to_pylist()[1]
+    assert result["vol"] == 0 and result["amount"] == 0
+    assert logs[0].source_corrections[0]["vol_before"] == "-1.0000"
+    assert logs[0].source_corrections[0]["amount_before"] == f"{Decimal(negative):.4f}"
+    assert logs[0].input_digest != logs[0].output_digest
+    prices.list_prices.return_value = [SimpleNamespace(wind_code=code, amount=Decimal("2"))]
+    with pytest.raises(SourceFetchError, match="未通过成交额对比"):
+        ingest_day(MagicMock(), pg, **kwargs)
+
+
+@pytest.mark.parametrize(
+    ("day", "code", "amount"),
+    [
+        (date(2026, 4, 30), "920608.BJ", "422"),
+        (date(2026, 6, 2), "920112.BJ", "1037"),
+        (date(2026, 6, 29), "920608.BJ", "11"),
+        (date(2026, 7, 9), "920422.BJ", "337"),
+        (date(2026, 7, 14), "920422.BJ", "11"),
+        (date(2026, 7, 17), "920121.BJ", "2063"),
+    ],
+)
+def test_corrects_approved_positive_amount_and_negative_volume(
+    monkeypatch, tmp_path, day, code, amount
+):
+    row = (
+        code,
+        datetime.combine(day, datetime.min.time()).replace(hour=15),
+        *[Decimal("10")] * 4,
+        Decimal("-1"),
+        Decimal(amount),
+    )
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([[row]]))
+    captured = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.stage_partition",
+        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+    )
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
+    logs = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
+    )
+    settings = Settings(var_root=tmp_path, allow_db_write=True)
+    pg = MagicMock()
+    pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
+    assert (
+        ingest_day(
+            MagicMock(),
+            pg,
+            trade_date=day,
+            settings=settings,
+            paths=resolve_var_paths(settings, repo_root=tmp_path),
+            calendar=MagicMock(),
+            write_db=True,
+        )
+        == "inserted"
+    )
+    result = captured[0].to_pylist()[0]
+    assert result["vol"] == 0 and result["amount"] == 0
+    assert logs[0].source_corrections[0]["vol_before"] == "-1.0000"
+    assert logs[0].source_corrections[0]["amount_before"] == f"{Decimal(amount):.4f}"
+    assert logs[0].input_digest != logs[0].output_digest
+
+
+def test_july_6_corrects_two_rows_with_distinct_amount_signs(monkeypatch, tmp_path):
+    day = date(2026, 7, 6)
+    rows = [
+        (
+            "920455.BJ",
+            datetime(2026, 7, 6, 9, 30),
+            *[Decimal("10")] * 4,
+            Decimal("1"),
+            Decimal("1000"),
+        ),
+        (
+            "920455.BJ",
+            datetime(2026, 7, 6, 15),
+            *[Decimal("10")] * 4,
+            Decimal("-1"),
+            Decimal("-41"),
+        ),
+        (
+            "920541.BJ",
+            datetime(2026, 7, 6, 15),
+            *[Decimal("10")] * 4,
+            Decimal("-1"),
+            Decimal("391"),
+        ),
+    ]
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
+    captured = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.stage_partition",
+        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+    )
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
+    logs = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
+    )
+    prices = MagicMock()
+    prices.list_prices.return_value = [SimpleNamespace(wind_code="920455.BJ", amount=Decimal("1"))]
+    settings = Settings(var_root=tmp_path, allow_db_write=True)
+    pg = MagicMock()
+    pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
+    assert (
+        ingest_day(
+            MagicMock(),
+            pg,
+            trade_date=day,
+            settings=settings,
+            paths=resolve_var_paths(settings, repo_root=tmp_path),
+            calendar=MagicMock(),
+            daily_prices=prices,
+            write_db=True,
+        )
+        == "inserted"
+    )
+    corrected = [r for r in captured[0].to_pylist() if r["trade_time"].hour == 15]
+    assert len(corrected) == 2 and all(r["vol"] == 0 and r["amount"] == 0 for r in corrected)
+    assert {(r["ts_code"], r["amount_before"]) for r in logs[0].source_corrections} == {
+        ("920455.BJ", "-41.0000"),
+        ("920541.BJ", "391.0000"),
+    }

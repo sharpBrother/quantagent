@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from datetime import UTC, date, datetime
 from datetime import time as time_of_day
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 import pyarrow as pa
@@ -13,7 +14,7 @@ import pyarrow.parquet as pq
 from pydantic import Field
 
 from quantagent.domain.minute_exclusions import JANUARY_21, JANUARY_21_EXCLUDED
-from quantagent.ingest.errors import ReplaceRequiredError, SourceNotReadyError
+from quantagent.ingest.errors import ReplaceRequiredError, SourceFetchError, SourceNotReadyError
 from quantagent.ingest.jobs.minprice_corrections import (
     correct_known_row,
     reconcile_negative_amounts,
@@ -37,6 +38,23 @@ if TYPE_CHECKING:
 _NAMES = ("ts_code", "trade_time", "open", "high", "low", "close", "vol", "amount")
 _EXPECTED_BARS = 241
 _JANUARY_21_NEGATIVE_COUNT = 103
+_APPROVED_NEGATIVE_VOLUME = {
+    date(2026, 1, 22): (("002485.SZ", Decimal("-28")),),
+    date(2026, 3, 26): (("920242.BJ", Decimal("-31")),),
+    date(2026, 4, 16): (("920855.BJ", Decimal("-37")),),
+    date(2026, 4, 30): (("920608.BJ", Decimal("422")),),
+    date(2026, 6, 2): (("920112.BJ", Decimal("1037")),),
+    date(2026, 6, 8): (("920608.BJ", Decimal("-51")),),
+    date(2026, 6, 22): (("920855.BJ", Decimal("-7")),),
+    date(2026, 6, 29): (("920608.BJ", Decimal("11")),),
+    date(2026, 7, 6): (("920455.BJ", Decimal("-41")), ("920541.BJ", Decimal("391"))),
+    date(2026, 7, 8): (("920132.BJ", Decimal("-56")),),
+    date(2026, 7, 9): (("920422.BJ", Decimal("337")),),
+    date(2026, 7, 14): (("920422.BJ", Decimal("11")),),
+    date(2026, 7, 15): (("920112.BJ", Decimal("28")), ("920168.BJ", Decimal("-53"))),
+    date(2026, 7, 17): (("920121.BJ", Decimal("2063")),),
+    date(2026, 7, 22): (("603869.SH", Decimal("-22")), ("920108.BJ", Decimal("19"))),
+}
 _PREVIOUSLY_APPROVED_DATES = frozenset(
     {
         date(2025, 10, 17),
@@ -127,6 +145,37 @@ def ingest_day(  # noqa: PLR0912, PLR0915
             ]
             batches.append(pa.RecordBatch.from_arrays(arrays, schema=_SCHEMA))
         table = pa.Table.from_batches(batches, schema=_SCHEMA)
+        volume_fixes = (
+            _APPROVED_NEGATIVE_VOLUME.get(trade_date, ()) if source_batches is None else ()
+        )
+        if volume_fixes:
+            original_input_digest = content_digest(
+                table.append_column(
+                    "trade_date", pa.array([trade_date] * table.num_rows, type=pa.date32())
+                )
+            )
+        for fix_code, fix_amount in volume_fixes:
+            fix_time = datetime.combine(trade_date, time_of_day(15))
+            # 只修复用户确认的源记录；负成交额仍交由日行情规则校验。
+            mask = pc.and_(
+                pc.equal(table["ts_code"], fix_code),
+                pc.equal(table["trade_time"], fix_time),
+            )
+            matches = table.filter(mask).select(["vol", "amount"]).to_pylist()
+            if matches != [{"vol": Decimal("-1"), "amount": fix_amount}]:
+                raise SourceFetchError(f"{trade_date} 指定修正记录不存在、重复或原值已变化")
+            index = table.schema.get_field_index("vol")
+            table = table.set_column(
+                index, "vol", pc.if_else(mask, pa.scalar(0, type=table["vol"].type), table["vol"])
+            )
+            if fix_amount >= 0:
+                # 正成交额也置零仅适用于负责人明确确认的这一行。
+                index = table.schema.get_field_index("amount")
+                table = table.set_column(
+                    index,
+                    "amount",
+                    pc.if_else(mask, pa.scalar(0, type=table["amount"].type), table["amount"]),
+                )
         if source_batches is None and trade_date == JANUARY_21:
             # 源异常集合变化时停止，不能套用过期裁定。
             negative = table.filter(pc.less(table["amount"], 0))
@@ -158,11 +207,12 @@ def ingest_day(  # noqa: PLR0912, PLR0915
         ):
             if daily_prices is None:
                 raise ValueError("负成交额需要同日日行情才能判断")
-            original_input_digest = content_digest(
-                table.append_column(
-                    "trade_date", pa.array([trade_date] * table.num_rows, type=pa.date32())
+            if original_input_digest is None:
+                original_input_digest = content_digest(
+                    table.append_column(
+                        "trade_date", pa.array([trade_date] * table.num_rows, type=pa.date32())
+                    )
                 )
-            )
             corrected, source_corrections, excluded_codes, amount_comparisons = (
                 reconcile_negative_amounts(table, trade_date=trade_date, prices=daily_prices)
             )
@@ -170,6 +220,32 @@ def ingest_day(  # noqa: PLR0912, PLR0915
             corrected, source_corrections = correct_known_row(
                 table, trade_date=trade_date, is_mysql=source_batches is None
             )
+        for fix_code, fix_amount in volume_fixes:
+            fix_time = datetime.combine(trade_date, time_of_day(15))
+            if fix_amount >= 0:
+                if fix_code in excluded_codes:
+                    raise SourceFetchError(f"{trade_date} 指定记录的股票被排除，停止入库")
+                source_corrections.append(
+                    {
+                        "ts_code": fix_code,
+                        "trade_time": fix_time.isoformat(sep=" "),
+                        "vol_before": "-1.0000",
+                        "vol_after": "0.0000",
+                        "amount_before": f"{fix_amount:.4f}",
+                        "amount_after": "0.0000",
+                    }
+                )
+            else:
+                # 记录原始负成交量，确保日志反映两个字段的修正。
+                matches = [
+                    item
+                    for item in source_corrections
+                    if item["ts_code"] == fix_code
+                    and item["trade_time"] == fix_time.isoformat(sep=" ")
+                ]
+                if len(matches) != 1:
+                    raise SourceFetchError(f"{trade_date} 指定记录未通过成交额对比，停止入库")
+                matches[0]["vol_before"] = "-1.0000"
         if source_corrections and original_input_digest is None:
             source_dates = pa.array([trade_date] * table.num_rows, type=pa.date32())
             original_input_digest = content_digest(table.append_column("trade_date", source_dates))
