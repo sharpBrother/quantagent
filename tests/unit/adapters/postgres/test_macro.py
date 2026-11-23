@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from quantagent.adapters.postgres.macro import PostgresMacroRepository, load_macro_visibilities
+from quantagent.contracts.loader import load_bundle
 from quantagent.domain.errors import MacroLookupError, PitUnsupportedError
 
 
@@ -128,3 +129,103 @@ def test_oecd_yields_read_from_alfred(series_id: str, fred_id: str) -> None:
     )
     _statement, params = cur.execute.call_args.args
     assert params[-1] == fred_id
+
+
+@pytest.mark.unit
+def test_nbs_cpi_reads_jydb_published_values() -> None:
+    # 契约非 strict：InfoPublDate 的日期当天可见，截止日就是 as_of。
+    repo, cur = _repo([(date(2026, 10, 31), date(2026, 11, 9), Decimal("0.7"), 0)])
+    rows = repo.list_observations(
+        as_of=date(2026, 11, 20),
+        start=date(2006, 1, 1),
+        end=date(2026, 11, 20),
+        series_ids=("cn_cpi_yoy_nbs",),
+    )
+    statement, params = cur.execute.call_args.args
+    assert '"src_jydb"."C_ED_MacroIndicatorData"' in statement
+    # timestamp 截止列必须按日期比较，发布当天带时刻的行也要算进来。
+    assert "::date" in statement
+    assert params == (date(2006, 1, 1), date(2026, 11, 20), date(2026, 11, 20), 110255493)
+    assert [(r.value, r.knowledge_dt) for r in rows] == [(Decimal("0.7"), date(2026, 11, 9))]
+
+
+@pytest.mark.unit
+def test_nbs_cpi_same_period_takes_latest_release() -> None:
+    repo, _cur = _repo(
+        [
+            (date(2026, 10, 31), date(2026, 11, 9), Decimal("0.7"), 0),
+            (date(2026, 10, 31), date(2026, 11, 12), Decimal("0.8"), 0),
+        ]
+    )
+    window = {"start": date(2026, 10, 1), "end": date(2026, 10, 31)}
+    first = repo.list_observations(
+        as_of=date(2026, 11, 10), series_ids=("cn_cpi_yoy_nbs",), **window
+    )
+    second = repo.list_observations(
+        as_of=date(2026, 11, 20), series_ids=("cn_cpi_yoy_nbs",), **window
+    )
+    assert [(r.value, r.knowledge_dt) for r in first] == [(Decimal("0.7"), date(2026, 11, 9))]
+    assert [(r.value, r.knowledge_dt) for r in second] == [(Decimal("0.8"), date(2026, 11, 12))]
+
+
+@pytest.mark.unit
+def test_nbs_cpi_same_publish_day_fails_closed() -> None:
+    repo, _cur = _repo(
+        [
+            (date(2026, 10, 31), date(2026, 11, 9), Decimal("0.7"), 0),
+            (date(2026, 10, 31), date(2026, 11, 9), Decimal("0.8"), 0),
+        ]
+    )
+    with pytest.raises(MacroLookupError, match="同一发布日"):
+        repo.list_observations(
+            as_of=date(2026, 11, 20),
+            start=date(2026, 10, 1),
+            end=date(2026, 10, 31),
+            series_ids=("cn_cpi_yoy_nbs",),
+        )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("power", [1, -1, None])
+def test_nbs_cpi_nonzero_power_fails_closed(power: int | None) -> None:
+    repo, _cur = _repo([(date(2026, 10, 31), date(2026, 11, 9), Decimal("0.7"), power)])
+    with pytest.raises(MacroLookupError, match="数量级"):
+        repo.list_observations(
+            as_of=date(2026, 11, 20),
+            start=date(2026, 10, 1),
+            end=date(2026, 10, 31),
+            series_ids=("cn_cpi_yoy_nbs",),
+        )
+
+
+@pytest.mark.unit
+def test_nbs_cpi_timestamp_cutoff_requires_date_only() -> None:
+    dataset = "src.jydb.c_ed_macroindicatordata"
+    contracts = load_macro_visibilities()
+    visibility = contracts[dataset].visibility.model_copy(update={"date_only": False})
+    contracts[dataset] = contracts[dataset].model_copy(update={"visibility": visibility})
+    repo = PostgresMacroRepository(MagicMock(), contracts=contracts)
+    with pytest.raises(PitUnsupportedError, match="date_only"):
+        repo.list_observations(
+            as_of=date(2026, 11, 20),
+            start=date(2026, 10, 1),
+            end=date(2026, 10, 31),
+            series_ids=("cn_cpi_yoy_nbs",),
+        )
+
+
+@pytest.mark.unit
+def test_nbs_cpi_fallback_contract_fails_closed() -> None:
+    dataset = "src.jydb.c_ed_macroindicatordata"
+    contracts = load_macro_visibilities()
+    # 货币供应带 earliest + fixed_lag fallback；宏观读取还没有逐行定级，必须拒绝。
+    money = load_bundle().visibilities["src.jydb.ed_moneysupply"]
+    contracts[dataset] = contracts[dataset].model_copy(update={"visibility": money.visibility})
+    repo = PostgresMacroRepository(MagicMock(), contracts=contracts)
+    with pytest.raises(PitUnsupportedError, match="fallback"):
+        repo.list_observations(
+            as_of=date(2026, 11, 20),
+            start=date(2026, 10, 1),
+            end=date(2026, 10, 31),
+            series_ids=("cn_cpi_yoy_nbs",),
+        )

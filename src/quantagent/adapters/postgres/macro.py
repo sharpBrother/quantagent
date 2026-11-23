@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING, Literal
 
@@ -25,7 +25,7 @@ from quantagent.domain.macro import MacroVersion, normalize_series_ids, select_v
 from quantagent.domain.pit import pit_cutoff
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Iterable, Mapping
 
     import psycopg
 
@@ -40,7 +40,9 @@ class _Source:
     dataset: str
     # point：一个观测一个版本，截止列是业务日（YYYYMMDD 文本）。
     # vintage：ALFRED 版本表，截止列是 realtime_start。
-    kind: Literal["point", "vintage"]
+    # published：带发布时刻的源表（聚源 InfoPublDate），截止列是 timestamp，
+    #   读取时按 ``::date`` 比较，发布日期当天可见。
+    kind: Literal["point", "vintage", "published"]
     cutoff_column: str
     statement: str
     fixed_params: tuple[object, ...]
@@ -61,6 +63,21 @@ _VINTAGE_SQL = assert_src_dml_sql(
     f"FROM {quote_ident('src_macro')}.{quote_ident('fred_observation_vintage')} "
     "WHERE observation_date BETWEEN %s AND %s AND realtime_start <= %s AND series_id = %s "
     "ORDER BY observation_date, realtime_start"
+)
+
+# 聚源宏观指标表：EndDate 是统计期（月末），InfoPublDate 是源端发布时刻。
+# 发布日为空的行无法定可见日，直接过滤掉而不是猜。
+# DataValue 的数量级由 PowerNumber 描述，读取时要求它为 0（见 ``_published_versions``）。
+_PUBLISHED_SQL = assert_src_dml_sql(
+    f"SELECT {quote_ident('EndDate')}::date AS obs, "
+    f"{quote_ident('InfoPublDate')}::date AS published, "
+    f"{quote_ident('DataValue')} AS value, {quote_ident('PowerNumber')} "
+    f"FROM {quote_ident('src_jydb')}.{quote_ident('C_ED_MacroIndicatorData')} "
+    f"WHERE {quote_ident('EndDate')}::date BETWEEN %s AND %s "
+    f"AND {quote_ident('InfoPublDate')} IS NOT NULL "
+    f"AND {quote_ident('InfoPublDate')}::date <= %s "
+    f"AND {quote_ident('IndicatorCode')} = %s "
+    f"ORDER BY {quote_ident('EndDate')}, {quote_ident('InfoPublDate')}"
 )
 
 # 中债曲线过滤值与旧仓 MarketDataService.get_china_cgb_10y_yield_curve 一致：
@@ -102,6 +119,13 @@ _SOURCES: Mapping[str, _Source] = {
         cutoff_column="realtime_start",
         statement=_VINTAGE_SQL,
         fixed_params=("CPALTT01CNM659N",),
+    ),
+    "cn_cpi_yoy_nbs": _Source(
+        dataset="src.jydb.c_ed_macroindicatordata",
+        kind="published",
+        cutoff_column="InfoPublDate",
+        statement=_PUBLISHED_SQL,
+        fixed_params=(110255493,),
     ),
     "de_bund_10y": _Source(
         dataset="src.macro.fred_observation_vintage",
@@ -163,6 +187,14 @@ class PostgresMacroRepository:
             raise PitUnsupportedError(
                 f"{source.dataset} 契约截止列 {cutoff.column} 与读取映射 {source.cutoff_column} 不符"
             )
+        if cutoff.fallback is not None:
+            # 宏观序列只读主截止列；按 fallback 推断可见日要逐行定级，这里没实现也不估计。
+            raise PitUnsupportedError(f"宏观读取不支持 fallback 可见性契约: {source.dataset}")
+        if source.kind == "published" and not cutoff.date_only:
+            # 截止列是 timestamp，不按 ::date 比较会把发布当天带时刻的记录漏成次日可见。
+            raise PitUnsupportedError(
+                f"{source.dataset} 截止列 {cutoff.column} 是 timestamp，契约必须声明 date_only"
+            )
         with self._conn.cursor() as cur:
             if source.kind == "point":
                 visible_end = min(end, cutoff.on_or_before)
@@ -172,6 +204,11 @@ class PostgresMacroRepository:
                     source.statement, (_ymd(start), _ymd(visible_end), *source.fixed_params)
                 )
                 versions = [_point_version(series_id, row) for row in cur.fetchall()]
+            elif source.kind == "published":
+                cur.execute(
+                    source.statement, (start, end, cutoff.on_or_before, *source.fixed_params)
+                )
+                versions = _published_versions(series_id, cur.fetchall())
             else:
                 cur.execute(
                     source.statement, (start, end, cutoff.on_or_before, *source.fixed_params)
@@ -207,6 +244,43 @@ def _point_version(series_id: str, row: object) -> MacroVersion:
         visible_from=observed,
         visible_to=None,
     )
+
+
+def _published_versions(series_id: str, rows: Iterable[object]) -> list[MacroVersion]:
+    """同一观测的多个发布版本按发布日排队：前一版在下一版发布前一天失效。
+
+    对应 pit-rules“同指标同期取最晚发布”：截止日可见的是发布日不晚于截止日的最后一版。
+    两行发布日相同则无法判定谁是最终值，fail-closed 不挑一版。
+    """
+    grouped: dict[date, list[tuple[date, Decimal | None]]] = {}
+    for row in rows:
+        obs, published, value, power = _unpack(row, 4, series_id)
+        if not isinstance(obs, date) or not isinstance(published, date):
+            raise MacroLookupError(f"{series_id} 观测日或发布日不是日期: {obs!r} {published!r}")
+        if power is None or power != 0:
+            # PowerNumber 是源端数量级标记；非 0 时 DataValue 还要换算，口径未定不猜。
+            raise MacroLookupError(f"{series_id} 数量级不明: {obs} PowerNumber={power!r}")
+        grouped.setdefault(obs, []).append((published, _decimal(value, series_id)))
+    out: list[MacroVersion] = []
+    for obs in sorted(grouped):
+        released = sorted(grouped[obs], key=lambda item: item[0])
+        for index, (visible_from, value) in enumerate(released):
+            visible_to: date | None = None
+            if index + 1 < len(released):
+                following = released[index + 1][0]
+                if following == visible_from:
+                    raise MacroLookupError(f"{series_id} {obs} 同一发布日有多个版本")
+                visible_to = following - timedelta(days=1)
+            out.append(
+                MacroVersion(
+                    series_id=series_id,
+                    observation_date=obs,
+                    value=value,
+                    visible_from=visible_from,
+                    visible_to=visible_to,
+                )
+            )
+    return out
 
 
 def _vintage_version(series_id: str, row: object) -> MacroVersion:

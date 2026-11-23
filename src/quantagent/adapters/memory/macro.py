@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from quantagent.domain.errors import InvalidQueryError, MissingVisibilityError
+from quantagent.domain.errors import (
+    InvalidQueryError,
+    MissingVisibilityError,
+    PitUnsupportedError,
+)
 from quantagent.domain.macro import normalize_series_ids, select_visible_versions
 from quantagent.domain.pit import pit_cutoff
 
@@ -46,6 +50,9 @@ class MemoryMacroRepository:
             if contract is None:
                 raise MissingVisibilityError(series_id)
             cutoff = pit_cutoff(contract, as_of=as_of)
+            if cutoff.fallback is not None:
+                # 与 PostgreSQL 实现同一口径：按 fallback 推断可见日要逐行定级，未实现就不猜。
+                raise PitUnsupportedError(f"宏观读取不支持 fallback 可见性契约: {series_id}")
             out.extend(
                 select_visible_versions(
                     (v for v in self._versions if v.series_id == series_id),

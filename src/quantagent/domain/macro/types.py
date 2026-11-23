@@ -21,10 +21,19 @@ if TYPE_CHECKING:
 # us_tips_10y：10 年期 TIPS 实际收益率（FRED DFII10），按 ALFRED 首发版本可见。
 # cn_cpi_yoy：中国 CPI 同比（OECD MEI，FRED CPALTT01CNM659N），月频，观测日是月初。
 #   ALFRED 版本从 2013-06 起，源端停在 2025-04；更早或更晚的月份按 as_of 不可见或缺失。
+# cn_cpi_yoy_nbs：国家统计局 CPI 当期同比（聚源 C_ED_MacroIndicatorData 指标 110255493），
+#   月频，观测日是月末（EndDate）；按 InfoPublDate 的日期当天可见。发布日从 2007-02 起，
+#   更早月份不可见；源镜像数值为当前版本。
 # de_bund_10y、jp_jgb_10y：德国、日本 10 年期国债收益率（OECD MEI 月均，FRED
 #   IRLTLT01DEM156N、IRLTLT01JPM156N），观测日是月初，ALFRED 版本从 2013-06 起。
 MacroSeriesId = Literal[
-    "cn_cgb_10y", "us_ust_10y", "us_tips_10y", "cn_cpi_yoy", "de_bund_10y", "jp_jgb_10y"
+    "cn_cgb_10y",
+    "us_ust_10y",
+    "us_tips_10y",
+    "cn_cpi_yoy",
+    "cn_cpi_yoy_nbs",
+    "de_bund_10y",
+    "jp_jgb_10y",
 ]
 MACRO_SERIES: frozenset[str] = frozenset(get_args(MacroSeriesId))
 

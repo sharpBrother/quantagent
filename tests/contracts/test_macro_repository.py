@@ -9,7 +9,11 @@ import pytest
 
 from quantagent.adapters.memory.macro import MemoryMacroRepository
 from quantagent.contracts.spec import VisibilityContract
-from quantagent.domain.errors import InvalidQueryError, MissingVisibilityError
+from quantagent.domain.errors import (
+    InvalidQueryError,
+    MissingVisibilityError,
+    PitUnsupportedError,
+)
 from quantagent.domain.macro import MacroVersion
 
 
@@ -122,5 +126,50 @@ def test_empty_request_bad_window_and_missing_contract() -> None:
             as_of=date(2024, 1, 5),
             start=date(2024, 1, 1),
             end=date(2024, 1, 5),
+            series_ids=("cn_cgb_10y",),
+        )
+
+
+def _with_fallback(dataset: str) -> VisibilityContract:
+    """聚源货币供应同款契约：主字段发布日 + EndDate 次月 15 日 fallback。"""
+    return VisibilityContract.model_validate(
+        {
+            "dataset": dataset,
+            "doc_ref": "docs/migration/jydb-ingest-plan.md",
+            "temporal_kind": "period_with_revision",
+            "period_fields": ["EndDate"],
+            "visibility": {
+                "rule": "source_field",
+                "field": "InfoPublDate",
+                "date_only": True,
+                "fallback_mode": "earliest",
+                "grade": "A",
+                "fallback": {
+                    "rule": "fixed_lag",
+                    "field": "EndDate",
+                    "lag_n": 15,
+                    "lag_unit": "calendar_day",
+                    "grade": "B",
+                    "rationale": "契约测试用的次月 15 日保守可见日",
+                },
+                "rationale": "契约测试用：发布日与次月 15 日取较早者",
+            },
+            "pit_recoverable": True,
+        }
+    )
+
+
+@pytest.mark.contracts
+def test_fallback_contract_fails_closed() -> None:
+    # 内存实现与 PostgreSQL 同口径：还没有逐行定级，带 fallback 的契约直接拒绝。
+    repo = MemoryMacroRepository(
+        (_point("cn_cgb_10y", date(2024, 1, 2), "2.55"),),
+        contracts={"cn_cgb_10y": _with_fallback("src.wind.cbondcurvecnbd")},
+    )
+    with pytest.raises(PitUnsupportedError, match="fallback"):
+        repo.list_observations(
+            as_of=date(2024, 1, 5),
+            start=date(2024, 1, 1),
+            end=date(2024, 1, 31),
             series_ids=("cn_cgb_10y",),
         )
