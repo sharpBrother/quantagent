@@ -156,9 +156,17 @@ superseded_by: null
 - ruff、mypy、import-linter、pytest 全部通过。新写入路径对六条写入保护各有测试。
 - 增量连跑两次，第二次 inserted 和 replaced 都为 0。
 
-## 待裁定（遇到就停下问负责人）
+## pit_recoverable（已裁定）
 
-1. **`pit_recoverable` 怎么填。** 字段含义是"历史修订史能否恢复"。源镜像跟随源端原地覆盖，
-   wx2 里每个 `(IndicatorCode, EndDate)` 只有一行，回测时看到的是改后的值，按字面应为 `false`。
-   但 Wind 同类契约写的是 `true`。负责人裁定前，聚源先与 Wind 保持一致（`true`），
-   并在 rationale 写明"值为当前版本"。
+按 [源数据不做批次 vintage 归档](../adr/2026-09-17-no-source-vintage-archive.md)：源镜像只反映源端
+当前状态，源端静默修订不可回溯，这是负责人接受的误差。负责人 2026-11-23 重申：聚源、朝阳永续
+与 Wind 一样，只能做到可见日按源端发布字段，数值为当前版本；PIT 尽量做到可恢复。
+
+所以聚源的源镜像契约与 Wind 一致，写 `pit_recoverable: true`，rationale 写明"数值为当前版本"。
+`false` 和 `pit_from` 只用于版本不可得或可见日不可信的情形（如存量一次性迁入）。
+
+## 遇到以下情况停下问负责人
+
+- 源端列清单与 0005 不一致。
+- 本地行数与源端 `COUNT(*)` 对不上，且无法用订阅范围或修订解释。
+- 某张表找不到旧仓下游的可见日依据（P3 的 `DZ_MainOperIncome` 先核对 `macro_regime/pools.py`）。
