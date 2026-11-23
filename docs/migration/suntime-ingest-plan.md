@@ -29,7 +29,7 @@ superseded_by: null
 
 - 研究侧读取（指数层一致预期的聚合、`ConsensusRepository` 之类的端口），由研究线另做。
 - 本文"不同步"一节列出的表。
-- 动 `con_forecast_stk_ttm`，见"待裁定"第 1 条。
+- `con_forecast_stk_ttm`，见"不同步"。
 
 ## 旧仓怎么同步
 
@@ -50,9 +50,9 @@ superseded_by: null
 
 | 优先级 | 表 | 用途（旧仓消费者） | wx2 行数 / 大小 | 覆盖 | 建表 | 可见性 |
 |---|---|---|---|---|---|---|
-| P0 | `con_forecast_stk` | 个股一致预期（年度）；研究线估值陷阱检验要用，旧仓 `agent_style_rotation`、`alpha_factory`、`core/raw_loader` | 69,642,855 / 28.9 GB | 2006-01 – 2026-11 | 0006 已建，PK `id` | `source_field con_date`（pit-rules 已钉），等级见"待裁定"第 3 条 |
+| P0 | `con_forecast_stk` | 个股一致预期（年度）；研究线估值陷阱检验要用，旧仓 `agent_style_rotation`、`alpha_factory`、`core/raw_loader` | 69,642,855 / 28.9 GB | 2006-01 – 2026-11 | 0006 已建，PK `id` | `source_field con_date`，A |
 | P0 | `con_forecast_roll_stk` | 个股滚动 12 个月一致预期；同上 | 17,410,992 / 4.0 GB | 2006-01 – 2026-11 | 0006 已建，PK `id` | 同上 |
-| P1 | `rpt_earnings_adjust` | 卖方盈利预测调整（上调、下调）；旧仓 `core/raw_loader`、`enhanced_optimizer` | 3,397,832 / 1.0 GB | 2006-01 – 2026-11 | 0006 已建，PK `id` | **待裁定**第 2 条 |
+| P1 | `rpt_earnings_adjust` | 卖方盈利预测调整（上调、下调）；旧仓 `core/raw_loader`、`enhanced_optimizer` | 3,397,832 / 1.0 GB | 2006-01 – 2026-11 | 0006 已建，PK `id` | 只建镜像，**不写契约** |
 | P2 | `FIN_APPO_RELE_DATE` | 定期报告预约披露日；旧仓 `strategy/growth_stock*.py` | 336,985 / 50 MB | — | 0006 已建，PK `ID` | `source_field DECLARE_DATE strict`（pit-rules 已钉） |
 | P2 | `der_prob_excess_stock` | 可能超预期提示；旧仓 `alpha_factory` | 108,663 / 24 MB | — | 0006 已建，PK `id` | 只建镜像，**不写契约**，见下 |
 | P2 | `der_diver_stk` | 个股一致预期分歧度；旧仓 `core/raw_loader`、`enhanced_optimizer` | 61,544,212 / 11.0 GB | 2009-01 – 2026-11 | 0006 已建，PK `id` | `source_field con_date`，同 P0 |
@@ -71,9 +71,11 @@ superseded_by: null
 
 不同步：
 
-- **`con_forecast_stk_ttm`：** 这是旧仓的派生表，不是朝阳永续的源表。它没有 `tmstamp`，
-  由 `data/wind_to_sql_am.py` 的 `con_forecast_stk_ttm()` 用 `con_forecast_stk` 加 Wind 财报算出，
-  按 `nd` 删后重插。它被列进了 `db/src_tables.yaml` 的第一批，0006 也建了表，见"待裁定"第 1 条。
+- **`con_forecast_stk_ttm`：** 负责人 2026-11-24 决定不同步。这是旧仓的派生表，不是朝阳永续的源表。
+  它没有 `tmstamp`，由 `data/wind_to_sql_am.py` 的 `con_forecast_stk_ttm()` 用 `con_forecast_stk`
+  加 Wind 财报算出，按 `nd` 删后重插。以后要用就在 `features` 层用源表重算。
+  它仍在 `db/src_tables.yaml` 第一批里，0006 建的空表留着，不写入、不进写入白名单，
+  和 `ED_SocialFinancing` 一样处理。
 - **`con_forecast_stk_fttm_wide`、`con_forecast_stk_fttm_wide_new`：** 也是旧仓派生表，不在第一批，不接。
 - **第二批再评估：** `con_forecast_citic`（54,305,172 行 / 12.7 GB）、`rpt_forecast_stk`
   （4,228,605 行 / 7.4 GB）、`fin_performance_forecast`、`fin_performance_express`、
@@ -115,16 +117,19 @@ superseded_by: null
    - 代码放在 `ingest/sources/suntime/`（现在只有占位）和 `ingest/jobs/`。
    - CLI 子命令 `quantagent ingest suntime <TABLE>`，默认干跑。
    - 增量前检查源端 `tmstamp`、`id` 都没有空值，旧仓也查。
-   - **先测吞吐。** `con_forecast_stk` 有 7 千万行，旧仓说源库慢，每页 1000 行。
-     先用一张小表和 `con_forecast_stk` 的一段，测出每页行数与吞吐量，估算全量回填要多久，
-     报给负责人后再开跑。回填期间不要占满源库，旧仓的三次定时同步可能还在用它。
+   - **全量回填直接从源库读，不经 wx2**（负责人 2026-11-24）。
+   - 先用一张小表试跑，定下每页行数，把吞吐量和预计耗时写进 run log 再开始大表回填。
+     `con_forecast_stk` 有 7 千万行，旧仓每页 1000 行。回填期间不要占满源库，
+     旧仓的三次定时同步可能还在用它。
 6. **可见性契约。** 写在 `contracts/visibility/src.suntime.*.yaml`，`doc_ref` 指向本文。
    - `con_forecast_stk`、`con_forecast_roll_stk`、`der_diver_stk`：`source_field`、`field=con_date`、
-     非 strict（pit-rules 已从旧仓钉死）。`temporal_kind` 是每日快照，按 `docs/domain/temporal-semantics.md`
-     选。等级等第 3 条裁定。
+     非 strict、等级 A、`pit_recoverable: true`（见 [ADR](../adr/2026-11-24-suntime-visibility.md)）。
+     rationale 写明三点：`con_date` 当天收盘后可见；2018 年以前的快照是供应商事后回补的；
+     源端会改写历史行，数值为当前版本。`temporal_kind` 是每日快照，按
+     `docs/domain/temporal-semantics.md` 选。
    - `FIN_APPO_RELE_DATE`：`source_field`、`field=DECLARE_DATE`、`strict: true`。
      `DECLARE_DATE` 是 timestamp，确认现有 `date_only` 与 strict 的组合语义正确再写；不支持就停下来问。
-   - `rpt_earnings_adjust`：等第 2 条裁定。
+   - `rpt_earnings_adjust`：只建镜像，不写契约。入库常晚于研报日期（见下），研究侧要用时再定规则。
    - `der_prob_excess_stock`：旧仓规则是 `declare_date < adj OR entrytime < adj`，两个字段取早者，严格小于。
      现有引擎只支持"主字段 + 固定延迟"的取早者，不支持两个源字段取早者。新仓也没有消费者。
      本次只建镜像、不写契约。没有契约的数据集无法参与 PIT 查询，引擎会 fail-closed，这是预期行为。
@@ -153,26 +158,19 @@ superseded_by: null
   - 按每年 6 月抽样，1 天内入库的比例在 2006 年为 11%，2015–2025 年为 50%–80%；
     2019、2020 年的平均延迟分别为 165 天和 68 天。
 
-## 待裁定（遇到就停下问负责人）
+## 已裁定（负责人 2026-11-24）
 
-1. **`con_forecast_stk_ttm` 是否从源镜像清单移除？** 它是旧仓的派生表（见上），不是朝阳永续的源表。
-   按分层约定，派生数据应在 `features` 层用源表计算，不该作为 `src_suntime` 镜像。
-   移除要改 `db/src_tables.yaml`；0006 建的空表留着，不写入，和 `ED_SocialFinancing` 的处理方式一样。
-   在裁定之前，不同步、不建写入白名单。
-2. **`rpt_earnings_adjust` 的可见日用哪一列？** pit-rules 按旧仓写的是 `current_create_date`，
-   即研报日期。但入库常晚于研报日期（见上），按研报日期算可见日，回测会提前看到一部分调整。
-   可选的做法：
-   - a. 维持 `current_create_date`，在 rationale 里写明有提前看到的风险，等级降为 B；
-   - b. 取 `current_create_date` 与 `entrytime` 日期中较晚者。这需要引擎支持"两个源字段取晚者"，
-     现在不支持；而且早年的 `entrytime` 也有回补成分。
-   - c. 只建镜像、先不写契约，等研究侧确实要用时再定。
-3. **一致预期快照的等级。** `con_date` 是供应商原生的快照日期，按定义属于 A 级。
-   但 2018 年以前的快照是事后回补的，回补时可能用到了当时还没入库的研报。可选的做法：
-   - a. 整表 A；
-   - b. 整表 B；
-   - c. 设一个 `pit_from`（例如 2018-01-01），之前的行按 B 或 C 标注。
+见 [ADR](../adr/2026-11-24-suntime-visibility.md)：
 
-   选 c 需要确认现有契约能否表达"按日期分段定级"；不能的话就退回 a 或 b。
-4. **全量回填的来源。** 默认直接从源库读。如果第 5 步实测的回填时间不可接受，
-   是否允许先从 wx2 导入历史、再从源库按游标增量？wx2 是按 `(tmstamp, id)` 跟随源库的完整镜像，
-   但来源记录（`_batch`）要写清楚是从 wx2 导入的。这个改变了数据来源，需要负责人同意。
+1. `con_forecast_stk_ttm` 不同步，以后在 `features` 层重算。
+2. `rpt_earnings_adjust` 只建镜像，先不写可见性契约。
+3. 一致预期快照按旧仓口径：`con_date <= as_of`，等级 A，rationale 写明 2018 年以前是供应商回补。
+4. 全量回填直接从源库读，不经 wx2。
+
+## 遇到以下情况停下问负责人
+
+- 源端列清单与 0006 不一致。
+- 中文列解码失败，或者与 wx2 的值对不上。
+- `FIN_APPO_RELE_DATE` 的 `DECLARE_DATE`（timestamp）加 strict，现有引擎表达不了。
+- 源库里发现了指数层一致预期表。
+- 本地行数与源端 `COUNT(*)` 对不上，而且无法用源端新增或删除解释。

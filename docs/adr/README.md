@@ -103,5 +103,6 @@ applies_to:
 | 2026-11-23 | [货币供应 ED_MoneySupply 可见日：InfoPublDate 优先，空则期末次月 15 日](2026-11-23-ed-moneysupply-visibility.md)（已被取代） |
 | 2026-11-23 | [聚源可见性：发布当天可见；货币供应取发布日与次月 15 日中较早者](2026-11-23-jydb-visibility.md) |
 | 2026-11-23 | [美国与境外市场日频数据次日可见](2026-11-23-overseas-daily-next-day.md) |
+| 2026-11-24 | [朝阳永续接入范围与一致预期可见性](2026-11-24-suntime-visibility.md) |
 | 2026-11-22 | [中信一级行业成分改用 AINDEXMEMBERSCITICSZL](2026-11-22-citics-l1-members-zl.md) |
 | 2026-11-22 | [股票前瞻收益按 open-to-open 落 mart，端点停牌不落行](2026-11-22-forward-return-open2open.md) |
