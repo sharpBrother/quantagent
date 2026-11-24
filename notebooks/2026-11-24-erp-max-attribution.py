@@ -141,9 +141,7 @@ open_days = [
 open_idx = pd.DatetimeIndex(open_days)
 log(f"交易日 {len(open_days)}")
 
-val_rows = valuations.list_valuations(
-    as_of=AS_OF, start=START, end=AS_OF, wind_codes=(MAIN,)
-)
+val_rows = valuations.list_valuations(as_of=AS_OF, start=START, end=AS_OF, wind_codes=(MAIN,))
 pe = pd.Series(
     {
         pd.Timestamp(r.trade_dt): float(r.pe_ttm)
@@ -157,7 +155,10 @@ log(f"估值行 {len(val_rows)}")
 def point_series(series_id: str) -> pd.Series:
     rows = macro.list_observations(as_of=AS_OF, start=START, end=AS_OF, series_ids=(series_id,))
     s = pd.Series(
-        {pd.Timestamp(r.observation_date): (np.nan if r.value is None else float(r.value)) for r in rows}
+        {
+            pd.Timestamp(r.observation_date): (np.nan if r.value is None else float(r.value))
+            for r in rows
+        }
     )
     return s.sort_index()
 
@@ -166,9 +167,7 @@ r_cn_raw = point_series("cn_cgb_10y")
 r_us_raw = point_series("us_ust_10y").dropna()
 log(f"中债 {len(r_cn_raw)} 美债 {len(r_us_raw)}")
 
-ret_rows = index_returns.list_returns(
-    as_of=AS_OF, start=START, end=AS_OF, wind_codes=(TR,)
-)
+ret_rows = index_returns.list_returns(as_of=AS_OF, start=START, end=AS_OF, wind_codes=(TR,))
 pct = pd.Series(
     {
         pd.Timestamp(r.trade_dt): (np.nan if r.pct_change is None else float(r.pct_change))
@@ -203,7 +202,17 @@ ret_d = pct.reindex(open_idx) / 100.0
 cash = cash_accrual(r_cn)
 
 daily = pd.DataFrame(
-    {"ey": ey, "r_cn": r_cn, "r_us": r_us, "V": V, "U": U, "M": M, "G": G, "ret": ret_d, "cash": cash}
+    {
+        "ey": ey,
+        "r_cn": r_cn,
+        "r_us": r_us,
+        "V": V,
+        "U": U,
+        "M": M,
+        "G": G,
+        "ret": ret_d,
+        "cash": cash,
+    }
 )
 log(
     f"有效天数: EY {ey.notna().sum()} r_cn {r_cn.notna().sum()} r_us {r_us.notna().sum()} "
@@ -262,15 +271,22 @@ for years in (PCT_YEARS, PCT_YEARS_ALT):
     window[years] = {"start": start, "ret": ret_w, "cash": cash_w}
     for name in SPREAD:
         old = read_old(f"{name}_{years}y_lag1")
-        run = ratchet(
-            PCTS[years][name].loc[start:], ret_w, lag=1, cash=cash_w, return_target=True
+        run = ratchet(PCTS[years][name].loc[start:], ret_w, lag=1, cash=cash_w, return_target=True)
+        n = max(
+            assert_identical(run[col], old[col], f"{name} {years}y {col}")
+            for col in ("w", "turnover", "ret")
         )
-        n = max(assert_identical(run[col], old[col], f"{name} {years}y {col}")
-                for col in ("w", "turnover", "ret"))
         runs[(years, name)] = run
         repro_rows.append(
-            {"pct_years": years, "signal": name, "start": str(start.date()), "rows": n,
-             "equal_w": True, "equal_turnover": True, "equal_ret": True}
+            {
+                "pct_years": years,
+                "signal": name,
+                "start": str(start.date()),
+                "rows": n,
+                "equal_w": True,
+                "equal_turnover": True,
+                "equal_ret": True,
+            }
         )
 repro = pd.DataFrame(repro_rows)
 log("复现断言通过：A/B/C 的 w、turnover、ret 与旧 run 逐位相等（atol=rtol=0，NaN 位置一致）")
@@ -279,10 +295,15 @@ print(repro.to_string(index=False))
 START5, START6 = window[PCT_YEARS]["start"], window[PCT_YEARS_ALT]["start"]
 RET5, CASH5 = window[PCT_YEARS]["ret"], window[PCT_YEARS]["cash"]
 IDX5 = RET5.index
-RUN_A, RUN_B, RUN_C = (runs[(PCT_YEARS, "Max_us_cn")], runs[(PCT_YEARS, "V_cn")],
-                       runs[(PCT_YEARS, "U_us")])
-log(f"5 年窗口 {START5.date()}..{IDX5[-1].date()}，{len(IDX5)} 个交易日；"
-    f"6 年窗口起点 {START6.date()}")
+RUN_A, RUN_B, RUN_C = (
+    runs[(PCT_YEARS, "Max_us_cn")],
+    runs[(PCT_YEARS, "V_cn")],
+    runs[(PCT_YEARS, "U_us")],
+)
+log(
+    f"5 年窗口 {START5.date()}..{IDX5[-1].date()}，{len(IDX5)} 个交易日；"
+    f"6 年窗口起点 {START6.date()}"
+)
 
 # %% [markdown]
 # ## P0.1 逐日精确归因
@@ -338,8 +359,13 @@ def events_of(diff: pd.Series, d: pd.Series) -> pd.DataFrame:
             continue
         seg = d[mask]
         rows.append(
-            {"start": seg.index[0], "end": seg.index[-1], "days": len(seg),
-             "avg_diff": float(diff[mask].mean()), "sum_d": float(seg.sum())}
+            {
+                "start": seg.index[0],
+                "end": seg.index[-1],
+                "days": len(seg),
+                "avg_diff": float(diff[mask].mean()),
+                "sum_d": float(seg.sum()),
+            }
         )
     return pd.DataFrame(rows).sort_values("sum_d", ascending=False).reset_index(drop=True)
 
@@ -353,8 +379,14 @@ def window_components(years: int) -> dict:
     d_ab = (w_a - rb["w"].shift(1)) * excess
     d_ac = (w_a - rc["w"].shift(1)) * excess
     return {
-        "years": years, "runs": (ra, rb, rc), "ret": ret_w, "cash": cash_w,
-        "w_a": w_a, "excess": excess, "d_ab": d_ab, "d_ac": d_ac,
+        "years": years,
+        "runs": (ra, rb, rc),
+        "ret": ret_w,
+        "cash": cash_w,
+        "w_a": w_a,
+        "excess": excess,
+        "d_ab": d_ab,
+        "d_ac": d_ac,
         "events_ab": events_of(w_a - rb["w"].shift(1), d_ab),
         "events_ac": events_of(w_a - rc["w"].shift(1), d_ac),
     }
@@ -469,9 +501,7 @@ p01_by_segment["sum_d_cb"] = p01_by_segment["sum_d_ab"] - p01_by_segment["sum_d_
 print(p01_by_segment.round(4).to_string(index=False))
 
 print("事件表（AB / AC 各前 10 行，按 Σd 降序）:")
-print(
-    p01_events_out.groupby("pair", sort=False).head(10).round(4).to_string(index=False)
-)
+print(p01_events_out.groupby("pair", sort=False).head(10).round(4).to_string(index=False))
 
 p01_trades = pd.DataFrame(
     {
@@ -497,12 +527,17 @@ log(f"调仓日 {len(p01_trades)} 天")
 # 每次只改一处，其余与 A 相同；比较区间都从 A 的起点开始，lag=1，现金同 P0.1。
 
 # %%
-BASE_SUM_AB = float(p01_summary.loc[(p01_summary["window"] == "5y") & (p01_summary["pair"] == "AB"),
-                                    "sum_d"].iloc[0])
+BASE_SUM_AB = float(
+    p01_summary.loc[(p01_summary["window"] == "5y") & (p01_summary["pair"] == "AB"), "sum_d"].iloc[
+        0
+    ]
+)
 exp_rows = []
 
 
-def exp_stats(run: pd.DataFrame, label: str, param: str, index: pd.DatetimeIndex | None = None) -> dict:
+def exp_stats(
+    run: pd.DataFrame, label: str, param: str, index: pd.DatetimeIndex | None = None
+) -> dict:
     """一个实验变体的绩效与相对 B、C 的 Σd（按日 ret 差累加）。"""
     idx = IDX5 if index is None else index
     r = run["ret"].reindex(idx)
@@ -557,7 +592,9 @@ sum_ac_post = float((RUN_A["ret"].reindex(ret_h.index) - RUN_C["ret"].reindex(re
 if not abs(sum_ah + sum_hc - sum_ac_post) < 1e-12:
     raise RuntimeError(f"H 分解不闭合：{sum_ah} + {sum_hc} != {sum_ac_post}")
 log(f"H 分解（τ 以后）: Σ(A−H)={sum_ah:.6f} + Σ(H−C)={sum_hc:.6f} = Σ(A−C)={sum_ac_post:.6f}")
-row_h = exp_stats(run_h, "H_from_tau", f"w0={w0_h:.4f} @ {IDX5[pos_tau - 1].date()}", index=ret_h.index)
+row_h = exp_stats(
+    run_h, "H_from_tau", f"w0={w0_h:.4f} @ {IDX5[pos_tau - 1].date()}", index=ret_h.index
+)
 row_h |= {"sum_d_a_vs_h": sum_ah, "sum_d_h_vs_c": sum_hc, "sum_d_a_vs_c": sum_ac_post}
 exp_rows.append(row_h)
 
@@ -651,19 +688,24 @@ print(p03_timing.round(4).to_string(index=False))
 bench_rows = []
 for tag, run in (("A", RUN_A), ("B", RUN_B), ("C", RUN_C)):
     w_bar = float(run["w"].mean())
-    r_fix = ratchet(
-        pd.Series(w_bar, index=IDX5), RET5, lag=1, cash=CASH5, one_way=False, band=0.0
-    )
+    r_fix = ratchet(pd.Series(w_bar, index=IDX5), RET5, lag=1, cash=CASH5, one_way=False, band=0.0)
     bench_rows.append(
-        {"benchmark": f"fixed_w_{tag}", "target_w": w_bar, "target_rule": "constant, daily rebalance"}
+        {
+            "benchmark": f"fixed_w_{tag}",
+            "target_w": w_bar,
+            "target_rule": "constant, daily rebalance",
+        }
         | perf_daily(r_fix["ret"], r_fix, rf=CASH5)
     )
 sigma60 = RET5.rolling(VOL_WINDOW).std() * np.sqrt(244)
 vol_target = (VOL_TARGET / sigma60).clip(upper=1.0)
 r_vol = ratchet(vol_target, RET5, lag=1, cash=CASH5, one_way=False)
 bench_rows.append(
-    {"benchmark": "vol_target_12pct", "target_w": float(vol_target.mean()),
-     "target_rule": f"min(1, {VOL_TARGET} / sigma{VOL_WINDOW}), band 0.10, no one-way"}
+    {
+        "benchmark": "vol_target_12pct",
+        "target_w": float(vol_target.mean()),
+        "target_rule": f"min(1, {VOL_TARGET} / sigma{VOL_WINDOW}), band 0.10, no one-way",
+    }
     | perf_daily(r_vol["ret"], r_vol, rf=CASH5)
 )
 p03_benchmarks = pd.DataFrame(bench_rows)
@@ -700,15 +742,29 @@ for bps in COST_BPS:
     for tag in ("A", "B", "C"):
         perf = perf_daily(net[tag], None, rf=CASH5)
         cost_rows.append(
-            {"strategy": tag, "cost_bps": bps, "ann_return": perf["ann_return"],
-             "ann_vol": perf["ann_vol"], "sharpe_excess": perf["sharpe_excess"],
-             "max_dd": perf["max_dd"], "sum_d_ab_net": sum_ab, "sum_d_ac_net": sum_ac}
+            {
+                "strategy": tag,
+                "cost_bps": bps,
+                "ann_return": perf["ann_return"],
+                "ann_vol": perf["ann_vol"],
+                "sharpe_excess": perf["sharpe_excess"],
+                "max_dd": perf["max_dd"],
+                "sum_d_ab_net": sum_ab,
+                "sum_d_ac_net": sum_ac,
+            }
         )
     perf_bh = perf_daily(BH_RUN["ret"], None, rf=CASH5)
     cost_rows.append(
-        {"strategy": "BH", "cost_bps": bps, "ann_return": perf_bh["ann_return"],
-         "ann_vol": perf_bh["ann_vol"], "sharpe_excess": perf_bh["sharpe_excess"],
-         "max_dd": perf_bh["max_dd"], "sum_d_ab_net": np.nan, "sum_d_ac_net": np.nan}
+        {
+            "strategy": "BH",
+            "cost_bps": bps,
+            "ann_return": perf_bh["ann_return"],
+            "ann_vol": perf_bh["ann_vol"],
+            "sharpe_excess": perf_bh["sharpe_excess"],
+            "max_dd": perf_bh["max_dd"],
+            "sum_d_ab_net": np.nan,
+            "sum_d_ac_net": np.nan,
+        }
     )
 p04_costs = pd.DataFrame(cost_rows)
 print("P0.4 成本敏感性（净收益口径）:")
@@ -764,17 +820,31 @@ for leg in CASH_LEGS:
     for tag in ("A", "B", "C"):
         perf = perf_daily(leg_runs[tag]["ret"], leg_runs[tag], rf=cash_leg)
         cash_rows.append(
-            {"leg": leg, "strategy": tag, "ann_return": perf["ann_return"],
-             "ann_vol": perf["ann_vol"], "sharpe_excess": perf["sharpe_excess"],
-             "max_dd": perf["max_dd"], "avg_w": perf["avg_w"],
-             "sum_d_ab": sum_ab, "sum_d_ac": sum_ac}
+            {
+                "leg": leg,
+                "strategy": tag,
+                "ann_return": perf["ann_return"],
+                "ann_vol": perf["ann_vol"],
+                "sharpe_excess": perf["sharpe_excess"],
+                "max_dd": perf["max_dd"],
+                "avg_w": perf["avg_w"],
+                "sum_d_ab": sum_ab,
+                "sum_d_ac": sum_ac,
+            }
         )
     perf_bh = perf_daily(BH_RUN["ret"], BH_RUN, rf=cash_leg)
     cash_rows.append(
-        {"leg": leg, "strategy": "BH", "ann_return": perf_bh["ann_return"],
-         "ann_vol": perf_bh["ann_vol"], "sharpe_excess": perf_bh["sharpe_excess"],
-         "max_dd": perf_bh["max_dd"], "avg_w": perf_bh["avg_w"],
-         "sum_d_ab": np.nan, "sum_d_ac": np.nan}
+        {
+            "leg": leg,
+            "strategy": "BH",
+            "ann_return": perf_bh["ann_return"],
+            "ann_vol": perf_bh["ann_vol"],
+            "sharpe_excess": perf_bh["sharpe_excess"],
+            "max_dd": perf_bh["max_dd"],
+            "avg_w": perf_bh["avg_w"],
+            "sum_d_ab": np.nan,
+            "sum_d_ac": np.nan,
+        }
     )
 p04_cash = pd.DataFrame(cash_rows)
 log("cash_10y 腿逐位复现基线 A/B/C 的 w、turnover、ret")
@@ -798,8 +868,9 @@ log(
     f"其中 5 年窗口内 {sum(1 for d in _hit if d >= START5)} 天"
 )
 
-ey_rev = pd.Series(np.where(pe_rev.reindex(open_idx) > 0, 100.0 / pe_rev.reindex(open_idx), np.nan),
-                   index=open_idx)
+ey_rev = pd.Series(
+    np.where(pe_rev.reindex(open_idx) > 0, 100.0 / pe_rev.reindex(open_idx), np.nan), index=open_idx
+)
 SPREAD_REV = {
     "Max_us_cn": ey_rev - np.maximum(r_us, r_cn),
     "V_cn": ey_rev - r_cn,
@@ -812,16 +883,20 @@ for tag, name in (("A", "Max_us_cn"), ("B", "V_cn"), ("C", "U_us")):
     )
     base = runs[(PCT_YEARS, name)]
     perf = perf_daily(run_rev["ret"], run_rev, rf=CASH5)
-    w_diff = (run_rev["w"].isna() != base["w"].isna()) | (
-        (run_rev["w"] - base["w"]).abs() > 1e-12
-    )
+    w_diff = (run_rev["w"].isna() != base["w"].isna()) | ((run_rev["w"] - base["w"]).abs() > 1e-12)
     rev_rows.append(
-        {"strategy": tag, "days_replaced_file": len(rev_map), "days_replaced_in_data": len(_hit),
-         "days_replaced_in_window": sum(1 for d in _hit if d >= START5),
-         "ann_return": perf["ann_return"], "ann_vol": perf["ann_vol"],
-         "sharpe_excess": perf["sharpe_excess"], "max_dd": perf["max_dd"],
-         "sum_d_ret_vs_base": float((run_rev["ret"] - base["ret"]).sum()),
-         "w_diff_days": int(w_diff.sum())}
+        {
+            "strategy": tag,
+            "days_replaced_file": len(rev_map),
+            "days_replaced_in_data": len(_hit),
+            "days_replaced_in_window": sum(1 for d in _hit if d >= START5),
+            "ann_return": perf["ann_return"],
+            "ann_vol": perf["ann_vol"],
+            "sharpe_excess": perf["sharpe_excess"],
+            "max_dd": perf["max_dd"],
+            "sum_d_ret_vs_base": float((run_rev["ret"] - base["ret"]).sum()),
+            "w_diff_days": int(w_diff.sum()),
+        }
     )
 p04_pe_revision = pd.DataFrame(rev_rows)
 print("P0.4 PE 修订（换回修订前值）:")
@@ -831,6 +906,7 @@ print(p04_pe_revision.round(4).to_string(index=False))
 # 信号断档：A 的起点之后，缺信号的日子仓位不动，报告这些天里冻住的仓位带来的收益。
 
 # %%
+
 
 def nan_run(mask: pd.Series) -> tuple[int, str, str]:
     """最长连续 True 区间的长度与起止日；没有 True 时返回 (0, "", "")。"""
@@ -854,15 +930,27 @@ for tag, sig, run in (("M", M, RUN_A), ("V", V, RUN_B), ("U", U, RUN_C)):
     contrib = (run["w"].shift(1) * (RET5 - CASH5))[nan_mask]
     length, first, last = nan_run(nan_mask)
     miss_rows.append(
-        {"signal": tag, "nan_days": int(nan_mask.sum()), "longest_run_days": length,
-         "run_start": first, "run_end": last, "sum_contrib": float(contrib.sum())}
+        {
+            "signal": tag,
+            "nan_days": int(nan_mask.sum()),
+            "longest_run_days": length,
+            "run_start": first,
+            "run_end": last,
+            "sum_contrib": float(contrib.sum()),
+        }
     )
 # r_us 的 7 天过期规则：过期即缺失，U、M 随之缺失。
 us_nan = r_us.reindex(IDX5).isna()
 length, first, last = nan_run(us_nan)
 miss_rows.append(
-    {"signal": "r_us(stale>7d)", "nan_days": int(us_nan.sum()), "longest_run_days": length,
-     "run_start": first, "run_end": last, "sum_contrib": np.nan}
+    {
+        "signal": "r_us(stale>7d)",
+        "nan_days": int(us_nan.sum()),
+        "longest_run_days": length,
+        "run_start": first,
+        "run_end": last,
+        "sum_contrib": np.nan,
+    }
 )
 p04_missing = pd.DataFrame(miss_rows)
 log(f"r_us 全样本（{open_idx[0].date()} 起）按 7 天过期规则缺失 {int(r_us.isna().sum())} 天")
@@ -899,9 +987,7 @@ def placebo_stats(gs: pd.Series) -> dict[str, float]:
     """一条 G 路径跑完分位 → ratchet → 统计量，返回 M/U 的 stat 与 Σd（相对基线 B）。"""
     out: dict[str, float] = {}
     for tag, spread in (("M", V_SEG - np.maximum(gs, 0.0)), ("U", V_SEG - gs)):
-        run = ratchet(
-            rolling_percentile(spread, PCT_YEARS).loc[START5:], RET5, lag=1, cash=CASH5
-        )
+        run = ratchet(rolling_percentile(spread, PCT_YEARS).loc[START5:], RET5, lag=1, cash=CASH5)
         out[f"stat_{tag}"] = perf_daily(run["ret"], run, rf=CASH5)["sharpe_excess"] - STAT_B
         out[f"sumd_{tag}"] = float((run["ret"].reindex(IDX5) - RUN_B["ret"].reindex(IDX5)).sum())
     return out
@@ -966,11 +1052,20 @@ log(f"时间平移安慰剂 {len(p05_shift)} 条耗时 {shift_elapsed:.1f}s")
 def summary_row(placebo: str, tag: str, stats: pd.Series) -> dict[str, float]:
     arr = stats.to_numpy(dtype=float)
     real_stat = real[f"stat_{tag}"]
-    return {"strategy": tag, "placebo": placebo, "real_stat": real_stat, "n_sims": len(arr),
-            "sim_mean": float(arr.mean()), "sim_p05": float(np.percentile(arr, 5)),
-            "sim_p50": float(np.percentile(arr, 50)), "sim_p95": float(np.percentile(arr, 95)),
-            "p_value": float(np.mean(arr >= real_stat)),
-            "ar1_c": AR1_C, "ar1_phi": AR1_PHI, "ar1_sigma": AR1_SIGMA}
+    return {
+        "strategy": tag,
+        "placebo": placebo,
+        "real_stat": real_stat,
+        "n_sims": len(arr),
+        "sim_mean": float(arr.mean()),
+        "sim_p05": float(np.percentile(arr, 5)),
+        "sim_p50": float(np.percentile(arr, 50)),
+        "sim_p95": float(np.percentile(arr, 95)),
+        "p_value": float(np.mean(arr >= real_stat)),
+        "ar1_c": AR1_C,
+        "ar1_phi": AR1_PHI,
+        "ar1_sigma": AR1_SIGMA,
+    }
 
 
 p05_summary = pd.DataFrame(
@@ -999,7 +1094,9 @@ inputs = [
     {
         "dataset": ds,
         "grade": bundle.visibilities[ds].visibility.grade,
-        "pit_from": None if bundle.visibilities[ds].pit_from is None else bundle.visibilities[ds].pit_from.isoformat(),
+        "pit_from": None
+        if bundle.visibilities[ds].pit_from is None
+        else bundle.visibilities[ds].pit_from.isoformat(),
         "pit_recoverable": bundle.visibilities[ds].pit_recoverable,
         "rationale": bundle.visibilities[ds].visibility.rationale.strip(),
     }
@@ -1044,7 +1141,9 @@ results = {
     "p05_ar1": p05_ar1,
     "p05_shift": p05_shift,
 }
-output_digest = digest_json({k: json.loads(v.to_json(orient="records")) for k, v in results.items()})
+output_digest = digest_json(
+    {k: json.loads(v.to_json(orient="records")) for k, v in results.items()}
+)
 
 run_id = new_run_id()
 out_dir = paths.root / "research" / "erp_max_attribution" / run_id
@@ -1054,10 +1153,18 @@ for name, frame in results.items():
     frame.to_csv(out_dir / f"{name}.csv", index=False)
 (out_dir / "summary.json").write_text(
     json.dumps(
-        {"params": PARAMS, "pit_report": pit_report,
-         "input_digest": input_digest, "output_digest": output_digest, "research_only": True,
-         "no_database_write": True, "production_qualified": False},
-        ensure_ascii=False, indent=2, default=str,
+        {
+            "params": PARAMS,
+            "pit_report": pit_report,
+            "input_digest": input_digest,
+            "output_digest": output_digest,
+            "research_only": True,
+            "no_database_write": True,
+            "production_qualified": False,
+        },
+        ensure_ascii=False,
+        indent=2,
+        default=str,
     ),
     encoding="utf-8",
 )

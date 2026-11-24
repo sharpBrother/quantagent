@@ -37,7 +37,9 @@ from erp_lib import (
 
 pd.set_option("display.width", 200)
 
-RUN = Path("/Volumes/QuantDB/quantagent/var/research/erp_rate_anchor/05cf3475b6354fa8be2c4d3f7bab942f")
+RUN = Path(
+    "/Volumes/QuantDB/quantagent/var/research/erp_rate_anchor/05cf3475b6354fa8be2c4d3f7bab942f"
+)
 MAIN = "000985.CSI"
 HORIZONS = (1, 3, 6, 12)
 MIN_HISTORY = 36
@@ -117,9 +119,11 @@ print("A 通过")
 # 那是永久的联立内生性，任何用 Δx 构造的工具都救不回来，IVX 规模必然崩（实测拒绝率 79%）。
 # 本研究笔记里「扰动相关 −0.9」指的就是 Stambaugh 那个相关，故按此实现。
 
+
 # %%
-def dgp(n: int, rng: np.random.Generator, *, beta: float = 0.0, phi: float = 0.99,
-        rho: float = -0.9) -> tuple[np.ndarray, np.ndarray]:
+def dgp(
+    n: int, rng: np.random.Generator, *, beta: float = 0.0, phi: float = 0.99, rho: float = -0.9
+) -> tuple[np.ndarray, np.ndarray]:
     z = rng.standard_normal((2, n + 1))
     u = z[0]  # u[t] 用于 x[t]，t = 0..n
     e = rho * z[0][1:] + np.sqrt(1 - rho**2) * z[1][1:]  # e[t] 与 u[t+1] 相关
@@ -177,8 +181,12 @@ size = pd.DataFrame(rows)
 print(size.round(4).to_string(index=False))
 for _, r in size.iterrows():
     ok = 0.03 <= r["ivx_rej5"] <= 0.08
-    print(f"  h={int(r['h']):2d}  IVX 拒绝率 {r['ivx_rej5']:.4f} → {'在 [0.03, 0.08] 内' if ok else '超界'}")
-    assert ok, f"h={int(r['h'])} 的 IVX 规模 {r['ivx_rej5']:.4f} 不在 [0.03, 0.08]，停止（不调参凑）"
+    print(
+        f"  h={int(r['h']):2d}  IVX 拒绝率 {r['ivx_rej5']:.4f} → {'在 [0.03, 0.08] 内' if ok else '超界'}"
+    )
+    assert ok, (
+        f"h={int(r['h'])} 的 IVX 规模 {r['ivx_rej5']:.4f} 不在 [0.03, 0.08]，停止（不调参凑）"
+    )
 print("B 通过")
 
 
@@ -242,8 +250,10 @@ y1_d, x_d = dgp(250, rng_d)
 t_true, t_star = self_bootstrap_quantile(y1_d, x_d, rng_d, 500)
 q95 = float(np.quantile(t_star, 0.95))
 print(f"单条样本（n=250）：真实 |t| = {t_true:.3f}；500 组自助 |t*| 的 95% 分位 = {q95:.3f}")
-print(f"  自助 |t*| 分位：50% {np.quantile(t_star, 0.5):.3f}  90% {np.quantile(t_star, 0.9):.3f}  "
-      f"95% {q95:.3f}  99% {np.quantile(t_star, 0.99):.3f}")
+print(
+    f"  自助 |t*| 分位：50% {np.quantile(t_star, 0.5):.3f}  90% {np.quantile(t_star, 0.9):.3f}  "
+    f"95% {q95:.3f}  99% {np.quantile(t_star, 0.99):.3f}"
+)
 
 rej, q95_each, t_each = [], [], []
 for _ in range(N_SELF):
@@ -278,8 +288,10 @@ n_segments = 1 + int((~continues).sum())
 mean_len = n_e / n_segments
 print(f"连续段数 {n_segments}，平均长度 {mean_len:.3f}")
 mb = moving_block_indices(10000, 12, rng_e)
-print(f"对照：moving_block_indices(n=10000, block=12) 长度 {len(mb)}，"
-      f"逐块起点 {mb[0]}, {mb[12]}, {mb[24]} …（每 12 个必然跳一次）")
+print(
+    f"对照：moving_block_indices(n=10000, block=12) 长度 {len(mb)}，"
+    f"逐块起点 {mb[0]}, {mb[12]}, {mb[24]} …（每 12 个必然跳一次）"
+)
 assert 11 <= mean_len <= 13, f"平均块长 {mean_len:.3f} 不在 11–13"
 print("E 通过")
 
@@ -292,9 +304,9 @@ hdr("F. 真实数据 IVX（000985.CSI，回归元 V，全样本从首月起）")
 v = monthly[f"V|{MAIN}"].to_numpy()
 y1_all = monthly[f"fwd1|{MAIN}"].to_numpy()
 ok_ivx = ~(np.isnan(y1_all) | np.isnan(v))
-assert np.array_equal(np.flatnonzero(ok_ivx), np.arange(ok_ivx.argmax(), ok_ivx.argmax() + ok_ivx.sum())), (
-    "有效月份不连续，下面的「去 NaN 后直接切」会把不同月份拼在一起"
-)
+assert np.array_equal(
+    np.flatnonzero(ok_ivx), np.arange(ok_ivx.argmax(), ok_ivx.argmax() + ok_ivx.sum())
+), "有效月份不连续，下面的「去 NaN 后直接切」会把不同月份拼在一起"
 y1c, vc = y1_all[ok_ivx], v[ok_ivx]
 first_valid = monthly.loc[ok_ivx, "period"].iloc[0]
 rows = []

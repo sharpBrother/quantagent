@@ -269,14 +269,10 @@ def test_earliest_fallback_picks_earlier_branch_and_grade() -> None:
     assert cutoff.fallback.column == "EndDate"
     assert cutoff.fallback.lag_days == 15
     # 2024-01 月末 + 15 天 = 02-15；发布日 02-12 更早，采用 A。
-    primary = resolve_row_visibility(
-        cutoff, primary=date(2024, 2, 12), fallback=date(2024, 1, 31)
-    )
+    primary = resolve_row_visibility(cutoff, primary=date(2024, 2, 12), fallback=date(2024, 1, 31))
     assert (primary.visible_on, primary.grade) == (date(2024, 2, 12), "A")
     # 发布日 02-28 晚于 02-15，采用 B。
-    fallback = resolve_row_visibility(
-        cutoff, primary=date(2024, 2, 28), fallback=date(2024, 1, 31)
-    )
+    fallback = resolve_row_visibility(cutoff, primary=date(2024, 2, 28), fallback=date(2024, 1, 31))
     assert (fallback.visible_on, fallback.grade) == (date(2024, 2, 15), "B")
     # 发布日为空时只看 fallback。
     missing = resolve_row_visibility(cutoff, primary=None, fallback=date(2024, 1, 31))

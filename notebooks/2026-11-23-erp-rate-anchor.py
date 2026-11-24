@@ -144,7 +144,9 @@ val_rows = valuations.list_valuations(
     as_of=AS_OF, start=START, end=AS_OF, wind_codes=tuple(INDICES)
 )
 pe = (
-    pd.DataFrame([(r.trade_dt, r.wind_code, r.pe_ttm) for r in val_rows], columns=["d", "code", "pe"])
+    pd.DataFrame(
+        [(r.trade_dt, r.wind_code, r.pe_ttm) for r in val_rows], columns=["d", "code", "pe"]
+    )
     .assign(pe=lambda f: pd.to_numeric(f["pe"], errors="raise").astype(float))
     .pivot(index="d", columns="code", values="pe")
 )
@@ -155,7 +157,10 @@ log(f"估值行 {len(val_rows)}")
 def point_series(series_id: str) -> pd.Series:
     rows = macro.list_observations(as_of=AS_OF, start=START, end=AS_OF, series_ids=(series_id,))
     s = pd.Series(
-        {pd.Timestamp(r.observation_date): (np.nan if r.value is None else float(r.value)) for r in rows}
+        {
+            pd.Timestamp(r.observation_date): (np.nan if r.value is None else float(r.value))
+            for r in rows
+        }
     )
     return s.sort_index()
 
@@ -167,13 +172,13 @@ log(f"中债 {len(r_cn_raw)} 美债 {len(r_us_raw)}")
 ret_rows = index_returns.list_returns(
     as_of=AS_OF, start=START, end=AS_OF, wind_codes=tuple(INDICES.values())
 )
-pct = (
-    pd.DataFrame(
-        [(r.trade_dt, r.wind_code, None if r.pct_change is None else float(r.pct_change)) for r in ret_rows],
-        columns=["d", "code", "pct"],
-    )
-    .pivot(index="d", columns="code", values="pct")
-)
+pct = pd.DataFrame(
+    [
+        (r.trade_dt, r.wind_code, None if r.pct_change is None else float(r.pct_change))
+        for r in ret_rows
+    ],
+    columns=["d", "code", "pct"],
+).pivot(index="d", columns="code", values="pct")
 pct.index = pd.DatetimeIndex(pct.index)
 log(f"全收益行 {len(ret_rows)}")
 
@@ -291,7 +296,10 @@ for code, tr in INDICES.items():
     daily[f"ret|{code}"] = pct[tr].reindex(open_idx) / 100.0 if tr in pct else np.nan
 
 print(daily.filter(regex=r"^(r_|ey\|000985|V\|000985|U\|000985|Ur\|000985)").describe().T.round(3))
-print("缺失（2005 年起）:\n", daily.loc["2005":].filter(regex=r"^(r_cn|r_us|r_us_real|ey\|000985|ret\|000985)$").isna().sum())
+print(
+    "缺失（2005 年起）:\n",
+    daily.loc["2005":].filter(regex=r"^(r_cn|r_us|r_us_real|ey\|000985|ret\|000985)$").isna().sum(),
+)
 
 # %% [markdown]
 # ## 第一部分：负责人基线策略（日频）
@@ -310,7 +318,16 @@ _check = ratchet(
     lag=0,
 )
 assert _check["w"].round(2).tolist() == [
-    0.60, 0.70, 0.70, 0.70, 0.70, 0.45, 0.30, 0.30, 0.52, 0.52
+    0.60,
+    0.70,
+    0.70,
+    0.70,
+    0.70,
+    0.45,
+    0.30,
+    0.30,
+    0.52,
+    0.52,
 ], _check
 # 0.6→0.7 差正好 0.10，加仓；0.75 与 0.70 差 0.05，不调；回落到 0.6、0.55 不减；
 # 跌破 0.5 到 0.45 才减；0.30→0.38 不加；回到 0.52 加仓；0.58 与 0.52 差 0.06，不调。
@@ -321,7 +338,9 @@ cash = cash_accrual(daily["r_cn"])
 strategy_runs: dict[tuple[str, int, int], pd.DataFrame] = {}
 baseline_rows = []
 for years in (PCT_YEARS, PCT_YEARS_ALT):
-    pcts = {name: rolling_percentile(daily[f"{col}|{MAIN}"], years) for name, col in SIGNALS.items()}
+    pcts = {
+        name: rolling_percentile(daily[f"{col}|{MAIN}"], years) for name, col in SIGNALS.items()
+    }
     # 共同区间：所有信号都已出值之后
     common_start = max(p.first_valid_index() for p in pcts.values())
     ret = daily[f"ret|{MAIN}"].loc[common_start:]
@@ -349,11 +368,11 @@ for seg, (a, b) in SUBPERIODS.items():
             seg_rows.append({"segment": seg, "signal": name} | perf_daily(r, rf=cash))
         else:
             run = strategy_runs[(name, PCT_YEARS, 1)].loc[a:b]
-            seg_rows.append(
-                {"segment": seg, "signal": name} | perf_daily(run["ret"], run, rf=cash)
-            )
+            seg_rows.append({"segment": seg, "signal": name} | perf_daily(run["ret"], run, rf=cash))
 segments = pd.DataFrame(seg_rows)
-print(segments[["segment", "signal", "ann_return", "max_dd", "avg_w"]].round(3).to_string(index=False))
+print(
+    segments[["segment", "signal", "ann_return", "max_dd", "avg_w"]].round(3).to_string(index=False)
+)
 
 # %% [markdown]
 # ## 第二部分：月频预测检验
@@ -365,7 +384,10 @@ month = pd.Series(open_idx, index=open_idx.to_period("M"))
 signal_dates = month.groupby(level=0).max()
 signal_dates = signal_dates[signal_dates.index < pd.Period(AS_OF, "M")]
 pos_of = {d: i for i, d in enumerate(open_idx)}
-entry = {p: (open_idx[pos_of[t] + 1] if pos_of[t] + 1 < len(open_idx) else None) for p, t in signal_dates.items()}
+entry = {
+    p: (open_idx[pos_of[t] + 1] if pos_of[t] + 1 < len(open_idx) else None)
+    for p, t in signal_dates.items()
+}
 periods = list(signal_dates.index)
 
 panel = daily.loc[signal_dates.to_numpy()].copy()
@@ -427,8 +449,16 @@ for code in INDICES:
             fit, n = nw_ols(y, x_all[cols], h)
             for col in cols:
                 in_sample.append(
-                    {"index": code, "h": h, "model": name, "var": col, "coef": fit.params[col],
-                     "t_nw": fit.tvalues[col], "r2": fit.rsquared, "n": n}
+                    {
+                        "index": code,
+                        "h": h,
+                        "model": name,
+                        "var": col,
+                        "coef": fit.params[col],
+                        "t_nw": fit.tvalues[col],
+                        "r2": fit.rsquared,
+                        "n": n,
+                    }
                 )
 in_sample = pd.DataFrame(in_sample)
 print(in_sample[in_sample["index"] == MAIN].round(3).to_string(index=False))
@@ -437,7 +467,9 @@ print(in_sample[in_sample["index"] == MAIN].round(3).to_string(index=False))
 def oos_forecasts(code: str, h: int) -> pd.DataFrame:
     x_all = predictors(code)
     y = panel[f"fwd{h}|{code}"]
-    realized = {p: (entry[periods[i + h]] if i + h < len(periods) else None) for i, p in enumerate(periods)}
+    realized = {
+        p: (entry[periods[i + h]] if i + h < len(periods) else None) for i, p in enumerate(periods)
+    }
     out = []
     for i, p in enumerate(periods):
         if p < OOS_START or np.isnan(y.iloc[i]):
@@ -456,7 +488,9 @@ def oos_forecasts(code: str, h: int) -> pd.DataFrame:
                 row[name] = np.nan
                 continue
             fit = sm.OLS(data["y"], sm.add_constant(data[cols])).fit()
-            row[name] = float(np.asarray(fit.predict(sm.add_constant(x_now, has_constant="add")))[0])
+            row[name] = float(
+                np.asarray(fit.predict(sm.add_constant(x_now, has_constant="add")))[0]
+            )
         out.append(row)
     return pd.DataFrame(out).set_index("period")
 
@@ -468,10 +502,32 @@ for code in INDICES:
         for name in MODELS:
             r2 = 1 - ((c["y"] - c[name]) ** 2).sum() / ((c["y"] - c["M0"]) ** 2).sum()
             t, p = clark_west(c["y"], c["M0"], c[name], h)
-            oos.append({"index": code, "h": h, "model": name, "vs": "M0", "r2_oos": r2, "cw_t": t, "cw_p": p, "n": len(c)})
+            oos.append(
+                {
+                    "index": code,
+                    "h": h,
+                    "model": name,
+                    "vs": "M0",
+                    "r2_oos": r2,
+                    "cw_t": t,
+                    "cw_p": p,
+                    "n": len(c),
+                }
+            )
         r2 = 1 - ((c["y"] - c["M3_V+G"]) ** 2).sum() / ((c["y"] - c["M1_V"]) ** 2).sum()
         t, p = clark_west(c["y"], c["M1_V"], c["M3_V+G"], h)
-        oos.append({"index": code, "h": h, "model": "M3_V+G", "vs": "M1_V", "r2_oos": r2, "cw_t": t, "cw_p": p, "n": len(c)})
+        oos.append(
+            {
+                "index": code,
+                "h": h,
+                "model": "M3_V+G",
+                "vs": "M1_V",
+                "r2_oos": r2,
+                "cw_t": t,
+                "cw_p": p,
+                "n": len(c),
+            }
+        )
 oos = pd.DataFrame(oos)
 print(oos[oos["index"] == MAIN].round(3).to_string(index=False))
 log("月频预测完成")
@@ -531,11 +587,20 @@ for h in HORIZONS:
     y = panel[f"fwd{h}|{MAIN}"]
     fit_g, _ = nw_ols(y, x_main[["V", "G"]], h)
     fit_t, _ = nw_ols(y, pd.concat([x_main["V"], trend], axis=1), h)
-    sims = np.abs([nw_ols(y, pd.concat([x_main["V"], z], axis=1), h)[0].tvalues["Z"] for z in sims_z])
+    sims = np.abs(
+        [nw_ols(y, pd.concat([x_main["V"], z], axis=1), h)[0].tvalues["Z"] for z in sims_z]
+    )
     placebo.append(
-        {"h": h, "t_G": fit_g.tvalues["G"], "r2_VG": fit_g.rsquared, "t_TREND": fit_t.tvalues["TREND"],
-         "r2_VTREND": fit_t.rsquared, "ar1_phi_G": phi, "sim_p_abs_t": float(np.mean(sims >= abs(fit_g.tvalues["G"]))),
-         "sim_abs_t_95": float(np.quantile(sims, 0.95))}
+        {
+            "h": h,
+            "t_G": fit_g.tvalues["G"],
+            "r2_VG": fit_g.rsquared,
+            "t_TREND": fit_t.tvalues["TREND"],
+            "r2_VTREND": fit_t.rsquared,
+            "ar1_phi_G": phi,
+            "sim_p_abs_t": float(np.mean(sims >= abs(fit_g.tvalues["G"]))),
+            "sim_abs_t_95": float(np.quantile(sims, 0.95)),
+        }
     )
 placebo = pd.DataFrame(placebo)
 persistence = {
@@ -567,7 +632,8 @@ REAL_SIGNALS = {
     "EY": "ey",
 }
 real_pcts = {
-    name: rolling_percentile(daily[f"{col}|{MAIN}"], PCT_YEARS) for name, col in REAL_SIGNALS.items()
+    name: rolling_percentile(daily[f"{col}|{MAIN}"], PCT_YEARS)
+    for name, col in REAL_SIGNALS.items()
 }
 real_start = max(p.first_valid_index() for p in real_pcts.values())
 # Vn 的起点约 2012-02，早于 Vr，共同起点仍由 Vr（OECD CPI）决定
@@ -593,7 +659,15 @@ for h in HORIZONS:
         fit, n = nw_ols(y[mask], x[mask], h)
         for col in cols:
             real_in_sample.append(
-                {"h": h, "model": name, "var": col, "coef": fit.params[col], "t_nw": fit.tvalues[col], "r2": fit.rsquared, "n": n}
+                {
+                    "h": h,
+                    "model": name,
+                    "var": col,
+                    "coef": fit.params[col],
+                    "t_nw": fit.tvalues[col],
+                    "r2": fit.rsquared,
+                    "n": n,
+                }
             )
 real_in_sample = pd.DataFrame(real_in_sample)
 print(real_in_sample.round(3).to_string(index=False))
@@ -610,8 +684,16 @@ for h in HORIZONS:
     for g in ("G_us", "G_de", "G_jp"):
         fit, n = nw_ols(y, pd.concat([x_main["V"], panel[g]], axis=1)[placebo_mask], h)
         foreign_rows.append(
-            {"h": h, "G": g, "coef_V": fit.params["V"], "t_V": fit.tvalues["V"],
-             "coef_G": fit.params[g], "t_G": fit.tvalues[g], "r2": fit.rsquared, "n": n}
+            {
+                "h": h,
+                "G": g,
+                "coef_V": fit.params["V"],
+                "t_V": fit.tvalues["V"],
+                "coef_G": fit.params[g],
+                "t_G": fit.tvalues[g],
+                "r2": fit.rsquared,
+                "n": n,
+            }
         )
 foreign_in_sample = pd.DataFrame(foreign_rows)
 print(foreign_in_sample.round(3).to_string(index=False))
@@ -623,6 +705,7 @@ print(panel.loc[placebo_mask, ["r_us", "r_de", "r_jp", "r_cn"]].corr().round(2))
 # π_NBS 取聚源指标 110255493（国家统计局 CPI 当期同比），观测日是月末，按
 # `InfoPublDate` 的日期当天可见，即 `knowledge_dt <= 信号日`；与 OECD 序列严格早于
 # 信号日不同。发布日从 2007-02 起，更早的月份不可见。
+
 
 # %%
 def series_by_month(series_id: str) -> pd.Series:
@@ -636,7 +719,10 @@ def series_by_month(series_id: str) -> pd.Series:
 
 # 数据核对：只描述两条 CPI 在重叠月份上的差异，不判读。
 cpi_diff = pd.concat(
-    [series_by_month("cn_cpi_yoy").rename("oecd"), series_by_month(PARAMS["nbs_cpi_series"]).rename("nbs")],
+    [
+        series_by_month("cn_cpi_yoy").rename("oecd"),
+        series_by_month(PARAMS["nbs_cpi_series"]).rename("nbs"),
+    ],
     axis=1,
 ).dropna()
 cpi_diff["diff"] = cpi_diff["nbs"] - cpi_diff["oecd"]
@@ -652,10 +738,15 @@ nbs_vs_oecd = pd.DataFrame(
 )
 print(nbs_vs_oecd.round(3).to_string(index=False))
 print("差异最大的 10 个月:")
-print(cpi_diff.loc[cpi_diff["diff"].abs().sort_values(ascending=False).index[:10]].round(3).to_string())
+print(
+    cpi_diff.loc[cpi_diff["diff"].abs().sort_values(ascending=False).index[:10]]
+    .round(3)
+    .to_string()
+)
 
 # 日频策略：与第一部分同规则（5 年窗口、T+1 成交），6 年窗口作敏感性。
 NBS_SIGNALS = {"U_us": "U", "V_cn": "V", "Max_us_cn": "Mx", "Vn_cn_real_nbs": "Vn", "EY": "ey"}
+
 
 def compare_windows(
     signals: dict[str, str], prefix: str
@@ -667,7 +758,9 @@ def compare_windows(
     rows = []
     windows: dict[int, tuple[pd.Timestamp, pd.Series]] = {}
     for years in (PCT_YEARS, PCT_YEARS_ALT):
-        pcts = {name: rolling_percentile(daily[f"{col}|{MAIN}"], years) for name, col in signals.items()}
+        pcts = {
+            name: rolling_percentile(daily[f"{col}|{MAIN}"], years) for name, col in signals.items()
+        }
         start = max(p.first_valid_index() for p in pcts.values())
         ret = daily[f"ret|{MAIN}"].loc[start:]
         windows[years] = (start, ret)
@@ -709,7 +802,9 @@ nbs_compare, nbs_windows = compare_windows(NBS_SIGNALS, "nbs_")
 print(nbs_compare.round(3).to_string(index=False))
 nbs_segments = segment_table(NBS_SIGNALS, "nbs_", nbs_windows)
 print(
-    nbs_segments[["pct_years", "segment", "signal", "ann_return", "sharpe_excess", "max_dd", "avg_w"]]
+    nbs_segments[
+        ["pct_years", "segment", "signal", "ann_return", "sharpe_excess", "max_dd", "avg_w"]
+    ]
     .round(3)
     .to_string(index=False)
 )
@@ -718,6 +813,7 @@ print(
 panel["Vn"] = panel[f"Vn|{MAIN}"]
 nbs_x = pd.concat([panel["Vn"], x_main[["V", "U", "EY", "G"]]], axis=1)
 nbs_mask = nbs_x.notna().all(axis=1)
+
 
 def in_sample_table(x: pd.DataFrame, mask: pd.Series, models: dict[str, list[str]]) -> pd.DataFrame:
     """月频样本内回归：所有模型同一样本，Newey-West 滞后期等于期限。"""
@@ -728,8 +824,15 @@ def in_sample_table(x: pd.DataFrame, mask: pd.Series, models: dict[str, list[str
             fit, n = nw_ols(y[mask], x.loc[mask, cols], h)
             for col in cols:
                 rows.append(
-                    {"h": h, "model": name, "var": col, "coef": fit.params[col],
-                     "t_nw": fit.tvalues[col], "r2": fit.rsquared, "n": n}
+                    {
+                        "h": h,
+                        "model": name,
+                        "var": col,
+                        "coef": fit.params[col],
+                        "t_nw": fit.tvalues[col],
+                        "r2": fit.rsquared,
+                        "n": n,
+                    }
                 )
     return pd.DataFrame(rows)
 
@@ -748,14 +851,17 @@ def sample_oos_forecasts(
 ) -> pd.DataFrame:
     """扩张窗口样本外预测，训练与预测都限定在 mask 月份内，且只用信号日已实现的样本。"""
     y = panel[f"fwd{h}|{MAIN}"]
-    realized = {p: (entry[periods[i + h]] if i + h < len(periods) else None) for i, p in enumerate(periods)}
+    realized = {
+        p: (entry[periods[i + h]] if i + h < len(periods) else None) for i, p in enumerate(periods)
+    }
     out = []
     for i, p in enumerate(periods):
         if p < OOS_START or np.isnan(y.iloc[i]) or not bool(mask.iloc[i]):
             continue
         t = panel["signal_dt"].iloc[i]
         train = [
-            q for q in periods[:i]
+            q
+            for q in periods[:i]
             if bool(mask.loc[q]) and realized[q] is not None and realized[q] <= t
         ]
         y_train = y.loc[train].dropna()
@@ -769,7 +875,9 @@ def sample_oos_forecasts(
                 row[name] = np.nan
                 continue
             fit = sm.OLS(data["y"], sm.add_constant(data[cols])).fit()
-            row[name] = float(np.asarray(fit.predict(sm.add_constant(x_now, has_constant="add")))[0])
+            row[name] = float(
+                np.asarray(fit.predict(sm.add_constant(x_now, has_constant="add")))[0]
+            )
         out.append(row)
     return pd.DataFrame(out).set_index("period")
 
@@ -834,7 +942,9 @@ def nbs_mix_asof(series_a: str, series_b: str) -> list[float]:
                 values[r.series_id][r.observation_date] = float(r.value)
         common = sorted(values[series_a].keys() & values[series_b].keys())
         out.append(
-            0.5 * (values[series_a][common[-1]] + values[series_b][common[-1]]) if common else np.nan
+            0.5 * (values[series_a][common[-1]] + values[series_b][common[-1]])
+            if common
+            else np.nan
         )
     return out
 
@@ -866,10 +976,13 @@ p7_compare, p7_windows = compare_windows(P7_SIGNALS, "p7_")
 print(p7_compare.round(3).to_string(index=False))
 p7_segments = segment_table(P7_SIGNALS, "p7_", p7_windows)
 print(
-    p7_segments[["pct_years", "segment", "signal", "ann_return", "sharpe_excess", "max_dd", "avg_w"]]
+    p7_segments[
+        ["pct_years", "segment", "signal", "ann_return", "sharpe_excess", "max_dd", "avg_w"]
+    ]
     .round(3)
     .to_string(index=False)
 )
+
 
 # 月频：样本限定在 Vm、Vcore、Vppi、Vn、V、U、EY、G 都可见的月份。
 # panel 在第二部分由 daily 取样建立，第七部分的日频列是后加的，要按信号日重新取样。
@@ -882,9 +995,7 @@ def panel_col(col: str) -> pd.Series:
 panel["Vm"] = panel_col(f"Vm|{MAIN}")
 panel["Vcore"] = panel_col(f"Vcore|{MAIN}")
 panel["Vppi"] = panel_col(f"Vppi|{MAIN}")
-p7_x = pd.concat(
-    [panel[["Vm", "Vcore", "Vppi", "Vn"]], x_main[["V", "U", "EY", "G"]]], axis=1
-)
+p7_x = pd.concat([panel[["Vm", "Vcore", "Vppi", "Vn"]], x_main[["V", "U", "EY", "G"]]], axis=1)
 p7_mask = p7_x.notna().all(axis=1)
 P7_IN_MODELS = {
     "Vm": ["Vm"],
@@ -930,8 +1041,15 @@ for h in HORIZONS:
         wald_p = float(np.ravel(fit.t_test("EY + r_cn = 0").pvalue)[0])
         for col in cols:
             p8a_rows.append(
-                {"h": h, "model": model, "var": col, "coef": fit.params[col],
-                 "t_nw": fit.tvalues[col], "n": n, "wald_p_ey_plus_rcn": wald_p}
+                {
+                    "h": h,
+                    "model": model,
+                    "var": col,
+                    "coef": fit.params[col],
+                    "t_nw": fit.tvalues[col],
+                    "n": n,
+                    "wald_p_ey_plus_rcn": wald_p,
+                }
             )
 p8a_fed = pd.DataFrame(p8a_rows)
 print(p8a_fed.round(3).to_string(index=False))
@@ -978,8 +1096,13 @@ fit_eps, n_eps = nw_ols(
 )
 p8b_eps = pd.DataFrame(
     [
-        {"var": col, "coef": fit_eps.params[col], "t_nw": fit_eps.tvalues[col],
-         "r2": fit_eps.rsquared, "n": n_eps}
+        {
+            "var": col,
+            "coef": fit_eps.params[col],
+            "t_nw": fit_eps.tvalues[col],
+            "r2": fit_eps.rsquared,
+            "n": n_eps,
+        }
         for col in ("dr_cn12", "g_past12")
     ]
 )
@@ -1026,9 +1149,16 @@ for h in P8_HORIZONS:
         used = pd.concat([y_dep.rename("y"), x_dep], axis=1).dropna()
         for var in ("G", lvl):
             p8c_rows.append(
-                {"h": h, "dep": dep, "var": var, "coef": fit.params[var],
-                 "t_nw": fit.tvalues[var], "n": n, "first_period": str(used.index[0]),
-                 "last_period": str(used.index[-1])}
+                {
+                    "h": h,
+                    "dep": dep,
+                    "var": var,
+                    "coef": fit.params[var],
+                    "t_nw": fit.tvalues[var],
+                    "n": n,
+                    "first_period": str(used.index[0]),
+                    "last_period": str(used.index[-1]),
+                }
             )
 p8c_policy = pd.DataFrame(p8c_rows)
 print(p8c_policy.round(3).to_string(index=False))
@@ -1043,9 +1173,16 @@ for sample, lo in (("full", None), (f"post_{P8_FX_POST}", pd.Period(P8_FX_POST, 
         fit, n = nw_ols(dep[sample_mask], x_main.loc[sample_mask, ["G"]], h)
         used = pd.concat([dep.rename("y"), x_main[["G"]]], axis=1)[sample_mask].dropna()
         p8d_rows.append(
-            {"sample": sample, "h": h, "coef_G": fit.params["G"], "t_G": fit.tvalues["G"],
-             "r2": fit.rsquared, "n": n, "first_period": str(used.index[0]),
-             "last_period": str(used.index[-1])}
+            {
+                "sample": sample,
+                "h": h,
+                "coef_G": fit.params["G"],
+                "t_G": fit.tvalues["G"],
+                "r2": fit.rsquared,
+                "n": n,
+                "first_period": str(used.index[0]),
+                "last_period": str(used.index[-1]),
+            }
         )
 p8d_fx = pd.DataFrame(p8d_rows)
 print(p8d_fx.round(3).to_string(index=False))
@@ -1069,7 +1206,9 @@ inputs = [
     {
         "dataset": ds,
         "grade": bundle.visibilities[ds].visibility.grade,
-        "pit_from": None if bundle.visibilities[ds].pit_from is None else bundle.visibilities[ds].pit_from.isoformat(),
+        "pit_from": None
+        if bundle.visibilities[ds].pit_from is None
+        else bundle.visibilities[ds].pit_from.isoformat(),
         "pit_recoverable": bundle.visibilities[ds].pit_recoverable,
         "rationale": bundle.visibilities[ds].visibility.rationale.strip(),
     }
@@ -1123,7 +1262,9 @@ results = {
     "p8c_policy": p8c_policy,
     "p8d_fx": p8d_fx,
 }
-output_digest = digest_json({k: json.loads(v.to_json(orient="records")) for k, v in results.items()})
+output_digest = digest_json(
+    {k: json.loads(v.to_json(orient="records")) for k, v in results.items()}
+)
 
 run_id = new_run_id()
 out_dir = paths.root / "research" / "erp_rate_anchor" / run_id
@@ -1136,11 +1277,20 @@ for name, frame in results.items():
     frame.to_csv(out_dir / f"{name}.csv", index=False)
 (out_dir / "summary.json").write_text(
     json.dumps(
-        {"params": PARAMS, "pit_report": pit_report, "persistence_ar1": persistence,
-         "inversion_spells": inversion_spells,
-         "input_digest": input_digest, "output_digest": output_digest, "research_only": True,
-         "no_database_write": True, "production_qualified": False},
-        ensure_ascii=False, indent=2, default=str,
+        {
+            "params": PARAMS,
+            "pit_report": pit_report,
+            "persistence_ar1": persistence,
+            "inversion_spells": inversion_spells,
+            "input_digest": input_digest,
+            "output_digest": output_digest,
+            "research_only": True,
+            "no_database_write": True,
+            "production_qualified": False,
+        },
+        ensure_ascii=False,
+        indent=2,
+        default=str,
     ),
     encoding="utf-8",
 )

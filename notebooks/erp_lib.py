@@ -23,7 +23,9 @@ TRADING_DAYS = 244
 def asof_lookup(series: pd.Series, cutoffs: pd.DatetimeIndex) -> tuple[np.ndarray, np.ndarray]:
     pos = series.index.searchsorted(cutoffs, side="right") - 1
     vals = np.where(pos >= 0, series.to_numpy()[np.clip(pos, 0, None)], np.nan)
-    obs = np.where(pos >= 0, series.index.to_numpy()[np.clip(pos, 0, None)], np.datetime64("NaT", "ns"))
+    obs = np.where(
+        pos >= 0, series.index.to_numpy()[np.clip(pos, 0, None)], np.datetime64("NaT", "ns")
+    )
     return vals, obs
 
 

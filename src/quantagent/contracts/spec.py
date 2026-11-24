@@ -77,7 +77,9 @@ class VisibilitySpec(BaseModel):
             if self.fallback is None or self.fallback.rule != "fixed_lag":
                 raise ValueError("fallback_mode=earliest 需要 fixed_lag fallback")
             if not self.fallback.field or self.fallback.lag_unit != "calendar_day":
-                raise ValueError("fallback_mode=earliest 的 fixed_lag 必须指定 field 与 calendar_day")
+                raise ValueError(
+                    "fallback_mode=earliest 的 fixed_lag 必须指定 field 与 calendar_day"
+                )
         return self
 
 

@@ -89,12 +89,15 @@ def wind_stop_after_page(
 def ingest_jydb(
     table: Annotated[str, typer.Argument(help="聚源表名，必须是 JYDB_SPECS 白名单")],
     write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
-    page_size: Annotated[int, typer.Option("--page-size", help="每页行数")] = JYDB_DEFAULT_PAGE_SIZE,
+    page_size: Annotated[
+        int, typer.Option("--page-size", help="每页行数")
+    ] = JYDB_DEFAULT_PAGE_SIZE,
     max_pages: Annotated[
         int | None, typer.Option("--max-pages", help="最多扫描页数；默认干跑一页、真写全量")
     ] = None,
     from_cursor: Annotated[
-        str | None, typer.Option("--from-cursor", help="可选 (JSID, ID) 游标 JSON；默认最新成功游标")
+        str | None,
+        typer.Option("--from-cursor", help="可选 (JSID, ID) 游标 JSON；默认最新成功游标"),
     ] = None,
 ) -> None:
     """从 JYDB 分页写入 src_jydb。<TABLE> 首次运行即全量回填，之后从游标增量。"""

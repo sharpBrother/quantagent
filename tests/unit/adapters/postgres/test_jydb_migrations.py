@@ -44,9 +44,7 @@ def test_c_in_indicatormain_has_pk_and_cursor_index(repo_root: Path) -> None:
     for item in list_migration_files(repo_root, "src"):
         statements.extend(split_sql_statements(item.path.read_text(encoding="utf-8")))
     create = next(
-        stmt
-        for stmt in statements
-        if stmt.startswith('CREATE TABLE src_jydb."C_IN_IndicatorMain"')
+        stmt for stmt in statements if stmt.startswith('CREATE TABLE src_jydb."C_IN_IndicatorMain"')
     )
     assert 'PRIMARY KEY ("ID")' in create
     assert (
@@ -62,8 +60,7 @@ def test_every_jydb_paged_table_has_jsid_id_index(repo_root: Path) -> None:
         statements.extend(split_sql_statements(item.path.read_text(encoding="utf-8")))
     for name in JYDB_SPECS:
         assert (
-            f'CREATE INDEX "{name}__jsid_id_idx" ON src_jydb."{name}" ("JSID", "ID")'
-            in statements
+            f'CREATE INDEX "{name}__jsid_id_idx" ON src_jydb."{name}" ("JSID", "ID")' in statements
         ), name
 
 

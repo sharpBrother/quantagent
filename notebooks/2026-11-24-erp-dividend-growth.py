@@ -154,7 +154,7 @@ PARAMS = {
         "V": "100/PE_TTM - r_cn (report four baseline)",
     },
     "dividend_yield_rule": "Wind AINDEXVALUATION.DIVIDEND_YIELD in percent; uses value only when > 0, "
-                           "otherwise NaN; no fill",
+    "otherwise NaN; no fill",
     "b1_signals": {
         "U": "100/PE_TTM - r_us",
         "V": "100/PE_TTM - r_cn",
@@ -165,7 +165,7 @@ PARAMS = {
         "R3": "target=pct * min(1, sigma_bar/sigma60), one_way=False, band 0.10",
     },
     "r3_detail": "sigma60 = ret.rolling(60).std()*sqrt(244); sigma_bar = expanding median; "
-                 "both use the full available daily return history of the index (backward looking)",
+    "both use the full available daily return history of the index (backward looking)",
     "pct_years": PCT_YEARS,
     "band": BAND,
     "sigma_window": SIGMA_WINDOW,
@@ -182,15 +182,26 @@ PARAMS = {
     "n_boot": N_BOOT,
     "boot_block": BOOT_BLOCK,
     "a3_seed_rule": "SeedSequence(20261124).spawn(1)[0].spawn(4)[model] -> default_rng",
-    "spa": {"block_size": SPA_BLOCK, "reps": SPA_REPS, "bootstrap": "stationary",
-            "studentize": True, "seed": SEED, "loss": "-net_ret"},
-    "b1_bootstrap": {"class": "arch.bootstrap.StationaryBootstrap", "block_size": B1_BLOCK,
-                     "reps": N_BOOT, "seed": SEED, "statistic": "mean of resampled centred d",
-                     "p_rule": "mean(boot_mean >= real_mean), one sided"},
+    "spa": {
+        "block_size": SPA_BLOCK,
+        "reps": SPA_REPS,
+        "bootstrap": "stationary",
+        "studentize": True,
+        "seed": SEED,
+        "loss": "-net_ret",
+    },
+    "b1_bootstrap": {
+        "class": "arch.bootstrap.StationaryBootstrap",
+        "block_size": B1_BLOCK,
+        "reps": N_BOOT,
+        "seed": SEED,
+        "statistic": "mean of resampled centred d",
+        "p_rule": "mean(boot_mean >= real_mean), one sided",
+    },
     "nw_lags": NW_LAGS,
     "monthly_definition": "month = natural month, month end = its last trading day; "
-                          "monthly log return = sum log1p(daily total return) over "
-                          "(previous month-end, this month-end], NaN if any daily return missing",
+    "monthly log return = sum log1p(daily total return) over "
+    "(previous month-end, this month-end], NaN if any daily return missing",
     "spread_definition": "100 * [sum log1p(r_growth) - sum log1p(r_value)] (percent points)",
     "post_fx_start": POST_FX.isoformat(),
     "a3_predictor": "signal level at the signal day (last trading day of month), as in report four Q2d",
@@ -347,6 +358,7 @@ log(
 # B1 的两只风格指数：U = EY − r_US、V = EY − r_CN 的分位。
 # 起点取「四个分位都有值的第一天」，之后不允许再有缺失。
 
+
 # %%
 def build_percentiles(levels: dict[str, pd.Series]) -> dict[str, pd.Series]:
     return {k: rolling_percentile(s, PCT_YEARS) for k, s in levels.items()}
@@ -395,7 +407,7 @@ for code in (B_GROWTH, B_VALUE):
     p["pct"] = build_percentiles({"U": p["U"], "V": p["V"]})
     _pp: dict[str, pd.Series] = p["pct"]
     p["own_start"] = common_start(_pp)
-    if not pd.concat(_pp, axis=1).loc[p["own_start"]:].notna().all(axis=1).all():
+    if not pd.concat(_pp, axis=1).loc[p["own_start"] :].notna().all(axis=1).all():
         raise RuntimeError(f"{code} 起点之后有分位缺失，停止")
 
 B1_START = pd.Timestamp(max(PANELS[B_GROWTH]["own_start"], PANELS[B_VALUE]["own_start"]))
@@ -404,17 +416,34 @@ hdr("起点")
 print(
     pd.DataFrame(
         [
-            {"index": A_INDEX, "total_return": A_TR, "signals": "Dv/Du/DY/V",
-             "start": str(A_START.date()),
-             "first_ret": str(_a["ret"].first_valid_index().date())},
-            {"index": B_GROWTH, "total_return": B_GROWTH_TR, "signals": "U/V",
-             "start": str(PANELS[B_GROWTH]["own_start"].date()),
-             "first_ret": str(PANELS[B_GROWTH]["ret"].first_valid_index().date())},
-            {"index": B_VALUE, "total_return": B_VALUE_TR, "signals": "U/V",
-             "start": str(PANELS[B_VALUE]["own_start"].date()),
-             "first_ret": str(PANELS[B_VALUE]["ret"].first_valid_index().date())},
-            {"index": "B1 common", "total_return": f"{B_GROWTH_TR}+{B_VALUE_TR}",
-             "signals": "U/V x2", "start": str(B1_START.date()), "first_ret": ""},
+            {
+                "index": A_INDEX,
+                "total_return": A_TR,
+                "signals": "Dv/Du/DY/V",
+                "start": str(A_START.date()),
+                "first_ret": str(_a["ret"].first_valid_index().date()),
+            },
+            {
+                "index": B_GROWTH,
+                "total_return": B_GROWTH_TR,
+                "signals": "U/V",
+                "start": str(PANELS[B_GROWTH]["own_start"].date()),
+                "first_ret": str(PANELS[B_GROWTH]["ret"].first_valid_index().date()),
+            },
+            {
+                "index": B_VALUE,
+                "total_return": B_VALUE_TR,
+                "signals": "U/V",
+                "start": str(PANELS[B_VALUE]["own_start"].date()),
+                "first_ret": str(PANELS[B_VALUE]["ret"].first_valid_index().date()),
+            },
+            {
+                "index": "B1 common",
+                "total_return": f"{B_GROWTH_TR}+{B_VALUE_TR}",
+                "signals": "U/V x2",
+                "start": str(B1_START.date()),
+                "first_ret": "",
+            },
         ]
     ).to_string(index=False),
     flush=True,
@@ -507,14 +536,24 @@ assert str(_a_used[0].date()) == str(a_ref_row["start"]), (
 hdr("断言：中证红利 V + R0（主口径）与报告四一致")
 a_repro = pd.DataFrame(
     [
-        {"field": "start", "ours": str(_a_used[0].date()), "report4": str(a_ref_row["start"]),
-         "equal": True},
-        {"field": "sharpe_excess", "ours": _a_perf["sharpe_excess"],
-         "report4": float(a_ref_row["sharpe_excess"]),
-         "equal": abs(_a_perf["sharpe_excess"] - float(a_ref_row["sharpe_excess"])) <= 1e-12},
-        {"field": "ann_return", "ours": _a_perf["ann_return"],
-         "report4": float(a_ref_row["ann_return"]),
-         "equal": abs(_a_perf["ann_return"] - float(a_ref_row["ann_return"])) <= 1e-12},
+        {
+            "field": "start",
+            "ours": str(_a_used[0].date()),
+            "report4": str(a_ref_row["start"]),
+            "equal": True,
+        },
+        {
+            "field": "sharpe_excess",
+            "ours": _a_perf["sharpe_excess"],
+            "report4": float(a_ref_row["sharpe_excess"]),
+            "equal": abs(_a_perf["sharpe_excess"] - float(a_ref_row["sharpe_excess"])) <= 1e-12,
+        },
+        {
+            "field": "ann_return",
+            "ours": _a_perf["ann_return"],
+            "report4": float(a_ref_row["ann_return"]),
+            "equal": abs(_a_perf["ann_return"] - float(a_ref_row["ann_return"])) <= 1e-12,
+        },
     ]
 )
 show("a_repro 断言（中证红利 V+R0，主口径）", a_repro)
@@ -526,6 +565,7 @@ log(f"断言通过：中证红利 V+R0 与报告四一致，样本 {_a_used[0].d
 #
 # 成本按成交日扣：`ret_net = ret − c/1e4 × turnover`，不影响仓位路径。
 # 买入持有满仓全收益指数，窗口首日无收益（与报告一同口径），不计成本。
+
 
 # %%
 def perf_rows(
@@ -548,9 +588,16 @@ def perf_rows(
                     perf = perf_daily(net, run, rf=cash_leg)
                 used = net.dropna().index
                 rows.append(
-                    {"index": label, "signal": sig, "mapping": mp, "cash_leg": leg,
-                     "cost_bps": cost, "start": str(used[0].date()),
-                     "end": str(used[-1].date())} | perf
+                    {
+                        "index": label,
+                        "signal": sig,
+                        "mapping": mp,
+                        "cash_leg": leg,
+                        "cost_bps": cost,
+                        "start": str(used[0].date()),
+                        "end": str(used[-1].date()),
+                    }
+                    | perf
                 )
     for leg in {leg for leg, _ in specs}:
         cash_leg = CASH_BY_LEG[leg]
@@ -561,15 +608,34 @@ def perf_rows(
             perf = perf_daily(bh, bh_run, rf=cash_leg)
         used = bh.dropna().index
         rows.append(
-            {"index": label, "signal": "BH", "mapping": "BH", "cash_leg": leg,
-             "cost_bps": 0, "start": str(used[0].date()), "end": str(used[-1].date())} | perf
+            {
+                "index": label,
+                "signal": "BH",
+                "mapping": "BH",
+                "cash_leg": leg,
+                "cost_bps": 0,
+                "start": str(used[0].date()),
+                "end": str(used[-1].date()),
+            }
+            | perf
         )
     return rows
 
 
 PERF_COLS = [
-    "index", "signal", "mapping", "cash_leg", "cost_bps", "start", "end",
-    "ann_return", "ann_vol", "sharpe_excess", "max_dd", "avg_w", "turnover_per_year",
+    "index",
+    "signal",
+    "mapping",
+    "cash_leg",
+    "cost_bps",
+    "start",
+    "end",
+    "ann_return",
+    "ann_vol",
+    "sharpe_excess",
+    "max_dd",
+    "avg_w",
+    "turnover_per_year",
 ]
 
 
@@ -627,9 +693,9 @@ def run_spa(bench: pd.Series, cands: dict[str, pd.Series]) -> dict[str, object]:
 # ### a_perf：Dv / Du / DY / V 在 R0、R1、R3 下的绩效（主口径 + 敏感性）
 
 # %%
-a_perf = pd.DataFrame(
-    perf_rows(A_INDEX, RUN_A, _a_ret, A_START, SIGNALS_A, specs=PERF_SPECS)
-)[PERF_COLS]
+a_perf = pd.DataFrame(perf_rows(A_INDEX, RUN_A, _a_ret, A_START, SIGNALS_A, specs=PERF_SPECS))[
+    PERF_COLS
+]
 log(f"a_perf {len(a_perf)} 行")
 show(
     "a_perf 主口径（ibo、5bp）",
@@ -673,8 +739,18 @@ a_cands = {
 }
 a2_spa = pd.DataFrame([{"benchmark": "V+R0"} | run_spa(a_bench, a_cands)])
 a2_spa = a2_spa[
-    ["benchmark", "n_days", "start", "end", "n_models", "p_lower", "p_consistent",
-     "p_upper", "best_model", "best_mean_diff_bp"]
+    [
+        "benchmark",
+        "n_days",
+        "start",
+        "end",
+        "n_models",
+        "p_lower",
+        "p_consistent",
+        "p_upper",
+        "best_model",
+        "best_mean_diff_bp",
+    ]
 ]
 show("a2_spa（基准 V+R0，6 个候选）", a2_spa)
 log(f"a2_spa p_consistent={a2_spa['p_consistent'].iloc[0]:.4f} best={a2_spa['best_model'].iloc[0]}")
@@ -712,8 +788,12 @@ def build_monthly(ret: pd.Series, cash_daily: pd.Series) -> pd.DataFrame:
         if len(wc) and not np.isnan(wc).any():
             cash_m[i] = float(np.log1p(wc).sum() * 100.0)
     return pd.DataFrame(
-        {"period": LAST_OF_MONTH.index.astype(str).to_numpy(), "signal_dt": SIGNAL_DATES,
-         "fwd1": fwd1, "cash_m": cash_m}
+        {
+            "period": LAST_OF_MONTH.index.astype(str).to_numpy(),
+            "signal_dt": SIGNAL_DATES,
+            "fwd1": fwd1,
+            "cash_m": cash_m,
+        }
     )
 
 
@@ -806,15 +886,19 @@ A_MONTHLY = build_monthly(_a_ret, CASH_IBO)
 for sig in SIGNALS_A:
     A_MONTHLY[f"level|{sig}"] = _a[sig].reindex(SIGNAL_DATES).to_numpy()
     A_MONTHLY[f"pct|{sig}"] = _pct[sig].reindex(SIGNAL_DATES).to_numpy()
-log(f"{A_INDEX} 月频面板 {len(A_MONTHLY)} 个月 "
-    f"{A_MONTHLY['period'].iloc[0]}..{A_MONTHLY['period'].iloc[-1]}")
+log(
+    f"{A_INDEX} 月频面板 {len(A_MONTHLY)} 个月 "
+    f"{A_MONTHLY['period'].iloc[0]}..{A_MONTHLY['period'].iloc[-1]}"
+)
 
 _y1 = A_MONTHLY["fwd1"].to_numpy(dtype=float)
 _x_all = {k: A_MONTHLY[f"level|{k}"].to_numpy(dtype=float) for k in A3_MODELS}
 _A3_A, _A3_B = longest_valid_run([_y1, *_x_all.values()], 0)
 _y1c = _y1[_A3_A : _A3_B + 1]
-log(f"{A_INDEX} 月频推断样本 {A_MONTHLY['period'].iloc[_A3_A]}.."
-    f"{A_MONTHLY['period'].iloc[_A3_B]}（{_A3_B - _A3_A + 1} 个月）")
+log(
+    f"{A_INDEX} 月频推断样本 {A_MONTHLY['period'].iloc[_A3_A]}.."
+    f"{A_MONTHLY['period'].iloc[_A3_B]}（{_A3_B - _A3_A + 1} 个月）"
+)
 
 a3_rows: list[dict[str, object]] = []
 a3_grade_rows: list[dict[str, object]] = []
@@ -834,11 +918,16 @@ for j, model in enumerate(A3_MODELS):
             yh, _xc, h, train_start=0, oos_start=o_start, min_history=MIN_HISTORY
         ).dropna()
         cw_t, cw_p = clark_west_np(fc["y"], fc["M0"], fc["model"], h)
-        real[h] = {"t": float(fit.tvalues["x"]), "coef": float(fit.params["x"]),
-                   "n": int(ok.sum()), "ivx_p_pos": float(ivx["p_one_sided_pos"]),
-                   "r2_os": r2_os(fc["y"], fc["model"], fc["M0"]),
-                   "cw_t": cw_t, "cw_p": cw_p,
-                   "oos_start": str(A_MONTHLY["period"].iloc[_A3_A + o_start])}
+        real[h] = {
+            "t": float(fit.tvalues["x"]),
+            "coef": float(fit.params["x"]),
+            "n": int(ok.sum()),
+            "ivx_p_pos": float(ivx["p_one_sided_pos"]),
+            "r2_os": r2_os(fc["y"], fc["model"], fc["M0"]),
+            "cw_t": cw_t,
+            "cw_p": cw_p,
+            "oos_start": str(A_MONTHLY["period"].iloc[_A3_A + o_start]),
+        }
     boot_t = {h: np.empty(N_BOOT) for h in HORIZONS}
     for bi in range(N_BOOT):
         idx = stationary_indices(len(_y1c) - 1, BOOT_BLOCK, rng)
@@ -850,12 +939,20 @@ for j, model in enumerate(A3_MODELS):
             boot_t[h][bi] = t_star[1]
     for h in HORIZONS:
         a3_rows.append(
-            {"index": A_INDEX, "model": model, "h": h, "n": real[h]["n"],
-             "coef": real[h]["coef"], "t_nw": real[h]["t"],
-             "ivx_p_one_sided": real[h]["ivx_p_pos"],
-             "p_boot_one_sided": float(np.mean(boot_t[h] >= real[h]["t"])),
-             "r2_os": real[h]["r2_os"], "cw_t": real[h]["cw_t"], "cw_p": real[h]["cw_p"],
-             "oos_start": real[h]["oos_start"]}
+            {
+                "index": A_INDEX,
+                "model": model,
+                "h": h,
+                "n": real[h]["n"],
+                "coef": real[h]["coef"],
+                "t_nw": real[h]["t"],
+                "ivx_p_one_sided": real[h]["ivx_p_pos"],
+                "p_boot_one_sided": float(np.mean(boot_t[h] >= real[h]["t"])),
+                "r2_os": real[h]["r2_os"],
+                "cw_t": real[h]["cw_t"],
+                "cw_p": real[h]["cw_p"],
+                "oos_start": real[h]["oos_start"],
+            }
         )
     log(f"  {model}: 预测起点 {real[1]['oos_start']}，自助 {N_BOOT} 次完成")
 
@@ -870,23 +967,43 @@ for model in A3_MODELS:
     c1_h = [h for h in HORIZONS if float(_rows[h]["p_holm"]) < 0.05]
     c1 = len(c1_h) >= 2
     c3_h = [
-        h for h in HORIZONS
-        if float(_rows[h]["ivx_p_one_sided"]) < 0.05
-        or float(_rows[h]["p_boot_one_sided"]) < 0.05
+        h
+        for h in HORIZONS
+        if float(_rows[h]["ivx_p_one_sided"]) < 0.05 or float(_rows[h]["p_boot_one_sided"]) < 0.05
     ]
     c3_on_c1 = all(h in c3_h for h in c1_h)
     # 条件 2（训练起点网格）按计划记为不满足，所以第 3 类不可达
     grade = "2" if (c1 or len(c3_h) >= 2) else "5"
     a3_grade_rows.append(
-        {"index": A_INDEX, "model": model, "c1_horizons": ",".join(map(str, c1_h)),
-         "c1": c1, "c2": False, "c3_horizons": ",".join(map(str, c3_h)),
-         "c3_on_c1": c3_on_c1, "grade": grade,
-         "note": "条件 2（训练起点网格）按计划记为不满足，最高第 2 类"}
+        {
+            "index": A_INDEX,
+            "model": model,
+            "c1_horizons": ",".join(map(str, c1_h)),
+            "c1": c1,
+            "c2": False,
+            "c3_horizons": ",".join(map(str, c3_h)),
+            "c3_on_c1": c3_on_c1,
+            "grade": grade,
+            "note": "条件 2（训练起点网格）按计划记为不满足，最高第 2 类",
+        }
     )
 
 a3_inference = pd.DataFrame(a3_rows)[
-    ["index", "model", "h", "n", "coef", "t_nw", "ivx_p_one_sided", "p_boot_one_sided",
-     "r2_os", "cw_t", "cw_p", "p_holm", "oos_start"]
+    [
+        "index",
+        "model",
+        "h",
+        "n",
+        "coef",
+        "t_nw",
+        "ivx_p_one_sided",
+        "p_boot_one_sided",
+        "r2_os",
+        "cw_t",
+        "cw_p",
+        "p_holm",
+        "oos_start",
+    ]
 ]
 a3_grade = pd.DataFrame(a3_grade_rows)
 show("a3_inference 月频推断（中证红利）", a3_inference)
@@ -913,8 +1030,13 @@ for kind in ("level", "pct"):
         for cb in cols:
             pair = frame[[ca, cb]].dropna()
             a_corr_rows.append(
-                {"kind": kind, "series_a": ca.split("|")[0], "series_b": cb.split("|")[0],
-                 "corr": float(matrix.loc[ca, cb]), "n_days": len(pair)}
+                {
+                    "kind": kind,
+                    "series_a": ca.split("|")[0],
+                    "series_b": cb.split("|")[0],
+                    "corr": float(matrix.loc[ca, cb]),
+                    "n_days": len(pair),
+                }
             )
 a_corr = pd.DataFrame(a_corr_rows)
 show("a_corr 相关矩阵（长表）", a_corr)
@@ -936,9 +1058,7 @@ for code in (B_GROWTH, B_VALUE):
     runs: dict[tuple[str, str], pd.DataFrame] = {}
     for sig in B1_SIGNALS:
         for mp in ("R0", "R1"):
-            runs[(sig, mp)] = run_mapping(
-                pcts[sig], ret, CASH_IBO, B1_START, mp, base=pcts[sig]
-            )
+            runs[(sig, mp)] = run_mapping(pcts[sig], ret, CASH_IBO, B1_START, mp, base=pcts[sig])
     RUN_B1[code] = runs
 
 b1_perf_rows: list[dict[str, object]] = []
@@ -952,10 +1072,17 @@ for code in (B_GROWTH, B_VALUE):
                 perf = perf_daily(net, run, rf=CASH_IBO)
             used = net.dropna().index
             b1_perf_rows.append(
-                {"index": code, "signal": sig, "mapping": mp,
-                 "ann_return": perf["ann_return"], "sharpe_excess": perf["sharpe_excess"],
-                 "max_dd": perf["max_dd"], "avg_w": perf["avg_w"],
-                 "start": str(used[0].date()), "end": str(used[-1].date())}
+                {
+                    "index": code,
+                    "signal": sig,
+                    "mapping": mp,
+                    "ann_return": perf["ann_return"],
+                    "sharpe_excess": perf["sharpe_excess"],
+                    "max_dd": perf["max_dd"],
+                    "avg_w": perf["avg_w"],
+                    "start": str(used[0].date()),
+                    "end": str(used[-1].date()),
+                }
             )
     bh = ret.loc[B1_START:].copy()
     bh.iloc[0] = np.nan
@@ -963,10 +1090,17 @@ for code in (B_GROWTH, B_VALUE):
         perf = perf_daily(bh, pd.DataFrame({"w": 1.0, "turnover": 0.0, "ret": bh}), rf=CASH_IBO)
     used = bh.dropna().index
     b1_perf_rows.append(
-        {"index": code, "signal": "BH", "mapping": "BH",
-         "ann_return": perf["ann_return"], "sharpe_excess": perf["sharpe_excess"],
-         "max_dd": perf["max_dd"], "avg_w": 1.0,
-         "start": str(used[0].date()), "end": str(used[-1].date())}
+        {
+            "index": code,
+            "signal": "BH",
+            "mapping": "BH",
+            "ann_return": perf["ann_return"],
+            "sharpe_excess": perf["sharpe_excess"],
+            "max_dd": perf["max_dd"],
+            "avg_w": 1.0,
+            "start": str(used[0].date()),
+            "end": str(used[-1].date()),
+        }
     )
 b1_perf = pd.DataFrame(b1_perf_rows)[
     ["index", "signal", "mapping", "ann_return", "sharpe_excess", "max_dd", "avg_w", "start", "end"]
@@ -990,9 +1124,7 @@ for mp in ("R0", "R1"):
     g_v = net_ret(RUN_B1[B_GROWTH][("V", mp)], COST_MAIN)
     v_u = net_ret(RUN_B1[B_VALUE][("U", mp)], COST_MAIN)
     v_v = net_ret(RUN_B1[B_VALUE][("V", mp)], COST_MAIN)
-    frame = pd.concat(
-        {"g_u": g_u, "g_v": g_v, "v_u": v_u, "v_v": v_v}, axis=1
-    ).dropna()
+    frame = pd.concat({"g_u": g_u, "g_v": g_v, "v_u": v_u, "v_v": v_v}, axis=1).dropna()
     d_growth = frame["g_u"] - frame["g_v"]
     d_value = frame["v_u"] - frame["v_v"]
     d = d_growth - d_value
@@ -1000,11 +1132,17 @@ for mp in ("R0", "R1"):
     sum_v = float(d_value.sum())
     p_boot = stationary_boot_mean_p(d)
     b1_test_rows.append(
-        {"mapping": mp, "n_days": len(frame), "start": str(frame.index[0].date()),
-         "end": str(frame.index[-1].date()),
-         "sum_uv_growth": sum_g, "sum_uv_value": sum_v,
-         "mean_d_bp": float(d.mean()) * 1e4, "p_boot": p_boot,
-         "supports": bool(sum_g > 0 and p_boot < 0.10)}
+        {
+            "mapping": mp,
+            "n_days": len(frame),
+            "start": str(frame.index[0].date()),
+            "end": str(frame.index[-1].date()),
+            "sum_uv_growth": sum_g,
+            "sum_uv_value": sum_v,
+            "mean_d_bp": float(d.mean()) * 1e4,
+            "p_boot": p_boot,
+            "supports": bool(sum_g > 0 and p_boot < 0.10),
+        }
     )
 b1_test = pd.DataFrame(b1_test_rows)
 b1_supports_all = bool(b1_test["supports"].all() and set(b1_test["mapping"]) == {"R0", "R1"})
@@ -1063,7 +1201,10 @@ B23_CY = monthly_frame(spread_cy, spread_allshare)
 for name, df in (("300价差", B23_MAIN), ("创业板价差", B23_CY)):
     both = df[["d_tips", "d_be", "d_rus"]].dropna()
     gap = float(np.max(np.abs(both["d_tips"] + both["d_be"] - both["d_rus"])))
-    print(f"{name} 恒等式 |ΔTIPS + ΔBE − Δr_US| 最大 {gap:.3e}，n={len(both)}（阈值 1e-12）", flush=True)
+    print(
+        f"{name} 恒等式 |ΔTIPS + ΔBE − Δr_US| 最大 {gap:.3e}，n={len(both)}（阈值 1e-12）",
+        flush=True,
+    )
     if gap > 1e-12:
         raise RuntimeError(f"{name} 的 ΔTIPS + ΔBE 与 Δr_US 不一致（{gap:.3e}），停止")
 
@@ -1092,10 +1233,18 @@ def regress(
         raise RuntimeError(f"{spread_name} {model} {sample} 样本太短：{len(data)}")
     fit, n = nw_ols(data["spread"], data[list(x_cols)], NW_LAGS)
     return [
-        {"spread_name": spread_name, "model": model, "sample": sample, "var": col,
-         "coef": float(fit.params[col]), "t_nw": float(fit.tvalues[col]), "n": n,
-         "r2": float(fit.rsquared),
-         "start": str(data.index[0]), "end": str(data.index[-1])}
+        {
+            "spread_name": spread_name,
+            "model": model,
+            "sample": sample,
+            "var": col,
+            "coef": float(fit.params[col]),
+            "t_nw": float(fit.tvalues[col]),
+            "n": n,
+            "r2": float(fit.rsquared),
+            "start": str(data.index[0]),
+            "end": str(data.index[-1]),
+        }
         for col in x_cols
     ]
 
@@ -1113,8 +1262,10 @@ show("b23_reg", b23_reg)
 
 def pick(rows: pd.DataFrame, spread: str, model: str, sample: str, var: str) -> dict[str, object]:
     sel = rows[
-        (rows["spread_name"] == spread) & (rows["model"] == model)
-        & (rows["sample"] == sample) & (rows["var"] == var)
+        (rows["spread_name"] == spread)
+        & (rows["model"] == model)
+        & (rows["sample"] == sample)
+        & (rows["var"] == var)
     ]
     if len(sel) != 1:
         raise RuntimeError(f"b23 行不唯一：{spread} {model} {sample} {var} -> {len(sel)}")
@@ -1208,27 +1359,32 @@ for code in INDICES:
     _panel[f"pe|{code}"] = p["pe"]
     _panel[f"dy|{code}"] = p["dy"]
 panel_records["daily"] = json.loads(_panel.to_json(orient="records", date_format="iso"))
-_a_panel = pd.DataFrame({"trade_dt": open_idx, "DY": _a["DY"], "Dv": _a["Dv"],
-                         "Du": _a["Du"], "V": _a["V"]})
+_a_panel = pd.DataFrame(
+    {"trade_dt": open_idx, "DY": _a["DY"], "Dv": _a["Dv"], "Du": _a["Du"], "V": _a["V"]}
+)
 for k in SIGNALS_A:
     _a_panel[f"pct_{k}"] = _pct[k]
 panel_records["a_panel"] = json.loads(_a_panel.to_json(orient="records", date_format="iso"))
 for code in (B_GROWTH, B_VALUE):
     p = PANELS[code]
     pcts: dict[str, pd.Series] = p["pct"]
-    _b = pd.DataFrame({"trade_dt": open_idx, "U": p["U"], "V": p["V"],
-                       "pct_U": pcts["U"], "pct_V": pcts["V"]})
-    panel_records[f"b1_panel_{code}"] = json.loads(
-        _b.to_json(orient="records", date_format="iso")
+    _b = pd.DataFrame(
+        {"trade_dt": open_idx, "U": p["U"], "V": p["V"], "pct_U": pcts["U"], "pct_V": pcts["V"]}
     )
-panel_records["monthly"] = json.loads(
-    A_MONTHLY.to_json(orient="records", date_format="iso")
-)
+    panel_records[f"b1_panel_{code}"] = json.loads(_b.to_json(orient="records", date_format="iso"))
+panel_records["monthly"] = json.loads(A_MONTHLY.to_json(orient="records", date_format="iso"))
 
 input_digest = digest_json(
-    {"params": PARAMS, "panels": panel_records,
-     "starts": {"a": str(A_START.date()), "b1": str(B1_START.date()),
-                "b23_main": str(B23_MAIN_START), "b23_cy": str(B23_CY_START)}}
+    {
+        "params": PARAMS,
+        "panels": panel_records,
+        "starts": {
+            "a": str(A_START.date()),
+            "b1": str(B1_START.date()),
+            "b23_main": str(B23_MAIN_START),
+            "b23_cy": str(B23_CY_START),
+        },
+    }
 )
 
 results = {
@@ -1255,8 +1411,12 @@ for name, frame in results.items():
     frame.to_csv(out_dir / f"{name}.csv", index=False)
 summary = {
     "params": PARAMS,
-    "starts": {"a": str(A_START.date()), "b1": str(B1_START.date()),
-               "b23_main": str(B23_MAIN_START), "b23_cy": str(B23_CY_START)},
+    "starts": {
+        "a": str(A_START.date()),
+        "b1": str(B1_START.date()),
+        "b23_main": str(B23_MAIN_START),
+        "b23_cy": str(B23_CY_START),
+    },
     "pit_report": pit_report,
     "input_digest": input_digest,
     "output_digest": output_digest,

@@ -58,8 +58,7 @@ def _evaluate(context: ScheduleEvaluationContext) -> RunRequest | SkipReason:
         run_key=f"{_SCHEDULE_NAME}:{day}",
         run_config={
             "ops": {
-                item.op.name: {"config": {"write_db": True, "page_size": 1000}}
-                for item in _ASSETS
+                item.op.name: {"config": {"write_db": True, "page_size": 1000}} for item in _ASSETS
             }
         },
     )

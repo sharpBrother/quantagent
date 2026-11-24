@@ -88,9 +88,7 @@ def business_columns(spec: SrcTableWriteSpec) -> tuple[str, ...]:
     return tuple(
         name
         for name in spec.native_columns
-        if name not in _SYSTEM_COLUMNS
-        and name not in spec.system_columns
-        and name not in spec.keys
+        if name not in _SYSTEM_COLUMNS and name not in spec.system_columns and name not in spec.keys
     )
 
 

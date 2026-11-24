@@ -508,9 +508,28 @@ log(f"P1.1 全部完成，耗时 {time.monotonic() - t_p11:.1f}s")
 
 p11 = pd.DataFrame([p11_rows[key] for key in p11_order])
 p11_cols = [
-    "index", "model", "h", "var", "coef", "t_nw", "n", "effect_1sd", "ci_lo", "ci_hi",
-    "ivx_kind", "ivx_coef", "ivx_wald", "ivx_p", "ivx_p_pos", "ivx_n",
-    "r2_os", "cw_t", "p_boot_t_one_sided", "p_boot_t_two_sided", "p_boot_r2", "p_boot_cw",
+    "index",
+    "model",
+    "h",
+    "var",
+    "coef",
+    "t_nw",
+    "n",
+    "effect_1sd",
+    "ci_lo",
+    "ci_hi",
+    "ivx_kind",
+    "ivx_coef",
+    "ivx_wald",
+    "ivx_p",
+    "ivx_p_pos",
+    "ivx_n",
+    "r2_os",
+    "cw_t",
+    "p_boot_t_one_sided",
+    "p_boot_t_two_sided",
+    "p_boot_r2",
+    "p_boot_cw",
 ]
 p11 = p11[p11_cols]
 show("P1.1 p11_inference（000985.CSI 主口径）", p11[p11["index"] == MAIN])
@@ -655,15 +674,27 @@ for model in ("M0", *MODELS):
     cols = MODELS.get(model)
     if model == "M0":
         base_fc = oos_expanding(
-            yh1, design(vm_s, ("EY",)), 1, train_start=train_start_p13,
-            oos_start=oos_rel, min_history=MIN_HISTORY,
+            yh1,
+            design(vm_s, ("EY",)),
+            1,
+            train_start=train_start_p13,
+            oos_start=oos_rel,
+            min_history=MIN_HISTORY,
         )
         f13[model] = base_fc[["M0"]].rename(columns={"M0": "f"}).loc[eval_months]
     else:
-        f13[model] = oos_expanding(
-            yh1, design(vm_s, cols), 1, train_start=train_start_p13,
-            oos_start=oos_rel, min_history=MIN_HISTORY,
-        )[["model"]].rename(columns={"model": "f"}).loc[eval_months]
+        f13[model] = (
+            oos_expanding(
+                yh1,
+                design(vm_s, cols),
+                1,
+                train_start=train_start_p13,
+                oos_start=oos_rel,
+                min_history=MIN_HISTORY,
+            )[["model"]]
+            .rename(columns={"model": "f"})
+            .loc[eval_months]
+        )
 
 p13_rows: list[dict[str, object]] = []
 skipped = 0
@@ -693,7 +724,9 @@ p13 = pd.DataFrame(p13_rows)
 cer_m0 = float(p13.loc[p13["model"] == "M0", "cer"].iloc[0])
 p13["cer_gain_vs_m0"] = p13["cer"] - cer_m0
 p13 = p13[["model", "n", "cer", "cer_gain_vs_m0", "mean_w"]]
-log(f"P1.3 完成，耗时 {time.monotonic() - t_p13:.1f}s；训练期不足 {P13_VAR_MIN} 个月而跳过的评估月 {skipped} 个")
+log(
+    f"P1.3 完成，耗时 {time.monotonic() - t_p13:.1f}s；训练期不足 {P13_VAR_MIN} 个月而跳过的评估月 {skipped} 个"
+)
 show("P1.3 p13_cer（百分点/年；ex、var 单位见上）", p13)
 
 # %% [markdown]
@@ -754,8 +787,11 @@ for group, files in SPA_GROUPS.items():
         for name, fname in files.items()
     }
     frame = pd.DataFrame(rets).dropna()
-    print(f"\n{group}: 共同非 NaN 交易日 {len(frame)} 个，{frame.index[0].date()} .. "
-          f"{frame.index[-1].date()}", flush=True)
+    print(
+        f"\n{group}: 共同非 NaN 交易日 {len(frame)} 个，{frame.index[0].date()} .. "
+        f"{frame.index[-1].date()}",
+        flush=True,
+    )
     for benchmark in ("V_cn", "EY"):
         candidates = [c for c in frame.columns if c != benchmark]
         bench_loss = -frame[benchmark].to_numpy()
@@ -818,8 +854,7 @@ for model in GRADED:
     c1_h = [h for h in HORIZONS if float(p_holm_idx.loc[(model, h)]) < 0.05]
     c1 = len(c1_h) >= 2
     c2 = bool(c1_h) and all(
-        sum(float(p12_idx.loc[(s, model, h), "r2_os"]) > 0 for s in TRAIN_STARTS) >= 4
-        for h in c1_h
+        sum(float(p12_idx.loc[(s, model, h), "r2_os"]) > 0 for s in TRAIN_STARTS) >= 4 for h in c1_h
     )
     c3_h = []
     for h in HORIZONS:

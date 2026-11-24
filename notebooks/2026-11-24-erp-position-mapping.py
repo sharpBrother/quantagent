@@ -101,8 +101,14 @@ TAU = pd.Timestamp("2022-04-12")  # 报告一的切换日，Q2a 用它算占比
 CASH_MAIN = "cash_ibo7d"
 CASH_LEGS = ("cash_ibo7d", "cash_10y")
 COST_MAIN = 5
-PERF_SPECS = ((CASH_MAIN, COST_MAIN), (CASH_MAIN, 0), (CASH_MAIN, 10),
-              ("cash_10y", 0), ("cash_10y", 5), ("cash_10y", 10))
+PERF_SPECS = (
+    (CASH_MAIN, COST_MAIN),
+    (CASH_MAIN, 0),
+    (CASH_MAIN, 10),
+    ("cash_10y", 0),
+    ("cash_10y", 5),
+    ("cash_10y", 10),
+)
 SEED = 20261124
 HORIZONS = (1, 3, 6, 12)
 MIN_HISTORY = 60
@@ -132,17 +138,17 @@ PARAMS = {
     "r4_signals": list(R4_SIGNALS),
     "r4_detail": {
         "panel": "signal day = last trading day of month; fwd1 = log return (pct) from next day "
-                 "after signal to next month's next-day-after-signal close",
+        "after signal to next month's next-day-after-signal close",
         "cash_m": "sum(log1p(cash_accrual(cn_ibo_7d))) over the same interval, pct",
         "ex": "fwd1 - cash_m",
         "predictor": "signal level (EY / V) at the signal day, as in report two P1.1/P1.3",
         "forecast": "oos_expanding(ex, level, 1, train_start=first valid month, "
-                    "oos_start=first month with >=60 training months, min_history=60)",
+        "oos_start=first month with >=60 training months, min_history=60)",
         "var": "variance (ddof=1) of the last 60 valid training ex months with q <= i-2",
         "weight": "clip(100*f/(3*var), 0, 1); units as in report two P1.3",
     },
     "r3_detail": "sigma60 = ret.rolling(60).std()*sqrt(244) and expanding median use the full "
-                 "available daily return history of the index (backward looking only)",
+    "available daily return history of the index (backward looking only)",
     "band": BAND,
     "sigma_window": SIGMA_WINDOW,
     "tau": str(TAU.date()),
@@ -157,12 +163,20 @@ PARAMS = {
     "min_history": MIN_HISTORY,
     "n_boot": N_BOOT,
     "boot_block": BOOT_BLOCK,
-    "spa": {"block_size": SPA_BLOCK, "reps": SPA_REPS, "bootstrap": "stationary",
-            "studentize": True, "seed": SEED, "loss": "-net_ret"},
+    "spa": {
+        "block_size": SPA_BLOCK,
+        "reps": SPA_REPS,
+        "bootstrap": "stationary",
+        "studentize": True,
+        "seed": SEED,
+        "loss": "-net_ret",
+    },
     "nw_lags": NW_LAGS,
-    "q2d": {"predictor": "signal level (EY / V / U / M) at the signal day, as in report two P1.1",
-            "train_start": "first valid month of the index",
-            "seed_rule": "SeedSequence(20261124).spawn(2)[index].spawn(4)[model]"},
+    "q2d": {
+        "predictor": "signal level (EY / V / U / M) at the signal day, as in report two P1.1",
+        "train_start": "first valid month of the index",
+        "seed_rule": "SeedSequence(20261124).spawn(2)[index].spawn(4)[model]",
+    },
     "p01_run": f"research/erp_max_attribution/{P01_RUN}",
 }
 
@@ -259,10 +273,7 @@ ibo = pd.Series(np.where(stale_ibo | pd.isna(obs_ibo), np.nan, vals_ibo), index=
 CASH_10Y = cash_accrual(r_cn)
 CASH_IBO = cash_accrual(ibo)
 CASH_BY_LEG = {"cash_10y": CASH_10Y, "cash_ibo7d": CASH_IBO}
-log(
-    f"有效天数: r_cn {r_cn.notna().sum()} r_us {r_us.notna().sum()} "
-    f"ibo {ibo.notna().sum()}"
-)
+log(f"有效天数: r_cn {r_cn.notna().sum()} r_us {r_us.notna().sum()} ibo {ibo.notna().sum()}")
 
 # 每月最后一个交易日：R2 的目标只在这些日子更新
 _month = open_idx.to_period("M")
@@ -318,8 +329,9 @@ def build_panel(code: str) -> dict[str, object]:
     v = ey - r_cn
     u = ey - r_us
     m = ey - np.maximum(r_us, r_cn)
-    pcts = {k: rolling_percentile(s, PCT_YEARS) for k, s in
-            (("EY", ey), ("V", v), ("U", u), ("M", m))}
+    pcts = {
+        k: rolling_percentile(s, PCT_YEARS) for k, s in (("EY", ey), ("V", v), ("U", u), ("M", m))
+    }
     ok = pd.concat(pcts, axis=1).notna().all(axis=1)
     if not ok.any():
         raise RuntimeError(f"{code} 四个 5 年分位没有共同有效日，停止")
@@ -327,8 +339,17 @@ def build_panel(code: str) -> dict[str, object]:
     if not ok.loc[own_start:].all():
         raise RuntimeError(f"{code} 起点之后有分位缺失，停止")
     ret = ret_map[tr].reindex(open_idx) / 100.0
-    return {"code": code, "tr": tr, "ey": ey, "V": v, "U": u, "M": m,
-            "pct": pcts, "own_start": own_start, "ret": ret}
+    return {
+        "code": code,
+        "tr": tr,
+        "ey": ey,
+        "V": v,
+        "U": u,
+        "M": m,
+        "pct": pcts,
+        "own_start": own_start,
+        "ret": ret,
+    }
 
 
 PANELS = {code: build_panel(code) for code in INDICES}
@@ -390,8 +411,16 @@ for tag, sig, w_col, r_col in (("V", "V", "b_w", "b_ret"), ("M", "M", "a_w", "a_
     )
     n_w = assert_identical(run["w"], p01[w_col], f"{tag} w")
     n_r = assert_identical(run["ret"], p01[r_col], f"{tag} ret")
-    repro_rows.append({"signal": tag, "mapping": "R0", "window": str(START_P01.date()),
-                       "points": n_w, "equal_w": True, "equal_ret": True})
+    repro_rows.append(
+        {
+            "signal": tag,
+            "mapping": "R0",
+            "window": str(START_P01.date()),
+            "points": n_w,
+            "equal_w": True,
+            "equal_ret": True,
+        }
+    )
     log(f"断言 {tag}: w/ret 与 p01_daily 逐位相等（{n_r} 个交易日）")
 repro = pd.DataFrame(repro_rows)
 print(repro.to_string(index=False), flush=True)
@@ -403,8 +432,11 @@ print(repro.to_string(index=False), flush=True)
 # 全收益对数收益（百分点），与报告二 P1.3 同口径。月现金用同业拆借 7 天在同一区间累计。
 # 先断言此口径下 000985 的 `fwd1` 与报告二上游 `monthly.csv` 的 `fwd1|000985.CSI` 一致。
 
+
 # %%
-def build_monthly(open_idx: pd.DatetimeIndex, ret: pd.Series, cash_daily: pd.Series) -> pd.DataFrame:
+def build_monthly(
+    open_idx: pd.DatetimeIndex, ret: pd.Series, cash_daily: pd.Series
+) -> pd.DataFrame:
     """月频面板：period、signal_dt、fwd1（百分点，对数）、cash_m（百分点，对数）。"""
     month = open_idx.to_period("M")
     last = pd.Series(open_idx, index=month).groupby(level=0).max()
@@ -426,8 +458,12 @@ def build_monthly(open_idx: pd.DatetimeIndex, ret: pd.Series, cash_daily: pd.Ser
         if len(wc) and not np.isnan(wc).any():
             cash_m[i] = float(np.log1p(wc).sum() * 100.0)
     return pd.DataFrame(
-        {"period": last.index.astype(str).to_numpy(), "signal_dt": sig_dt,
-         "fwd1": fwd1, "cash_m": cash_m}
+        {
+            "period": last.index.astype(str).to_numpy(),
+            "signal_dt": sig_dt,
+            "fwd1": fwd1,
+            "cash_m": cash_m,
+        }
     )
 
 
@@ -435,9 +471,7 @@ for code, p in PANELS.items():
     mp = build_monthly(open_idx, p["ret"], CASH_IBO)
     for sig in SIGNALS:
         mp[f"pct|{sig}"] = p["pct"][sig].reindex(pd.DatetimeIndex(mp["signal_dt"])).to_numpy()
-        mp[f"level|{sig}"] = p[LEVEL_KEY[sig]].reindex(
-            pd.DatetimeIndex(mp["signal_dt"])
-        ).to_numpy()
+        mp[f"level|{sig}"] = p[LEVEL_KEY[sig]].reindex(pd.DatetimeIndex(mp["signal_dt"])).to_numpy()
     p["monthly"] = mp
     log(f"{code} 月频面板 {len(mp)} 个月 {mp['period'].iloc[0]}..{mp['period'].iloc[-1]}")
 
@@ -506,14 +540,16 @@ for code, p in PANELS.items():
             w_hist.append(w)
             n_use += 1
         targets[sig] = tgt
-        info[sig] = {"panel_first_month": str(mp["period"].iloc[first]),
-                     "oos_start_month": str(mp["period"].iloc[oos_start]),
-                     "n_predictions": n_use,
-                     "w_min": float(np.min(w_hist)) if w_hist else None,
-                     "w_max": float(np.max(w_hist)) if w_hist else None,
-                     "w_mean": float(np.mean(w_hist)) if w_hist else None,
-                     "n_nonzero": int(np.sum(np.asarray(w_hist) > 0)) if w_hist else 0,
-                     "first_target_dt": None if first_dt is None else str(first_dt.date())}
+        info[sig] = {
+            "panel_first_month": str(mp["period"].iloc[first]),
+            "oos_start_month": str(mp["period"].iloc[oos_start]),
+            "n_predictions": n_use,
+            "w_min": float(np.min(w_hist)) if w_hist else None,
+            "w_max": float(np.max(w_hist)) if w_hist else None,
+            "w_mean": float(np.mean(w_hist)) if w_hist else None,
+            "n_nonzero": int(np.sum(np.asarray(w_hist) > 0)) if w_hist else 0,
+            "first_target_dt": None if first_dt is None else str(first_dt.date()),
+        }
     p["r4_target"] = targets
     r4_info[code] = info
     log(f"{code} R4: V {info['V']} | EY {info['EY']}")
@@ -542,9 +578,7 @@ for leg in CASH_LEGS:
             pp = base.loc[own:]
             runs[(sig, "R0")] = ratchet(pp, rr, lag=1, cash=cc)
             runs[(sig, "R1")] = ratchet(pp, rr, lag=1, cash=cc, one_way=False)
-            runs[(sig, "R2")] = ratchet(
-                pp.where(KEEP.loc[own:]), rr, lag=1, cash=cc, one_way=False
-            )
+            runs[(sig, "R2")] = ratchet(pp.where(KEEP.loc[own:]), rr, lag=1, cash=cc, one_way=False)
             vol_target = base * np.minimum(1.0, sigma_bar / sigma60)
             runs[(sig, "R3")] = ratchet(vol_target.loc[own:], rr, lag=1, cash=cc, one_way=False)
             if sig in R4_SIGNALS:
@@ -562,9 +596,7 @@ def net_of(leg: str, code: str, sig: str, mp: str, cost_bps: int) -> pd.Series:
 
 
 OWN_START_COMMON = max(OWN_START.values())
-R4_START = {
-    code: RUNS[CASH_MAIN][code][("V", "R4")]["ret"].dropna().index[0] for code in INDICES
-}
+R4_START = {code: RUNS[CASH_MAIN][code][("V", "R4")]["ret"].dropna().index[0] for code in INDICES}
 WINDOWS = {
     code: {
         "own": OWN_START[code],
@@ -573,12 +605,13 @@ WINDOWS = {
     }
     for code in INDICES
 }
-log(f"共同区间起点 {OWN_START_COMMON.date()}；R4 起点 "
-    + " ".join(f"{k} {v.date()}" for k, v in R4_START.items()))
+log(
+    f"共同区间起点 {OWN_START_COMMON.date()}；R4 起点 "
+    + " ".join(f"{k} {v.date()}" for k, v in R4_START.items())
+)
 
 BH_RUN = {
-    code: pd.DataFrame({"w": 1.0, "turnover": 0.0, "ret": p["ret"]})
-    for code, p in PANELS.items()
+    code: pd.DataFrame({"w": 1.0, "turnover": 0.0, "ret": p["ret"]}) for code, p in PANELS.items()
 }
 
 # %% [markdown]
@@ -611,9 +644,17 @@ for code, p in PANELS.items():
                         perf = perf_daily(net, run.loc[r.index], rf=cash_leg)
                     used = net.dropna().index
                     perf_rows.append(
-                        {"index": code, "window": wname, "cash_leg": leg, "cost_bps": cost,
-                         "signal": sig, "mapping": mp,
-                         "start": str(used[0].date()), "end": str(used[-1].date())} | perf
+                        {
+                            "index": code,
+                            "window": wname,
+                            "cash_leg": leg,
+                            "cost_bps": cost,
+                            "signal": sig,
+                            "mapping": mp,
+                            "start": str(used[0].date()),
+                            "end": str(used[-1].date()),
+                        }
+                        | perf
                     )
             # 买入持有：满仓全收益指数，首日无收益（与报告一同口径），不计成本
             bh = p["ret"].loc[wstart:AS_OF].copy()
@@ -623,14 +664,34 @@ for code, p in PANELS.items():
                 perf = perf_daily(bh, bh_run, rf=cash_leg)
             used = bh.dropna().index
             perf_rows.append(
-                {"index": code, "window": wname, "cash_leg": leg, "cost_bps": cost,
-                 "signal": "BH", "mapping": "BH",
-                 "start": str(used[0].date()), "end": str(used[-1].date())} | perf
+                {
+                    "index": code,
+                    "window": wname,
+                    "cash_leg": leg,
+                    "cost_bps": cost,
+                    "signal": "BH",
+                    "mapping": "BH",
+                    "start": str(used[0].date()),
+                    "end": str(used[-1].date()),
+                }
+                | perf
             )
 p4_perf = pd.DataFrame(perf_rows)
 perf_cols = [
-    "index", "window", "cash_leg", "cost_bps", "signal", "mapping", "start", "end",
-    "ann_return", "ann_vol", "sharpe_excess", "max_dd", "avg_w", "turnover_per_year",
+    "index",
+    "window",
+    "cash_leg",
+    "cost_bps",
+    "signal",
+    "mapping",
+    "start",
+    "end",
+    "ann_return",
+    "ann_vol",
+    "sharpe_excess",
+    "max_dd",
+    "avg_w",
+    "turnover_per_year",
 ]
 p4_perf = p4_perf[perf_cols]
 log(f"p4_perf {len(p4_perf)} 行")
@@ -645,6 +706,7 @@ show(
 
 # %% [markdown]
 # ## SPA 工具
+
 
 # %%
 def run_spa(bench: pd.Series, cands: dict[str, pd.Series]) -> dict[str, object]:
@@ -697,14 +759,14 @@ q1_src = p4_perf[
     & (p4_perf["cost_bps"] == COST_MAIN)
     & (p4_perf["signal"] == "V")
 ]
-q1 = q1_src.pivot(index="mapping", columns="index", values="sharpe_excess").reindex(
-    list(MAPPINGS)
-)
+q1 = q1_src.pivot(index="mapping", columns="index", values="sharpe_excess").reindex(list(MAPPINGS))
 r0_sharpe = q1.loc["R0", list(INDICES)]
 q1["beats_r0_all"] = [bool((q1.loc[m, list(INDICES)] > r0_sharpe).all()) for m in MAPPINGS]
 p4_q1 = q1.reset_index()[["mapping", *INDICES, "beats_r0_all"]]
 show("p4_q1 主口径 V 的五种映射超额夏普（own window）", p4_q1)
-log(f"p4_q1 中优于 R0 的映射（三个指数都高）：{p4_q1.loc[p4_q1['beats_r0_all'], 'mapping'].tolist()}")
+log(
+    f"p4_q1 中优于 R0 的映射（三个指数都高）：{p4_q1.loc[p4_q1['beats_r0_all'], 'mapping'].tolist()}"
+)
 
 # %% [markdown]
 # ## Q2：前两阶段的结论在价值、成长指数上是否成立？
@@ -775,10 +837,24 @@ for code in INDICES:
     q2_rows.append(row)
 p4_q2 = pd.DataFrame(q2_rows)
 p4_q2 = p4_q2[
-    ["index", "sum_mv_r0_10y_0bp", "share_post_tau", "a_holds", "sum_mv_r0_main",
-     "sum_mv_r1_10y_0bp", "ratio_r1_over_r0", "b_holds",
-     "p_consistent_R0", "p_consistent_R1", "p_consistent_R2", "p_consistent_R3",
-     "min_p_consistent", "min_p_mapping", "c_holds", "same_conclusion"]
+    [
+        "index",
+        "sum_mv_r0_10y_0bp",
+        "share_post_tau",
+        "a_holds",
+        "sum_mv_r0_main",
+        "sum_mv_r1_10y_0bp",
+        "ratio_r1_over_r0",
+        "b_holds",
+        "p_consistent_R0",
+        "p_consistent_R1",
+        "p_consistent_R2",
+        "p_consistent_R3",
+        "min_p_consistent",
+        "min_p_mapping",
+        "c_holds",
+        "same_conclusion",
+    ]
 ]
 show("p4_q2 逐条判定（a/b/c）", p4_q2)
 
@@ -791,15 +867,9 @@ show("p4_q2 逐条判定（a/b/c）", p4_q2)
 spa_rows: list[dict[str, object]] = []
 for code in INDICES:
     own = OWN_START[code]
-    combos = [
-        (sig, mp)
-        for sig in SIGNALS
-        for mp in MAPPINGS
-        if (sig, mp) in RUNS[CASH_MAIN][code]
-    ]
+    combos = [(sig, mp) for sig in SIGNALS for mp in MAPPINGS if (sig, mp) in RUNS[CASH_MAIN][code]]
     all_cands = {
-        f"{sig}+{mp}": net_of(CASH_MAIN, code, sig, mp, COST_MAIN).loc[own:]
-        for sig, mp in combos
+        f"{sig}+{mp}": net_of(CASH_MAIN, code, sig, mp, COST_MAIN).loc[own:] for sig, mp in combos
     }
     bh = PANELS[code]["ret"].loc[own:].copy()
     bh.iloc[0] = np.nan
@@ -810,12 +880,25 @@ for code in INDICES:
     for bench_name, (bench, cands) in groups.items():
         res = run_spa(bench, cands)
         spa_rows.append({"index": code, "benchmark": bench_name} | res)
-        log(f"SPA {code} 基准 {bench_name}: n={res['n_days']} "
-            f"{res['start']}..{res['end']} p_consistent={res['p_consistent']:.4f}")
+        log(
+            f"SPA {code} 基准 {bench_name}: n={res['n_days']} "
+            f"{res['start']}..{res['end']} p_consistent={res['p_consistent']:.4f}"
+        )
 p4_spa = pd.DataFrame(spa_rows)
 p4_spa = p4_spa[
-    ["index", "benchmark", "n_days", "start", "end", "n_models", "p_lower",
-     "p_consistent", "p_upper", "best_model", "best_mean_diff_bp"]
+    [
+        "index",
+        "benchmark",
+        "n_days",
+        "start",
+        "end",
+        "n_models",
+        "p_lower",
+        "p_consistent",
+        "p_upper",
+        "best_model",
+        "best_mean_diff_bp",
+    ]
 ]
 show("p4_spa", p4_spa)
 
@@ -826,6 +909,7 @@ show("p4_spa", p4_spa)
 # 四个模型 × 四个期限做 Holm。预测变量用信号的水平值（EY / V / U / M），同报告二 P1.1。
 # 评级按计划的 P1.5 规则，「训练起点网格」这一条按不满足计，
 # 所以最高第 2 类。000985 不重算，直接记为「见报告二」。
+
 
 # %%
 def nw_hac(y: np.ndarray, x: np.ndarray, h: int) -> tuple[np.ndarray, np.ndarray]:
@@ -875,11 +959,16 @@ for pos, code in enumerate(Q2D_INDICES):
                 yh, xc, h, train_start=0, oos_start=o_start, min_history=MIN_HISTORY
             ).dropna()
             cw_t, cw_p = clark_west_np(fc["y"], fc["M0"], fc["model"], h)
-            real[h] = {"t": float(fit.tvalues["x"]), "coef": float(fit.params["x"]),
-                       "n": int(ok.sum()), "ivx_p_pos": float(ivx["p_one_sided_pos"]),
-                       "r2_os": r2_os(fc["y"], fc["model"], fc["M0"]),
-                       "cw_t": cw_t, "cw_p": cw_p,
-                       "oos_start": str(mp["period"].iloc[a + o_start])}
+            real[h] = {
+                "t": float(fit.tvalues["x"]),
+                "coef": float(fit.params["x"]),
+                "n": int(ok.sum()),
+                "ivx_p_pos": float(ivx["p_one_sided_pos"]),
+                "r2_os": r2_os(fc["y"], fc["model"], fc["M0"]),
+                "cw_t": cw_t,
+                "cw_p": cw_p,
+                "oos_start": str(mp["period"].iloc[a + o_start]),
+            }
         boot_t = {h: np.empty(N_BOOT) for h in HORIZONS}
         for bi in range(N_BOOT):
             idx = stationary_indices(len(y1c) - 1, BOOT_BLOCK, rng)
@@ -891,25 +980,30 @@ for pos, code in enumerate(Q2D_INDICES):
                 boot_t[h][bi] = t_star[1]
         for h in HORIZONS:
             rows_m[(model, h)] = {
-                "index": code, "model": model, "h": h, "n": real[h]["n"],
-                "coef": real[h]["coef"], "t_nw": real[h]["t"],
+                "index": code,
+                "model": model,
+                "h": h,
+                "n": real[h]["n"],
+                "coef": real[h]["coef"],
+                "t_nw": real[h]["t"],
                 "ivx_p_one_sided": real[h]["ivx_p_pos"],
                 "p_boot_one_sided": float(np.mean(boot_t[h] >= real[h]["t"])),
-                "r2_os": real[h]["r2_os"], "cw_t": real[h]["cw_t"], "cw_p": real[h]["cw_p"],
+                "r2_os": real[h]["r2_os"],
+                "cw_t": real[h]["cw_t"],
+                "cw_p": real[h]["cw_p"],
                 "oos_start": real[h]["oos_start"],
             }
         log(f"  {model}: 预测起点 {real[1]['oos_start']}，自助 {N_BOOT} 次完成")
     keys = [(m, h) for m in Q2D_MODELS for h in HORIZONS]
-    p_holm = multipletests(
-        [float(rows_m[k]["cw_p"]) for k in keys], method="holm"
-    )[1]
+    p_holm = multipletests([float(rows_m[k]["cw_p"]) for k in keys], method="holm")[1]
     for k, ph in zip(keys, p_holm, strict=True):
         rows_m[k]["p_holm"] = float(ph)
     for model in Q2D_MODELS:
         c1_h = [h for h in HORIZONS if float(rows_m[(model, h)]["p_holm"]) < 0.05]
         c1 = len(c1_h) >= 2
         c3_h = [
-            h for h in HORIZONS
+            h
+            for h in HORIZONS
             if float(rows_m[(model, h)]["ivx_p_one_sided"]) < 0.05
             or float(rows_m[(model, h)]["p_boot_one_sided"]) < 0.05
         ]
@@ -917,16 +1011,36 @@ for pos, code in enumerate(Q2D_INDICES):
         # 条件 2（训练起点网格）按计划记为不满足，所以第 3 类不可达
         grade = "2" if (c1 or len(c3_h) >= 2) else "5"
         q2d_grade_rows.append(
-            {"index": code, "model": model, "c1_horizons": ",".join(map(str, c1_h)),
-             "c1": c1, "c2": False, "c3_horizons": ",".join(map(str, c3_h)),
-             "c3_on_c1": c3_on_c1, "grade": grade,
-             "note": "条件 2（训练起点网格）按计划记为不满足，最高第 2 类"}
+            {
+                "index": code,
+                "model": model,
+                "c1_horizons": ",".join(map(str, c1_h)),
+                "c1": c1,
+                "c2": False,
+                "c3_horizons": ",".join(map(str, c3_h)),
+                "c3_on_c1": c3_on_c1,
+                "grade": grade,
+                "note": "条件 2（训练起点网格）按计划记为不满足，最高第 2 类",
+            }
         )
     q2d_rows.extend(rows_m[k] for k in keys)
 p4_q2d = pd.DataFrame(q2d_rows)
 p4_q2d = p4_q2d[
-    ["index", "model", "h", "n", "coef", "t_nw", "ivx_p_one_sided", "p_boot_one_sided",
-     "r2_os", "cw_t", "cw_p", "p_holm", "oos_start"]
+    [
+        "index",
+        "model",
+        "h",
+        "n",
+        "coef",
+        "t_nw",
+        "ivx_p_one_sided",
+        "p_boot_one_sided",
+        "r2_os",
+        "cw_t",
+        "cw_p",
+        "p_holm",
+        "oos_start",
+    ]
 ]
 p4_q2d_grade = pd.DataFrame(q2d_grade_rows)
 # 000985 不重算，直接标注
@@ -963,10 +1077,15 @@ for code in INDICES:
             ex_m = frame["m"] - frame["c"]
             fit = nw_ols(ex_s, pd.DataFrame({"ex_m": ex_m}), NW_LAGS)[0]
             timing_rows.append(
-                {"index": code, "signal": sig, "mapping": mp, "n": len(frame),
-                 "beta": float(fit.params["ex_m"]),
-                 "alpha_ann": float(fit.params["const"]) * 12,
-                 "t_alpha": float(fit.tvalues["const"])}
+                {
+                    "index": code,
+                    "signal": sig,
+                    "mapping": mp,
+                    "n": len(frame),
+                    "beta": float(fit.params["ex_m"]),
+                    "alpha_ann": float(fit.params["const"]) * 12,
+                    "t_alpha": float(fit.tvalues["const"]),
+                }
             )
 p4_timing = pd.DataFrame(timing_rows)
 show("p4_timing R0/R1 的 CAPM α（年化）与 t", p4_timing)
@@ -992,11 +1111,19 @@ corr_rows = []
 for ca in corr_frame.columns:
     for cb in corr_frame.columns:
         pair = corr_frame[[ca, cb]].dropna()
-        corr_rows.append({"series_a": ca, "series_b": cb,
-                          "corr": float(corr_matrix.loc[ca, cb]), "n_days": len(pair)})
+        corr_rows.append(
+            {
+                "series_a": ca,
+                "series_b": cb,
+                "corr": float(corr_matrix.loc[ca, cb]),
+                "n_days": len(pair),
+            }
+        )
 p4_q3_corr = pd.DataFrame(corr_rows)
-log(f"p4_q3 相关矩阵：共同区间 {OWN_START_COMMON.date()}..{AS_OF.isoformat()}，"
-    f"{len(corr_frame)} 个交易日")
+log(
+    f"p4_q3 相关矩阵：共同区间 {OWN_START_COMMON.date()}..{AS_OF.isoformat()}，"
+    f"{len(corr_frame)} 个交易日"
+)
 
 q3_rows = []
 for code in INDICES:
@@ -1004,9 +1131,14 @@ for code in INDICES:
     w_v = RUNS[CASH_MAIN][code][("V", "R0")]["w"].loc[TAU:]
     diff = w_m - w_v
     q3_rows.append(
-        {"index": code, "from": str(TAU.date()), "days": int(diff.notna().sum()),
-         "avg_w_M": float(w_m.mean()), "avg_w_V": float(w_v.mean()),
-         "avg_diff_M_minus_V": float(diff.mean())}
+        {
+            "index": code,
+            "from": str(TAU.date()),
+            "days": int(diff.notna().sum()),
+            "avg_w_M": float(w_m.mean()),
+            "avg_w_V": float(w_v.mean()),
+            "avg_diff_M_minus_V": float(diff.mean()),
+        }
     )
 p4_q3_position = pd.DataFrame(q3_rows)
 show("p4_q3 2022-04-12 以后 R0 下 M 与 V 的平均仓位", p4_q3_position)
@@ -1052,16 +1184,25 @@ pit_report = {
 panel_records = {}
 for code, p in PANELS.items():
     frame = pd.DataFrame(
-        {"trade_dt": open_idx, "ey": p["ey"], "V": p["V"], "U": p["U"], "M": p["M"],
-         "ret": p["ret"]}
+        {
+            "trade_dt": open_idx,
+            "ey": p["ey"],
+            "V": p["V"],
+            "U": p["U"],
+            "M": p["M"],
+            "ret": p["ret"],
+        }
     )
     for k in SIGNALS:
         frame[f"pct_{k}"] = p["pct"][k]
     panel_records[code] = json.loads(frame.to_json(orient="records", date_format="iso"))
 input_digest = digest_json(
-    {"params": PARAMS, "panels": panel_records,
-     "r4_info": r4_info,
-     "windows": {c: {k: str(v.date()) for k, v in w.items()} for c, w in WINDOWS.items()}}
+    {
+        "params": PARAMS,
+        "panels": panel_records,
+        "r4_info": r4_info,
+        "windows": {c: {k: str(v.date()) for k, v in w.items()} for c, w in WINDOWS.items()},
+    }
 )
 
 results = {

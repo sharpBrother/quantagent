@@ -111,15 +111,15 @@ PARAMS = {
         "allshare": ALL_TR,
     },
     "spread_definition": "100 * [sum log1p(r_left) - sum log1p(r_right)] over the window, "
-                         "NaN if any daily return in the window is missing",
+    "NaN if any daily return in the window is missing",
     "spread_same_month": "(previous signal day, this signal day] in daily total returns",
     "fwd_spread": "from the close of T+1 (first open day after the signal day) to the close of "
-                  "T'+1 (first open day after the next signal day), i.e. daily returns "
-                  "(T+1, T'+1]; NaN if any day missing or T'+1 beyond as_of",
+    "T'+1 (first open day after the next signal day), i.e. daily returns "
+    "(T+1, T'+1]; NaN if any day missing or T'+1 beyond as_of",
     "signal_day": "last open A-share day of the natural month; the last month is truncated at "
-                  "as_of",
+    "as_of",
     "sample_start": "first month where the same-month spread is available: "
-                    f"{EXPECTED_START[SPREAD_300]} (300) / {EXPECTED_START[SPREAD_CYB]} (cyb)",
+    f"{EXPECTED_START[SPREAD_300]} (300) / {EXPECTED_START[SPREAD_CYB]} (cyb)",
     "rates_at_signal_day": {
         "r_us": "latest observation strictly before T-1 (7 calendar days stale limit)",
         "tips": "ALFRED vintage read per signal day as_of=T, strictly before T, 7 day stale limit",
@@ -137,32 +137,37 @@ PARAMS = {
     "h_supp_target": "fwd_spread_t + fwd_spread_{t+1} + fwd_spread_{t+2}; NaN if any term NaN",
     "min_train_months": MIN_TRAIN,
     "c2_train_rule": "prediction for month i uses month j only if the fwd spread of j is already "
-                     "realized by the signal day T_i, i.e. date(T'_j + 1) <= date(T_i) "
-                     "(equivalently j <= i-2); baseline = mean of training fwd",
+    "realized by the signal day T_i, i.e. date(T'_j + 1) <= date(T_i) "
+    "(equivalently j <= i-2); baseline = mean of training fwd",
     "c2_cw_lags": "h + 2 = 3 (erp_lib.clark_west_np uses maxlags=max(h,1), so pass 3)",
     "cost_bps_one_way": COST_BPS,
     "cost_rule": "5bp * (|dw_growth| + |dw_value|) charged on the rebalance day T+1",
     "c3_rule": "d_tips(T) < 0 -> hold 300 growth next month, else (including ==0) hold 300 value; "
-               "NaN d_tips -> no signal, carry the previous holding",
+    "NaN d_tips -> no signal, carry the previous holding",
     "c3_execution": "holdings take effect at the close of T+1, so daily returns start at T+2; "
-                    "the daily series starts on the first T+1 with a cash position (0 return "
-                    "minus the entry cost)",
+    "the daily series starts on the first T+1 with a cash position (0 return "
+    "minus the entry cost)",
     "bench_5050": "rebalanced to 0.5/0.5 at every same rebalance day T+1, weights drift inside "
-                  "the day, rebalance cost from drifted weights",
+    "the day, rebalance cost from drifted weights",
     "bh": "100% in h00918.CSI / h00919.CSI from the first T+1, no cost, first day in cash",
     "seed": SEED,
     "boot_block_days": BOOT_BLOCK,
     "n_boot": N_BOOT,
-    "c3_bootstrap": {"class": "arch.bootstrap.StationaryBootstrap", "block_size": BOOT_BLOCK,
-                     "reps": N_BOOT, "seed": SEED, "statistic": "mean of resampled centred "
-                     "daily excess", "p_rule": "mean(boot_mean >= real_mean), one sided"},
+    "c3_bootstrap": {
+        "class": "arch.bootstrap.StationaryBootstrap",
+        "block_size": BOOT_BLOCK,
+        "reps": N_BOOT,
+        "seed": SEED,
+        "statistic": "mean of resampled centred daily excess",
+        "p_rule": "mean(boot_mean >= real_mean), one sided",
+    },
     "us_stale_days": US_STALE_DAYS,
     "ann_excess": "mean(daily excess) * 244",
     "excess_sharpe": "mean(daily excess) / std(daily excess) * sqrt(244)",
     "hit_rate_month": "share of months with same-month-window excess > 0",
     "c_predict_holds": "Holm p of d_tips < 0.05 and C2 CW p of d_tips < 0.05",
     "c_rotation_holds": "ann_excess > 0 and p_boot < 0.10 and both half-sample ann_excess > 0, "
-                        "adjudicated for tips_sign only",
+    "adjudicated for tips_sign only",
     "research_class": "direction taken from the same sample as report five; class at most 2",
     "ref_b2_run": f"research/erp_dividend_growth/{B2_REF_RUN}",
 }
@@ -208,13 +213,9 @@ def point_series(series_id: str) -> pd.Series:
 r_cn_raw = point_series("cn_cgb_10y")
 r_us_raw = point_series("us_ust_10y").dropna()
 fx_raw = point_series("cn_usdcny_fix")
-log(
-    f"中债 {len(r_cn_raw)} 美债 {len(r_us_raw)} 中间价 {int(fx_raw.notna().sum())}"
-)
+log(f"中债 {len(r_cn_raw)} 美债 {len(r_us_raw)} 中间价 {int(fx_raw.notna().sum())}")
 
-ret_rows = index_returns.list_returns(
-    as_of=AS_OF, start=START, end=AS_OF, wind_codes=TR_CODES
-)
+ret_rows = index_returns.list_returns(as_of=AS_OF, start=START, end=AS_OF, wind_codes=TR_CODES)
 ret_map = {
     code: pd.Series(
         {
@@ -412,8 +413,7 @@ if not b2_ref_path.is_file():
     raise RuntimeError(f"报告五的 b23_reg.csv 不存在：{b2_ref_path}")
 b2_ref = pd.read_csv(b2_ref_path, float_precision="round_trip")
 b2_ref_rows = b2_ref[
-    (b2_ref["spread_name"] == SPREAD_300) & (b2_ref["model"] == "B2")
-    & (b2_ref["sample"] == "full")
+    (b2_ref["spread_name"] == SPREAD_300) & (b2_ref["model"] == "B2") & (b2_ref["sample"] == "full")
 ].set_index("var")
 if set(b2_ref_rows.index) != {"d_rus", "d_rcn"}:
     raise RuntimeError(f"报告五 B2 full 行不是 d_rus/d_rcn：{list(b2_ref_rows.index)}")
@@ -430,27 +430,49 @@ for _var in ("d_rus", "d_rcn"):
     _c_ref = float(b2_ref_rows.loc[_var, "coef"])
     _t_ref = float(b2_ref_rows.loc[_var, "t_nw"])
     _repro_rows.append(
-        {"field": f"{_var}_coef", "ours": _c_ours, "report5": _c_ref,
-         "diff": abs(_c_ours - _c_ref), "equal": bool(abs(_c_ours - _c_ref) <= REF_TOL)}
+        {
+            "field": f"{_var}_coef",
+            "ours": _c_ours,
+            "report5": _c_ref,
+            "diff": abs(_c_ours - _c_ref),
+            "equal": bool(abs(_c_ours - _c_ref) <= REF_TOL),
+        }
     )
     _repro_rows.append(
-        {"field": f"{_var}_t_nw", "ours": _t_ours, "report5": _t_ref,
-         "diff": abs(_t_ours - _t_ref), "equal": bool(abs(_t_ours - _t_ref) <= REF_TOL)}
+        {
+            "field": f"{_var}_t_nw",
+            "ours": _t_ours,
+            "report5": _t_ref,
+            "diff": abs(_t_ours - _t_ref),
+            "equal": bool(abs(_t_ours - _t_ref) <= REF_TOL),
+        }
     )
 _repro_rows.append(
-    {"field": "n", "ours": float(_b2_n), "report5": float(b2_ref_rows["n"].iloc[0]),
-     "diff": abs(_b2_n - float(b2_ref_rows["n"].iloc[0])),
-     "equal": bool(_b2_n == int(b2_ref_rows["n"].iloc[0]))}
+    {
+        "field": "n",
+        "ours": float(_b2_n),
+        "report5": float(b2_ref_rows["n"].iloc[0]),
+        "diff": abs(_b2_n - float(b2_ref_rows["n"].iloc[0])),
+        "equal": bool(_b2_n == int(b2_ref_rows["n"].iloc[0])),
+    }
 )
 _repro_rows.append(
-    {"field": "start", "ours": _b2_first,
-     "report5": str(b2_ref_rows["start"].iloc[0]), "diff": np.nan,
-     "equal": bool(_b2_first == str(b2_ref_rows["start"].iloc[0]))}
+    {
+        "field": "start",
+        "ours": _b2_first,
+        "report5": str(b2_ref_rows["start"].iloc[0]),
+        "diff": np.nan,
+        "equal": bool(_b2_first == str(b2_ref_rows["start"].iloc[0])),
+    }
 )
 _repro_rows.append(
-    {"field": "end", "ours": _b2_last,
-     "report5": str(b2_ref_rows["end"].iloc[0]), "diff": np.nan,
-     "equal": bool(_b2_last == str(b2_ref_rows["end"].iloc[0]))}
+    {
+        "field": "end",
+        "ours": _b2_last,
+        "report5": str(b2_ref_rows["end"].iloc[0]),
+        "diff": np.nan,
+        "equal": bool(_b2_last == str(b2_ref_rows["end"].iloc[0])),
+    }
 )
 b2_repro = pd.DataFrame(_repro_rows)[["field", "ours", "report5", "diff", "equal"]]
 hdr("断言：同月价差复现报告五 B2（spread ~ d_rus + d_rcn，NW 滞后 3）")
@@ -512,10 +534,20 @@ def single_reg(
         coef = float(fit.params[name])
         t_nw = float(fit.tvalues[name])
         out.append(
-            {"spread_name": spread, "model": model, "h": h, "sample": sample, "var": name,
-             "coef": coef, "t_nw": t_nw, "p_one_sided": float(norm.cdf(t_nw)), "n": n,
-             "r2": r2, "start": str(monthly["period"].iloc[idx[0]]),
-             "end": str(monthly["period"].iloc[idx[-1]])}
+            {
+                "spread_name": spread,
+                "model": model,
+                "h": h,
+                "sample": sample,
+                "var": name,
+                "coef": coef,
+                "t_nw": t_nw,
+                "p_one_sided": float(norm.cdf(t_nw)),
+                "n": n,
+                "r2": r2,
+                "start": str(monthly["period"].iloc[idx[0]]),
+                "end": str(monthly["period"].iloc[idx[-1]]),
+            }
         )
     _label = var + (f"+{extra[0]}" if len(extra) == 1 else "".join(f"+{e}" for e in extra))
     log(f"  {spread} {model} h={h} {sample} {_label}: n={n} lags={lags}")
@@ -535,10 +567,20 @@ _p_main = [float(r["p_one_sided"]) for r in main_rows]
 _p_holm = multipletests(_p_main, method="holm")[1]
 c1_holm = pd.DataFrame(
     [
-        {"spread_name": r["spread_name"], "var": r["var"], "sample": r["sample"],
-         "coef": r["coef"], "t_nw": r["t_nw"], "p_one_sided": float(p1), "p_holm": float(ph),
-         "n": r["n"], "start": r["start"], "end": r["end"],
-         "holm_lt_0.05": bool(ph < 0.05), "neg_expected": bool(float(r["coef"]) < 0)}
+        {
+            "spread_name": r["spread_name"],
+            "var": r["var"],
+            "sample": r["sample"],
+            "coef": r["coef"],
+            "t_nw": r["t_nw"],
+            "p_one_sided": float(p1),
+            "p_holm": float(ph),
+            "n": r["n"],
+            "start": r["start"],
+            "end": r["end"],
+            "holm_lt_0.05": bool(ph < 0.05),
+            "neg_expected": bool(float(r["coef"]) < 0),
+        }
         for r, p1, ph in zip(main_rows, _p_main, _p_holm, strict=True)
     ]
 )
@@ -554,8 +596,20 @@ supp_rows += single_reg(SPREAD_CYB, "d_tips")
 supp_rows += single_reg(SPREAD_CYB, "d_rus")
 supp_rows += single_reg(SPREAD_CYB, "d_fx", sample="post_2015_08")
 
-C1_COLS = ["spread_name", "model", "h", "sample", "var", "coef", "t_nw", "p_one_sided",
-           "n", "r2", "start", "end"]
+C1_COLS = [
+    "spread_name",
+    "model",
+    "h",
+    "sample",
+    "var",
+    "coef",
+    "t_nw",
+    "p_one_sided",
+    "n",
+    "r2",
+    "start",
+    "end",
+]
 c1_reg = pd.DataFrame(main_rows + supp_rows)[C1_COLS]
 show("c1_reg 预测回归（单边 p = Φ(t)；h=1 用 NW 滞后 3，h=3 用 5）", c1_reg)
 show("c1_holm 三个主检验的单边 p 与 Holm 校正", c1_holm)
@@ -567,6 +621,7 @@ log(f"c1 判读: d_tips Holm p={C1_TIPS_HOLM:.4f}，<0.05 = {C1_TIPS_HOLM < 0.05
 # 计划要求报告变化量的一阶自相关，若大于 0.5 回头补 IVX。
 # 配对用样本内相邻月（时间序列无缺月），两端都非 NaN 才进样本。
 
+
 # %%
 def ar1_rows(var: str, *, sample: str = "full", start: str = EXPECTED_START[SPREAD_300]) -> dict:
     x = monthly[var].to_numpy(dtype=float)
@@ -576,13 +631,16 @@ def ar1_rows(var: str, *, sample: str = "full", start: str = EXPECTED_START[SPRE
     if sample == "post_2015_08":
         mask &= POST_FX_MASK
     idx = np.flatnonzero(mask)
-    fit, n = nw_ols(
-        pd.Series(x[idx], name="y"), pd.DataFrame({"lag": lag[idx]}), 0
-    )
-    return {"var": var, "sample": sample, "ar1": float(fit.params["lag"]), "n": n,
-            "start": str(monthly["period"].iloc[idx[0]]),
-            "end": str(monthly["period"].iloc[idx[-1]]),
-            "gt_0.5": bool(abs(float(fit.params["lag"])) > 0.5)}
+    fit, n = nw_ols(pd.Series(x[idx], name="y"), pd.DataFrame({"lag": lag[idx]}), 0)
+    return {
+        "var": var,
+        "sample": sample,
+        "ar1": float(fit.params["lag"]),
+        "n": n,
+        "start": str(monthly["period"].iloc[idx[0]]),
+        "end": str(monthly["period"].iloc[idx[-1]]),
+        "gt_0.5": bool(abs(float(fit.params["lag"])) > 0.5),
+    }
 
 
 c1_ar1 = pd.DataFrame(
@@ -658,8 +716,14 @@ def oos_dated(spread: str, var: str) -> pd.DataFrame:
         design = np.column_stack([np.ones(len(ok)), x[ok]])
         coef = np.linalg.lstsq(design, fwd[ok], rcond=None)[0]
         rows.append(
-            {"i": i, "period": str(monthly["period"].iloc[i]), "y": float(fwd[i]), "m0": m0,
-             "model": float(coef[0] + x[i] * coef[1]), "n_train": len(train)}
+            {
+                "i": i,
+                "period": str(monthly["period"].iloc[i]),
+                "y": float(fwd[i]),
+                "m0": m0,
+                "model": float(coef[0] + x[i] * coef[1]),
+                "n_train": len(train),
+            }
         )
     if not rows:
         raise RuntimeError(f"{spread} {var} 没有样本外预测，停止")
@@ -692,13 +756,18 @@ for _var in ("d_tips", "d_rus"):
         3,
     )
     c2_rows.append(
-        {"var": _var, "n_oos": len(fc), "oos_start": str(fc["period"].iloc[0]),
-         "r2_os": r2_os(
-             fc["y"].to_numpy(dtype=float),
-             fc["model"].to_numpy(dtype=float),
-             fc["m0"].to_numpy(dtype=float),
-         ),
-         "cw_t": cw_t, "cw_p": cw_p}
+        {
+            "var": _var,
+            "n_oos": len(fc),
+            "oos_start": str(fc["period"].iloc[0]),
+            "r2_os": r2_os(
+                fc["y"].to_numpy(dtype=float),
+                fc["model"].to_numpy(dtype=float),
+                fc["m0"].to_numpy(dtype=float),
+            ),
+            "cw_t": cw_t,
+            "cw_p": cw_p,
+        }
     )
 c2_oos = pd.DataFrame(c2_rows)[["var", "n_oos", "oos_start", "r2_os", "cw_t", "cw_p"]]
 show("c2_oos 扩张窗口样本外（基准 = 训练段均值）", c2_oos)
@@ -817,9 +886,14 @@ C3_RUNS = {
 
 def perf_row(rule: str, frame: pd.DataFrame) -> dict[str, object]:
     perf = perf_daily(frame["ret"], frame[["w", "turnover"]])
-    return {"rule": rule, "ann_return": perf["ann_return"], "ann_vol": perf["ann_vol"],
-            "sharpe": perf["sharpe_rf0"], "max_dd": perf["max_dd"],
-            "turnover_per_year": perf["turnover_per_year"]}
+    return {
+        "rule": rule,
+        "ann_return": perf["ann_return"],
+        "ann_vol": perf["ann_vol"],
+        "sharpe": perf["sharpe_rf0"],
+        "max_dd": perf["max_dd"],
+        "turnover_per_year": perf["turnover_per_year"],
+    }
 
 
 c3_perf = pd.DataFrame([perf_row(k, v) for k, v in C3_RUNS.items()])[
@@ -908,11 +982,15 @@ for _k, (i, _a, _b) in enumerate(WINDOWS):
     if np.isfinite(signal):
         _hold = "growth" if signal < 0 else "value"
     _c3m.append(
-        {"period": str(monthly["period"].iloc[i]),
-         "signal_dt": str(open_idx[int(END_POS[i])].date()), "signal_d_tips": signal,
-         "hold": _hold if _hold is not None else "n/a",
-         "rot_ret": float(_rot_m[_k]), "b5050_ret": float(B5050_M[_k]),
-         "excess": float(_rot_m[_k] - B5050_M[_k])}
+        {
+            "period": str(monthly["period"].iloc[i]),
+            "signal_dt": str(open_idx[int(END_POS[i])].date()),
+            "signal_d_tips": signal,
+            "hold": _hold if _hold is not None else "n/a",
+            "rot_ret": float(_rot_m[_k]),
+            "b5050_ret": float(B5050_M[_k]),
+            "excess": float(_rot_m[_k] - B5050_M[_k]),
+        }
     )
 c3_monthly = pd.DataFrame(_c3m)
 show("c3_monthly 每月轮动 / 50-50 / 超额（百分点）", c3_monthly)
@@ -938,11 +1016,17 @@ hdr("判读")
 print(
     pd.DataFrame(
         [
-            {"rule": "c_predict_holds", "holds": C_PREDICT_HOLDS,
-             "detail": f"d_tips Holm p={C1_TIPS_HOLM:.4f} (<0.05), "
-                       f"C2 d_tips CW p={C2_TIPS_CW_P:.4f} (<0.05)"},
-            {"rule": "c_rotation_holds", "holds": C_ROTATION_HOLDS,
-             "detail": "ann_excess>0 and p_boot<0.10 and both halves>0 (tips_sign only)"},
+            {
+                "rule": "c_predict_holds",
+                "holds": C_PREDICT_HOLDS,
+                "detail": f"d_tips Holm p={C1_TIPS_HOLM:.4f} (<0.05), "
+                f"C2 d_tips CW p={C2_TIPS_CW_P:.4f} (<0.05)",
+            },
+            {
+                "rule": "c_rotation_holds",
+                "holds": C_ROTATION_HOLDS,
+                "detail": "ann_excess>0 and p_boot<0.10 and both halves>0 (tips_sign only)",
+            },
         ]
     ).to_string(index=False),
     flush=True,
@@ -994,8 +1078,17 @@ pit_report = {
 
 panel_records: dict[str, object] = {}
 _daily = pd.DataFrame(
-    {"trade_dt": open_idx, "r_cn": r_cn, "r_us": r_us, "tips": tips, "fx": fx,
-     "ret_growth": RG, "ret_value": RV, "ret_cyb": RCY, "ret_allshare": RALL}
+    {
+        "trade_dt": open_idx,
+        "r_cn": r_cn,
+        "r_us": r_us,
+        "tips": tips,
+        "fx": fx,
+        "ret_growth": RG,
+        "ret_value": RV,
+        "ret_cyb": RCY,
+        "ret_allshare": RALL,
+    }
 )
 panel_records["daily"] = json.loads(_daily.to_json(orient="records", date_format="iso"))
 panel_records["monthly"] = json.loads(monthly.to_json(orient="records", date_format="iso"))

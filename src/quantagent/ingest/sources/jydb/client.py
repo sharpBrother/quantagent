@@ -17,9 +17,7 @@ if TYPE_CHECKING:
 
 def open_jydb_connection(settings: Settings) -> Any:
     if not settings.jydb_mssql_configured:
-        raise ConfigError(
-            "JYDB 未配置：需要 QUANTAGENT_JYDB_MSSQL_HOST、DATABASE 与 USER"
-        )
+        raise ConfigError("JYDB 未配置：需要 QUANTAGENT_JYDB_MSSQL_HOST、DATABASE 与 USER")
     try:
         pymssql = import_module("pymssql")
     except ImportError as exc:

@@ -54,9 +54,7 @@ class _FakeSource:
     ) -> list[dict[str, object]]:
         self.cursors.append(cursor)
         picked = [
-            dict(row)
-            for row in self.rows
-            if (row["JSID"], row["ID"]) > (cursor.jsid, cursor.id)
+            dict(row) for row in self.rows if (row["JSID"], row["ID"]) > (cursor.jsid, cursor.id)
         ]
         return picked[:limit]
 

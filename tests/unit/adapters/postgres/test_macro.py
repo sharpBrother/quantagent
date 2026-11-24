@@ -238,9 +238,7 @@ def test_nbs_cpi_fallback_contract_fails_closed() -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize(
-    ("value", "expected"), [(Decimal("105.7"), Decimal("5.7")), (None, None)]
-)
+@pytest.mark.parametrize(("value", "expected"), [(Decimal("105.7"), Decimal("5.7")), (None, None)])
 def test_nbs_ppi_converts_year_ago_index_to_yoy(
     value: Decimal | None, expected: Decimal | None
 ) -> None:
