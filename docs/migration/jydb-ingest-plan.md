@@ -2,7 +2,7 @@
 title: 聚源 JYDB 源镜像接入交接
 status: active
 created: 2026-11-23
-updated: 2026-11-23
+updated: 2026-11-24
 applies_to:
   - src/quantagent/ingest/sources/jydb/
   - db/migrations/src/
@@ -64,6 +64,26 @@ superseded_by: null
 - P1 是其余在用的宏观表，量也小。
 - P2 是代码对照表。
 - P3 是大表，等 Wind 回填腾出源端带宽再做。
+
+### 追加（2026-11-24）：`QT_OSIndexQuote` 提前接入
+
+负责人 2026-11-24 同意为研究线（[第五阶段计划](../research/erp-phase5-plan.md) D 节）提前接入
+`QT_OSIndexQuote`，不再等 P3。其余 P2、P3 表不变。
+
+- **范围：** 整表镜像，与其余聚源表相同，不按 `IndexCode` 过滤。镜像语义见
+  [ADR](../adr/2026-11-23-jydb-suntime-mirror-follows-source.md)。
+- **源端事实（2026-11-24 只读查询聚源源库）：**
+  - 5,831,333 行，1,953 个 `IndexCode`，最新 `TradingDay` 为 2026-11-24；
+  - `ID` 非空且唯一；`JSID` 无空值；`(IndexCode, TradingDay)` 无重复；
+  - 源端索引：`(TradingDay, IndexCode)`、`ID`、`JSID`。
+- **建表：** 0005 已建，但没有主键。按本文"做法"第 3 步，删表重建并加 `PRIMARY KEY ("ID")`，
+  在 `_REBUILD_PAIRS` 登记。另加 `(JSID, ID)` 分页索引、`_batch_id` 索引，
+  以及研究读取用的 `("IndexCode", "TradingDay")` 索引。
+- **可见性契约：** `src.jydb.qt_osindexquote.yaml`，`source_field field=TradingDay strict: true`，
+  A 级，`doc_ref` 指向 [ADR](../adr/2026-11-23-overseas-daily-next-day.md)。
+- **对拍：** 与 wx2 按 `IndexCode` 抽 RLG 744056、RUI 3216、NDX 3205、SPX 3210、USDX 8676，
+  比较行数与 `ClosePrice`，差异只允许出现在 wx2 停更以后的日期。
+- **编排：** 并入现有聚源每日增量。
 
 不同步：
 
