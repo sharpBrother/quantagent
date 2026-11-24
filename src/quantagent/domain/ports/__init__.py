@@ -7,6 +7,7 @@
 """
 
 from quantagent.domain.ports.calendar import CalendarRepository
+from quantagent.domain.ports.derivative_indicator import DerivativeIndicatorRepository
 from quantagent.domain.ports.feature import FeatureRepository
 from quantagent.domain.ports.feature_metric import FeatureMetricRepository
 from quantagent.domain.ports.forward_return import ForwardReturnRepository
@@ -24,6 +25,7 @@ from quantagent.domain.ports.universe import UniverseRepository
 __all__ = [
     "CalendarRepository",
     "DailyPriceRepository",
+    "DerivativeIndicatorRepository",
     "FeatureMetricRepository",
     "FeatureRepository",
     "ForwardReturnRepository",

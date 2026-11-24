@@ -125,3 +125,4 @@ applies_to:
 | 2026-11-24 | [第一批四个分钟因子：无定义记缺失、排除日无日值、只在 all_a 内产出](2026-11-24-minute-factors-first-batch.md) |
 | 2026-11-24 | [资金流因子 2a：abso_umr、moneyflowh、actlargemedcut](2026-11-24-moneyflow-factors-batch-2a.md) |
 | 2026-11-24 | [第二批分钟因子：pxret21 截面中性化（存残差）、排序的堆排序兜底](2026-11-24-minute-factors-batch-2b.md) |
+| 2026-11-24 | [MIF 迁移：night_ratio 按 4 位舍入自算，换手走衍生指标窄端口，长表存 -corr](2026-11-24-mif.md) |
