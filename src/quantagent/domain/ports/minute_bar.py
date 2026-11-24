@@ -19,6 +19,13 @@ class MinuteBarTable(Protocol):
 
 
 class MinuteBarRepository(Protocol):
+    def excluded_codes(self, *, as_of: date, day: date) -> frozenset[str]:
+        """``day`` 当日分区已裁定排除的代码。这些股票当日没有分钟行，不是数据缺失。
+
+        排除集来自分区元数据与已裁定名单。无排除返回空集。``day`` 不可见则报错。
+        """
+        ...
+
     def scan_window(
         self,
         *,

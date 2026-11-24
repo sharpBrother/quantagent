@@ -26,13 +26,42 @@ _DATASET = "src.minprice.ashare_minute_bar"
 _COLUMNS = frozenset(
     {"ts_code", "trade_time", "open", "high", "low", "close", "vol", "amount", "trade_date"}
 )
+# 排除清单写在分区 footer 的 key-value 元数据里，JSON 数组。2026-01-21 分区没有该键，
+# 它的名单在 domain.minute_exclusions 中。
+_EXCLUDED_KEY = b"quantagent.excluded_codes"
 
 
 class LakeMinuteBarRepository:
     def __init__(self, conn: Any, root: Path, calendar: CalendarRepository) -> None:
         self._conn, self._root, self._calendar = conn, root.resolve(), calendar
 
-    def scan_window(  # noqa: PLR0912
+    def excluded_codes(self, *, as_of: date, day: date) -> frozenset[str]:
+        # 排除集是数据质量裁定，不是 PIT 信息，但读取仍受可见日约束：晚于 as_of 的日子不得查询。
+        contract = load_bundle().visibilities.get(_DATASET)
+        if contract is None:
+            raise MissingVisibilityError(_DATASET)
+        if day > visible_event_on_or_before(contract, as_of=as_of):
+            raise EmptyDomainError(f"{day.isoformat()} 晚于分钟行情可见日，不能读取排除集")
+        with self._conn.cursor() as cur:
+            cur.execute(
+                "SELECT trade_date,file_name,row_count FROM src_minprice.lake_partition "
+                "WHERE dataset=%s AND trade_date=%s",
+                ("ashare_minute_bar", day),
+            )
+            records = cur.fetchall()
+        if len(records) != 1:
+            raise EmptyDomainError(f"分钟行情 manifest 中 {day.isoformat()} 分区数不是 1")
+        _, name, count = records[0]
+        target = self._partition_file(day, name)
+        parquet_file = pq.ParquetFile(target)
+        if parquet_file.metadata.num_rows != count:
+            raise ValueError(f"分钟分区 footer 行数不符: {day}")
+        excluded = set(self._footer_exclusions(parquet_file, day))
+        if day == JANUARY_21:
+            excluded |= JANUARY_21_EXCLUDED
+        return frozenset(excluded)
+
+    def scan_window(
         self,
         *,
         as_of: date,
@@ -72,23 +101,11 @@ class LakeMinuteBarRepository:
             raise EmptyDomainError("2026-01-21 分钟分区不含已排除股票，请明确选择其他代码")
         files = []
         for day, name, count in records:
-            target = (self._root / name).resolve()
-            if not target.is_relative_to(self._root) or not target.is_file():
-                raise ValueError(f"分钟分区文件路径无效: {day}")
+            target = self._partition_file(day, name)
             parquet_file = pq.ParquetFile(target)
-            metadata = parquet_file.metadata.metadata or {}
-            raw_exclusions = metadata.get(b"quantagent.excluded_codes")
-            if raw_exclusions is not None:
-                try:
-                    excluded = json.loads(raw_exclusions)
-                    if not isinstance(excluded, list) or not all(
-                        isinstance(item, str) for item in excluded
-                    ):
-                        raise ValueError("invalid exclusion metadata")
-                except (ValueError, UnicodeDecodeError) as exc:
-                    raise ValueError(f"分钟分区排除清单无效: {day}") from exc
-                if excluded and (codes is None or set(excluded).intersection(codes)):
-                    raise EmptyDomainError(f"{day} 分钟分区不含已排除股票，请明确选择其他代码")
+            excluded = self._footer_exclusions(parquet_file, day)
+            if excluded and (codes is None or set(excluded).intersection(codes)):
+                raise EmptyDomainError(f"{day} 分钟分区不含已排除股票，请明确选择其他代码")
             if parquet_file.metadata.num_rows != count:
                 raise ValueError(f"分钟分区 footer 行数不符: {day}")
             files.append(str(target))
@@ -100,3 +117,23 @@ class LakeMinuteBarRepository:
             params.append(list(codes))
         with duck_session() as conn:
             return conn.execute(query, params).to_arrow_table()
+
+    def _partition_file(self, day: date, name: str) -> Path:
+        target = (self._root / name).resolve()
+        if not target.is_relative_to(self._root) or not target.is_file():
+            raise ValueError(f"分钟分区文件路径无效: {day}")
+        return target
+
+    @staticmethod
+    def _footer_exclusions(parquet_file: pq.ParquetFile, day: date) -> list[str]:
+        metadata = parquet_file.metadata.metadata or {}
+        raw = metadata.get(_EXCLUDED_KEY)
+        if raw is None:
+            return []
+        try:
+            excluded = json.loads(raw)
+        except (ValueError, UnicodeDecodeError) as exc:
+            raise ValueError(f"分钟分区排除清单无效: {day}") from exc
+        if not isinstance(excluded, list) or not all(isinstance(item, str) for item in excluded):
+            raise ValueError(f"分钟分区排除清单无效: {day}")
+        return excluded

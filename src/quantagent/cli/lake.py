@@ -12,6 +12,7 @@ import typer
 from quantagent.adapters.postgres.errors import PostgresAdapterError
 from quantagent.cli.cutamp_materialize import materialize_cutamp
 from quantagent.cli.forward_return_materialize import materialize_forward_return_cli
+from quantagent.cli.minute_factors_materialize import materialize_minute_factors
 from quantagent.cli.tr_umr_materialize import materialize_tr_umr
 from quantagent.domain.errors import DomainError
 from quantagent.lake.layout_bench import SCALES, run_layout_benchmark
@@ -143,6 +144,47 @@ def lake_materialize_cutamp(
             end=datetime.strptime(end.strip(), "%Y-%m-%d").date(),
             wind_codes=wind_codes,
             as_of=datetime.strptime(as_of.strip(), "%Y-%m-%d").date(),
+        )
+    except (
+        LakeLayoutError,
+        DomainError,
+        PostgresAdapterError,
+        ConfigError,
+        RunLogError,
+        ValueError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"wrote dataset=feature.value rows={row_count} digest={digest}")
+
+
+@materialize_app.command("minute-factors")
+def lake_materialize_minute_factors(
+    start: Annotated[str, typer.Option("--start", help="截面起点 YYYY-MM-DD")],
+    end: Annotated[str, typer.Option("--end", help="截面终点 YYYY-MM-DD")],
+    as_of: Annotated[str, typer.Option("--as-of", help="分钟行情可见日 YYYY-MM-DD，必填")],
+    codes: Annotated[
+        str | None,
+        typer.Option("--codes", help="逗号分隔的 Wind 代码；不传则每个截面日取该日 all_a 成员"),
+    ] = None,
+) -> None:
+    """把 Current-20 的四个分钟因子（5 日均值，方向 -1）写入 feature.value。
+
+    分区被排除的股票在排除日没有日值，不进入五日均值，运行不中断。
+    """
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    code_tuple = (
+        None if codes is None else tuple(part.strip() for part in codes.split(",") if part.strip())
+    )
+    try:
+        row_count, digest = materialize_minute_factors(
+            settings=settings,
+            paths=paths,
+            start=datetime.strptime(start.strip(), "%Y-%m-%d").date(),
+            end=datetime.strptime(end.strip(), "%Y-%m-%d").date(),
+            as_of=datetime.strptime(as_of.strip(), "%Y-%m-%d").date(),
+            codes=code_tuple,
         )
     except (
         LakeLayoutError,

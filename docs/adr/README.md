@@ -122,3 +122,4 @@ applies_to:
 | 2026-11-22 | [中信一级行业成分改用 AINDEXMEMBERSCITICSZL](2026-11-22-citics-l1-members-zl.md) |
 | 2026-11-22 | [股票前瞻收益按 open-to-open 落 mart，端点停牌不落行](2026-11-22-forward-return-open2open.md) |
 | 2026-11-24 | [tr_umr 升 v2，窗口内缺输入不产值](2026-11-24-tr-umr-v2-no-missing-as-zero.md) |
+| 2026-11-24 | [第一批四个分钟因子：无定义记缺失、排除日无日值、只在 all_a 内产出](2026-11-24-minute-factors-first-batch.md) |
