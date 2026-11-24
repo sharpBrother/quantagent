@@ -1,6 +1,6 @@
 """从 ``src_wind.AINDEXVALUATION`` 按 as_of 读取指数估值。
 
-只读 ``PE_TTM``，需要别的字段时窄扩展。不补缺失行，不按交易日过滤（源表含周末行，
+只读 ``PE_TTM`` 与 ``DIVIDEND_YIELD``，需要别的字段时窄扩展。不补缺失行，不按交易日过滤（源表含周末行，
 取样交给调用方）。截止列和截止日来自可见性契约。
 """
 
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 DATASET = "src.wind.aindexvaluation"
 _YMD_LEN = 8
-_COLUMNS = ("TRADE_DT", "S_INFO_WINDCODE", "PE_TTM")
+_COLUMNS = ("TRADE_DT", "S_INFO_WINDCODE", "PE_TTM", "DIVIDEND_YIELD")
 
 
 class PostgresIndexValuationRepository:
@@ -92,6 +92,7 @@ def _row_from_mapping(row: dict[str, object]) -> IndexValuation:
         trade_dt=_parse_trade_dt(row.get("TRADE_DT")),
         wind_code=wind_code,
         pe_ttm=_decimal(row.get("PE_TTM"), "PE_TTM"),
+        dividend_yield=_decimal(row.get("DIVIDEND_YIELD"), "DIVIDEND_YIELD"),
     )
 
 

@@ -30,8 +30,13 @@ def _contract() -> VisibilityContract:
     )
 
 
-def _row(day: date, code: str, pe: str | None) -> IndexValuation:
-    return IndexValuation(day, code, None if pe is None else Decimal(pe))
+def _row(day: date, code: str, pe: str | None, dividend_yield: str | None = None) -> IndexValuation:
+    return IndexValuation(
+        day,
+        code,
+        None if pe is None else Decimal(pe),
+        None if dividend_yield is None else Decimal(dividend_yield),
+    )
 
 
 @pytest.mark.contracts
@@ -72,6 +77,28 @@ def test_window_as_of_and_weekend_rows() -> None:
         )
         == ()
     )
+
+
+@pytest.mark.contracts
+def test_dividend_yield_passes_through() -> None:
+    repo = MemoryIndexValuationRepository(
+        (
+            _row(date(2024, 11, 20), "000922.CSI", "9.4918", "4.3497"),
+            _row(date(2024, 11, 20), "000985.CSI", "15.2300"),
+        ),
+        contract=_contract(),
+    )
+    rows = repo.list_valuations(
+        as_of=date(2024, 11, 20),
+        start=date(2024, 11, 20),
+        end=date(2024, 11, 20),
+        wind_codes=("000922.CSI", "000985.CSI"),
+    )
+    # 股息率原样返回，缺失保持为空，不补 0 也不补前值。
+    assert [(r.wind_code, r.dividend_yield) for r in rows] == [
+        ("000922.CSI", Decimal("4.3497")),
+        ("000985.CSI", None),
+    ]
 
 
 @pytest.mark.contracts
