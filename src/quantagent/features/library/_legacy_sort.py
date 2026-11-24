@@ -3,6 +3,8 @@
 旧仓因子切段时并列元素谁先谁后，取决于排序算法，不取决于交易日顺序。这里只保留两条路径：
 
 - ``legacy_quicksort_order``：``np.argsort(kind="quicksort")`` 在 float64 上的标量路径，逐行移植。
+  递归深度超限时的堆排序兜底（``_heapsort``）也一并移植。真实分钟成交量会触发它，见
+  ``docs/adr/2026-11-24-minute-factors-batch-2b.md``。
 - ``legacy_descending_order``：``DataFrame.sort_values(by, ascending=False)`` 单列时的
   ``nargsort`` 降序路径，即先翻转、再 quicksort、最后翻转回来。
 
@@ -49,9 +51,9 @@ def legacy_quicksort_order(keys: Sequence[float]) -> list[int]:
     cdepth = (n.bit_length() - 1) * 2
     while True:
         if cdepth < 0:
-            # numpy 此处转堆排序。堆排序的并列顺序尚未移植准确，cutamp 窗口最多 20 个元素，
-            # 深度上限 8、实际分区不超过 4 层，到不了这里。真到了就停下，不给一个对不上旧仓的顺序。
-            raise ValueError(f"quicksort 递归深度超限（n={n}），堆排序兜底未移植")
+            # numpy 在递归深度超限时对当前段改用堆排序（aquicksort_ 中 aheapsort_ 的调用）。
+            # 段内并列顺序由堆排序决定，所以这里也要逐行移植。
+            _heapsort(keys, tosort, pl, pr)
         else:
             while pr - pl > _SMALL_QUICKSORT:
                 pi = _partition(keys, tosort, pl, pr)
@@ -112,6 +114,51 @@ def _insertion_sort(keys: Sequence[float], tosort: list[int], pl: int, pr: int) 
             tosort[pj] = tosort[pj - 1]
             pj -= 1
         tosort[pj] = vi
+
+
+def _heapsort(keys: Sequence[float], tosort: list[int], pl: int, pr: int) -> None:
+    """numpy ``aheapsort_`` 的逐行移植，作用于 ``tosort[pl..pr]``（含两端）。
+
+    numpy 用 1 基下标：``a = tosort - 1``，这里把 ``a[k]`` 映射为 ``tosort[pl + k - 1]``。
+    比较与 ``_less`` 一致。
+    """
+    n = pr - pl + 1
+
+    def get(k: int) -> int:
+        return tosort[pl + k - 1]
+
+    def put(k: int, value: int) -> None:
+        tosort[pl + k - 1] = value
+
+    for half in range(n >> 1, 0, -1):
+        tmp = get(half)
+        i, j = half, half << 1
+        while j <= n:
+            if j < n and _less(keys[get(j)], keys[get(j + 1)]):
+                j += 1
+            if _less(keys[tmp], keys[get(j)]):
+                put(i, get(j))
+                i = j
+                j += j
+            else:
+                break
+        put(i, tmp)
+    size = n
+    while size > 1:
+        tmp = get(size)
+        put(size, get(1))
+        size -= 1
+        i, j = 1, 2
+        while j <= size:
+            if j < size and _less(keys[get(j)], keys[get(j + 1)]):
+                j += 1
+            if _less(keys[tmp], keys[get(j)]):
+                put(i, get(j))
+                i = j
+                j += j
+            else:
+                break
+        put(i, tmp)
 
 
 def _swap(items: list[int], i: int, j: int) -> None:

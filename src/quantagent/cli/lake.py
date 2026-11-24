@@ -12,6 +12,7 @@ import typer
 from quantagent.adapters.postgres.errors import PostgresAdapterError
 from quantagent.cli.cutamp_materialize import materialize_cutamp
 from quantagent.cli.forward_return_materialize import materialize_forward_return_cli
+from quantagent.cli.minute_factors_2b_materialize import materialize_minute_factors_2b
 from quantagent.cli.minute_factors_materialize import materialize_minute_factors
 from quantagent.cli.moneyflow_materialize import materialize_moneyflow_factors
 from quantagent.cli.tr_umr_materialize import materialize_tr_umr
@@ -145,6 +146,58 @@ def lake_materialize_cutamp(
             end=datetime.strptime(end.strip(), "%Y-%m-%d").date(),
             wind_codes=wind_codes,
             as_of=datetime.strptime(as_of.strip(), "%Y-%m-%d").date(),
+        )
+    except (
+        LakeLayoutError,
+        DomainError,
+        PostgresAdapterError,
+        ConfigError,
+        RunLogError,
+        ValueError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"wrote dataset=feature.value rows={row_count} digest={digest}")
+
+
+@materialize_app.command("minute-factors-2b")
+def lake_materialize_minute_factors_2b(
+    start: Annotated[str, typer.Option("--start", help="截面起点 YYYY-MM-DD")],
+    end: Annotated[str, typer.Option("--end", help="截面终点 YYYY-MM-DD")],
+    as_of: Annotated[str, typer.Option("--as-of", help="分钟行情可见日 YYYY-MM-DD，必填")],
+    feature: Annotated[
+        list[str],
+        typer.Option(
+            "--feature",
+            help=(
+                "要产出的因子 id，可重复。pf_single_corr_vrlaglarge_5_mean_neg、"
+                "pf_single_core_up_20_mean_pos_neut_pxret21、"
+                "pf_single_core_down_20_mean_neg_neut_pxret21"
+            ),
+        ),
+    ],
+    codes: Annotated[
+        str | None,
+        typer.Option("--codes", help="逗号分隔的 Wind 代码；不传则每个截面日取该日 all_a 成员"),
+    ] = None,
+) -> None:
+    """把 Current-20 第二批的三个分钟因子写入 feature.value。
+    中性化因子在每个截面日做 pxret21 截面回归残差。排除日与缺失规则同第一批。
+    """
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    code_tuple = (
+        None if codes is None else tuple(part.strip() for part in codes.split(",") if part.strip())
+    )
+    try:
+        row_count, digest = materialize_minute_factors_2b(
+            settings=settings,
+            paths=paths,
+            start=datetime.strptime(start.strip(), "%Y-%m-%d").date(),
+            end=datetime.strptime(end.strip(), "%Y-%m-%d").date(),
+            as_of=datetime.strptime(as_of.strip(), "%Y-%m-%d").date(),
+            codes=code_tuple,
+            feature_ids=tuple(feature),
         )
     except (
         LakeLayoutError,
