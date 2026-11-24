@@ -90,6 +90,12 @@ def test_windows_launcher_rejects_missing_workspace(tmp_path: Path) -> None:
     assert str(home) in result.stdout
 
 
+def _guard_code(command: str) -> str:
+    """取 `... -c "<code>"` 里的代码片段；入口前缀不固定（可能是 `uv run python`）。"""
+    parts = shlex.split(command)
+    return parts[parts.index("-c") + 1]
+
+
 @pytest.mark.unit
 def test_script_guard_allows_only_web_launchers(tmp_path: Path) -> None:
     precommit = yaml.safe_load((ROOT / ".pre-commit-config.yaml").read_text(encoding="utf-8"))
@@ -105,8 +111,10 @@ def test_script_guard_allows_only_web_launchers(tmp_path: Path) -> None:
         for step in ci["jobs"]["guardrails"]["steps"]
         if step.get("name") == "scripts/ 只允许 Dagster Web 启动入口"
     )
-    hook_code = shlex.split(hook["entry"])[2]
-    ci_code = shlex.split(ci_step["run"])[2]
+    # 按 `-c` 定位代码：钩子入口可能带 `uv run` 前缀（macOS 没有 `python`
+    # 这个名字），不能按固定下标取参数。
+    hook_code = _guard_code(hook["entry"])
+    ci_code = _guard_code(ci_step["run"])
     assert hook_code == ci_code
     scripts = tmp_path / "scripts"
     scripts.mkdir()

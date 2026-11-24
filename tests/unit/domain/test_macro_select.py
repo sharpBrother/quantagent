@@ -28,7 +28,9 @@ _REVISIONS = (
 )
 
 
-def _select(cutoff: date, versions: tuple[MacroVersion, ...] = _REVISIONS) -> list[tuple]:
+def _select(
+    cutoff: date, versions: tuple[MacroVersion, ...] = _REVISIONS
+) -> list[tuple[Decimal | None, date, str]]:
     rows = select_visible_versions(
         versions, start=_OBS, end=_OBS, visible_on_or_before=cutoff, pit_grade="A"
     )

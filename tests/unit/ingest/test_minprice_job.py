@@ -15,6 +15,25 @@ from quantagent.platform.config import Settings
 from quantagent.platform.storage.paths import resolve_var_paths
 
 
+def _partition_stage(captured: list[pa.Table]) -> Any:
+    """stage_partition 替身：记录被写出的表，返回固定 digest。"""
+
+    def stage(table: pa.Table, **kwargs: Any) -> SimpleNamespace:
+        captured.append(table)
+        return SimpleNamespace(content_digest="a" * 64)
+
+    return stage
+
+
+def _run_log_recorder(logs: list[Any]) -> Any:
+    """persist_run_log 替身：收集 run log。lambda 里 append 会触发 mypy func-returns-value。"""
+
+    def record(entry: Any, paths: Any) -> None:
+        logs.append(entry)
+
+    return record
+
+
 def test_dry_run_reads_source_without_writes(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -90,10 +109,8 @@ def test_accepted_open_low_difference_is_recorded_in_run_log(
         lambda *a, **k: SimpleNamespace(content_digest="a" * 64),
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
@@ -161,10 +178,8 @@ def test_january_21_excludes_affected_stocks_and_corrects_index(
 
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.stage_partition", stage)
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
@@ -201,8 +216,12 @@ def test_january_21_excludes_affected_stocks_and_corrects_index(
     ],
 )
 def test_approved_negative_volume_corrected_after_daily_check(
-    monkeypatch, tmp_path, day, code, negative
-):
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    day: date,
+    code: str,
+    negative: str,
+) -> None:
     rows = [
         (
             code,
@@ -220,22 +239,19 @@ def test_approved_negative_volume_corrected_after_daily_check(
         ),
     ]
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
-    captured = []
+    captured: list[pa.Table] = []
     monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+        "quantagent.ingest.jobs.minprice.stage_partition", _partition_stage(captured)
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     prices = MagicMock()
     prices.list_prices.return_value = [SimpleNamespace(wind_code=code, amount=Decimal("1"))]
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
-    kwargs = {
+    kwargs: dict[str, Any] = {
         "trade_date": day,
         "settings": settings,
         "paths": resolve_var_paths(settings, repo_root=tmp_path),
@@ -275,8 +291,12 @@ def test_approved_negative_volume_corrected_after_daily_check(
     ],
 )
 def test_corrects_approved_positive_amount_and_negative_volume(
-    monkeypatch, tmp_path, day, code, amount
-):
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    day: date,
+    code: str,
+    amount: str,
+) -> None:
     row = (
         code,
         datetime.combine(day, datetime.min.time()).replace(hour=15),
@@ -285,16 +305,13 @@ def test_corrects_approved_positive_amount_and_negative_volume(
         Decimal(amount),
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([[row]]))
-    captured = []
+    captured: list[pa.Table] = []
     monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+        "quantagent.ingest.jobs.minprice.stage_partition", _partition_stage(captured)
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
@@ -317,7 +334,9 @@ def test_corrects_approved_positive_amount_and_negative_volume(
     assert logs[0].input_digest != logs[0].output_digest
 
 
-def test_july_6_corrects_two_rows_with_distinct_amount_signs(monkeypatch, tmp_path):
+def test_july_6_corrects_two_rows_with_distinct_amount_signs(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     day = date(2026, 7, 6)
     rows = [
         (
@@ -343,16 +362,13 @@ def test_july_6_corrects_two_rows_with_distinct_amount_signs(monkeypatch, tmp_pa
         ),
     ]
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
-    captured = []
+    captured: list[pa.Table] = []
     monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+        "quantagent.ingest.jobs.minprice.stage_partition", _partition_stage(captured)
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     prices = MagicMock()
     prices.list_prices.return_value = [SimpleNamespace(wind_code="920455.BJ", amount=Decimal("1"))]
     settings = Settings(var_root=tmp_path, allow_db_write=True)
@@ -379,23 +395,22 @@ def test_july_6_corrects_two_rows_with_distinct_amount_signs(monkeypatch, tmp_pa
     }
 
 
-def test_august_17_corrects_two_positive_amount_rows(monkeypatch, tmp_path):
+def test_august_17_corrects_two_positive_amount_rows(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     # 同日两条正成交额的 -1 手记录，均按负责人裁定把成交量和成交额置 0。
     rows = [
         (code, datetime(2026, 8, 17, 15), *[Decimal("10")] * 4, Decimal("-1"), Decimal(amount))
         for code, amount in (("920121.BJ", "1462"), ("920679.BJ", "10"))
     ]
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
-    captured = []
+    captured: list[pa.Table] = []
     monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+        "quantagent.ingest.jobs.minprice.stage_partition", _partition_stage(captured)
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
@@ -419,7 +434,9 @@ def test_august_17_corrects_two_positive_amount_rows(monkeypatch, tmp_path):
     assert logs[0].input_digest != logs[0].output_digest
 
 
-def test_august_20_corrects_two_rows_with_distinct_amount_signs(monkeypatch, tmp_path):
+def test_august_20_corrects_two_rows_with_distinct_amount_signs(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     # 同日两条 -1 手记录：正成交额直接置 0，负成交额仍须通过日成交额对比。
     day = date(2026, 8, 20)
     rows = [
@@ -442,22 +459,19 @@ def test_august_20_corrects_two_rows_with_distinct_amount_signs(monkeypatch, tmp
         ),
     ]
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
-    captured = []
+    captured: list[pa.Table] = []
     monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+        "quantagent.ingest.jobs.minprice.stage_partition", _partition_stage(captured)
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     prices = MagicMock()
     prices.list_prices.return_value = [SimpleNamespace(wind_code="920395.BJ", amount=Decimal("1"))]
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
-    kwargs = {
+    kwargs: dict[str, Any] = {
         "trade_date": day,
         "settings": settings,
         "paths": resolve_var_paths(settings, repo_root=tmp_path),
@@ -478,7 +492,9 @@ def test_august_20_corrects_two_rows_with_distinct_amount_signs(monkeypatch, tmp
         ingest_day(MagicMock(), pg, **kwargs)
 
 
-def test_august_24_corrects_three_rows_mixed_amount_signs(monkeypatch, tmp_path):
+def test_august_24_corrects_three_rows_mixed_amount_signs(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     # 首个三条 -1 手记录的交易日：正成交额直接置 0，两条负成交额分别过日行情对比。
     day = date(2026, 8, 24)
     fixes = (("920168.BJ", "378"), ("920275.BJ", "-62"), ("920679.BJ", "-37"))
@@ -490,16 +506,13 @@ def test_august_24_corrects_three_rows_mixed_amount_signs(monkeypatch, tmp_path)
         for code, amount in fixes
     ]
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
-    captured = []
+    captured: list[pa.Table] = []
     monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+        "quantagent.ingest.jobs.minprice.stage_partition", _partition_stage(captured)
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     prices = MagicMock()
     prices.list_prices.return_value = [
         SimpleNamespace(wind_code=code, amount=Decimal("1")) for code in ("920275.BJ", "920679.BJ")
@@ -507,7 +520,7 @@ def test_august_24_corrects_three_rows_mixed_amount_signs(monkeypatch, tmp_path)
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
-    kwargs = {
+    kwargs: dict[str, Any] = {
         "trade_date": day,
         "settings": settings,
         "paths": resolve_var_paths(settings, repo_root=tmp_path),
@@ -530,7 +543,9 @@ def test_august_24_corrects_three_rows_mixed_amount_signs(monkeypatch, tmp_path)
         ingest_day(MagicMock(), pg, **kwargs)
 
 
-def test_september_15_corrects_three_positive_amount_rows(monkeypatch, tmp_path):
+def test_september_15_corrects_three_positive_amount_rows(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     # 三条正成交额的 -1 手记录，均按负责人惯例指示把成交量和成交额置 0。
     day = date(2026, 9, 15)
     fixes = (("920121.BJ", "205"), ("920166.BJ", "2"), ("920168.BJ", "542"))
@@ -539,16 +554,13 @@ def test_september_15_corrects_three_positive_amount_rows(monkeypatch, tmp_path)
         for code, amount in fixes
     ]
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
-    captured = []
+    captured: list[pa.Table] = []
     monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+        "quantagent.ingest.jobs.minprice.stage_partition", _partition_stage(captured)
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
@@ -572,7 +584,9 @@ def test_september_15_corrects_three_positive_amount_rows(monkeypatch, tmp_path)
     assert logs[0].input_digest != logs[0].output_digest
 
 
-def test_september_30_corrects_two_rows_and_keeps_plain_negative_amount(monkeypatch, tmp_path):
+def test_september_30_corrects_two_rows_and_keeps_plain_negative_amount(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     # 两条 -1 手记录走裁定，同日另一条仅有负成交额（成交量 0）仍由既有日行情规则处理。
     day = date(2026, 9, 30)
     rows = [
@@ -602,16 +616,13 @@ def test_september_30_corrects_two_rows_and_keeps_plain_negative_amount(monkeypa
         ),
     ]
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
-    captured = []
+    captured: list[pa.Table] = []
     monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+        "quantagent.ingest.jobs.minprice.stage_partition", _partition_stage(captured)
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     prices = MagicMock()
     prices.list_prices.return_value = [
         SimpleNamespace(wind_code=code, amount=Decimal("1"))
@@ -620,7 +631,7 @@ def test_september_30_corrects_two_rows_and_keeps_plain_negative_amount(monkeypa
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
-    kwargs = {
+    kwargs: dict[str, Any] = {
         "trade_date": day,
         "settings": settings,
         "paths": resolve_var_paths(settings, repo_root=tmp_path),
@@ -646,7 +657,9 @@ def test_september_30_corrects_two_rows_and_keeps_plain_negative_amount(monkeypa
         ingest_day(MagicMock(), pg, **kwargs)
 
 
-def test_october_8_corrects_three_negative_amount_rows(monkeypatch, tmp_path):
+def test_october_8_corrects_three_negative_amount_rows(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     # 三条 -1 手且成交额为负，逐条须通过日行情对比后才置 0 入库。
     day = date(2026, 10, 8)
     fixes = (("920033.BJ", "-29"), ("920541.BJ", "-7"), ("920781.BJ", "-17"))
@@ -658,16 +671,13 @@ def test_october_8_corrects_three_negative_amount_rows(monkeypatch, tmp_path):
         for code, amount in fixes
     ]
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
-    captured = []
+    captured: list[pa.Table] = []
     monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+        "quantagent.ingest.jobs.minprice.stage_partition", _partition_stage(captured)
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     prices = MagicMock()
     prices.list_prices.return_value = [
         SimpleNamespace(wind_code=code, amount=Decimal("1")) for code, _ in fixes
@@ -675,7 +685,7 @@ def test_october_8_corrects_three_negative_amount_rows(monkeypatch, tmp_path):
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
-    kwargs = {
+    kwargs: dict[str, Any] = {
         "trade_date": day,
         "settings": settings,
         "paths": resolve_var_paths(settings, repo_root=tmp_path),
@@ -699,7 +709,9 @@ def test_october_8_corrects_three_negative_amount_rows(monkeypatch, tmp_path):
         ingest_day(MagicMock(), pg, **kwargs)
 
 
-def test_october_12_corrects_two_positive_amount_rows(monkeypatch, tmp_path):
+def test_october_12_corrects_two_positive_amount_rows(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     # 两条正成交额的 -1 手记录，均按负责人惯例指示把成交量和成交额置 0。
     day = date(2026, 10, 12)
     fixes = (("920166.BJ", "404"), ("920541.BJ", "619"))
@@ -708,16 +720,13 @@ def test_october_12_corrects_two_positive_amount_rows(monkeypatch, tmp_path):
         for code, amount in fixes
     ]
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
-    captured = []
+    captured: list[pa.Table] = []
     monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+        "quantagent.ingest.jobs.minprice.stage_partition", _partition_stage(captured)
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
@@ -740,7 +749,9 @@ def test_october_12_corrects_two_positive_amount_rows(monkeypatch, tmp_path):
     assert logs[0].excluded_codes == []
 
 
-def test_october_13_corrects_two_rows_and_keeps_plain_negative_amount(monkeypatch, tmp_path):
+def test_october_13_corrects_two_rows_and_keeps_plain_negative_amount(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     # 两条 -1 手负成交额记录走裁定；同日成交量 0 的负成交额仍由既有日行情规则处理。
     day = date(2026, 10, 13)
     fixes = (("920069.BJ", "-44", "-1"), ("920080.BJ", "-41", "-1"), ("920541.BJ", "-54", "0"))
@@ -752,16 +763,13 @@ def test_october_13_corrects_two_rows_and_keeps_plain_negative_amount(monkeypatc
         for code, amount, vol in fixes
     ]
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
-    captured = []
+    captured: list[pa.Table] = []
     monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+        "quantagent.ingest.jobs.minprice.stage_partition", _partition_stage(captured)
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     prices = MagicMock()
     prices.list_prices.return_value = [
         SimpleNamespace(wind_code=code, amount=Decimal("1")) for code, _, _ in fixes
@@ -769,7 +777,7 @@ def test_october_13_corrects_two_rows_and_keeps_plain_negative_amount(monkeypatc
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
-    kwargs = {
+    kwargs: dict[str, Any] = {
         "trade_date": day,
         "settings": settings,
         "paths": resolve_var_paths(settings, repo_root=tmp_path),
@@ -793,7 +801,9 @@ def test_october_13_corrects_two_rows_and_keeps_plain_negative_amount(monkeypatc
         ingest_day(MagicMock(), pg, **kwargs)
 
 
-def test_october_21_corrects_two_positive_amount_rows(monkeypatch, tmp_path):
+def test_october_21_corrects_two_positive_amount_rows(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     # 两条正成交额的 -1 手记录，均按负责人惯例指示把成交量和成交额置 0。
     day = date(2026, 10, 21)
     fixes = (("920145.BJ", "18"), ("920957.BJ", "761"))
@@ -802,16 +812,13 @@ def test_october_21_corrects_two_positive_amount_rows(monkeypatch, tmp_path):
         for code, amount in fixes
     ]
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
-    captured = []
+    captured: list[pa.Table] = []
     monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+        "quantagent.ingest.jobs.minprice.stage_partition", _partition_stage(captured)
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
@@ -834,7 +841,9 @@ def test_october_21_corrects_two_positive_amount_rows(monkeypatch, tmp_path):
     assert logs[0].excluded_codes == []
 
 
-def test_october_27_corrects_three_negative_amount_rows(monkeypatch, tmp_path):
+def test_october_27_corrects_three_negative_amount_rows(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     # 三条 -1 手且成交额为负，逐条须通过日行情对比后才置 0 入库。
     day = date(2026, 10, 27)
     fixes = (("920027.BJ", "-53"), ("920455.BJ", "-56"), ("920675.BJ", "-31"))
@@ -846,16 +855,13 @@ def test_october_27_corrects_three_negative_amount_rows(monkeypatch, tmp_path):
         for code, amount in fixes
     ]
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
-    captured = []
+    captured: list[pa.Table] = []
     monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+        "quantagent.ingest.jobs.minprice.stage_partition", _partition_stage(captured)
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     prices = MagicMock()
     prices.list_prices.return_value = [
         SimpleNamespace(wind_code=code, amount=Decimal("1")) for code, _ in fixes
@@ -863,7 +869,7 @@ def test_october_27_corrects_three_negative_amount_rows(monkeypatch, tmp_path):
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
-    kwargs = {
+    kwargs: dict[str, Any] = {
         "trade_date": day,
         "settings": settings,
         "paths": resolve_var_paths(settings, repo_root=tmp_path),
@@ -887,7 +893,9 @@ def test_october_27_corrects_three_negative_amount_rows(monkeypatch, tmp_path):
         ingest_day(MagicMock(), pg, **kwargs)
 
 
-def test_november_3_corrects_two_rows_mixed_amount_signs(monkeypatch, tmp_path):
+def test_november_3_corrects_two_rows_mixed_amount_signs(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     # 两条 -1 手记录：正成交额置 0，负成交额过日行情对比；成交量 0 的负额走既有规则。
     day = date(2026, 11, 3)
     fixes = (("920275.BJ", "-35", "-1"), ("920931.BJ", "263", "-1"), ("920030.BJ", "-55", "0"))
@@ -899,16 +907,13 @@ def test_november_3_corrects_two_rows_mixed_amount_signs(monkeypatch, tmp_path):
         for code, amount, vol in fixes
     ]
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
-    captured = []
+    captured: list[pa.Table] = []
     monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.stage_partition",
-        lambda table, **k: captured.append(table) or SimpleNamespace(content_digest="a" * 64),
+        "quantagent.ingest.jobs.minprice.stage_partition", _partition_stage(captured)
     )
     monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
-    logs = []
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
-    )
+    logs: list[Any] = []
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.persist_run_log", _run_log_recorder(logs))
     prices = MagicMock()
     prices.list_prices.return_value = [
         SimpleNamespace(wind_code=code, amount=Decimal("1")) for code, _, _ in fixes
@@ -916,7 +921,7 @@ def test_november_3_corrects_two_rows_mixed_amount_signs(monkeypatch, tmp_path):
     settings = Settings(var_root=tmp_path, allow_db_write=True)
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
-    kwargs = {
+    kwargs: dict[str, Any] = {
         "trade_date": day,
         "settings": settings,
         "paths": resolve_var_paths(settings, repo_root=tmp_path),

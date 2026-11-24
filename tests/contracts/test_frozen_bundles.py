@@ -77,7 +77,7 @@ def _check_config(manifest: dict[str, Any], bundle_dir: Path) -> None:
 
 
 def _check_registered_file(entry: dict[str, Any], bundle_dir: Path) -> str:
-    rel = entry["path"]
+    rel: str = entry["path"]
     path = bundle_dir / rel
     _require(path.is_file(), f"{bundle_dir}: manifest 登记的文件不存在 {rel}")
     size = path.stat().st_size

@@ -107,18 +107,18 @@ def test_cgb_10y_and_erp_match_wx2() -> None:
     assert isinstance(revised, dict)
     erp_lines: dict[str, list[str]] = defaultdict(list)
     seen_revised: set[str] = set()
-    for row in pe:
-        r = rf.get(row.trade_dt)
-        if row.pe_ttm is None or row.pe_ttm <= 0 or r is None:
+    for pe_row in pe:
+        risk_free = rf.get(pe_row.trade_dt)
+        if pe_row.pe_ttm is None or pe_row.pe_ttm <= 0 or risk_free is None:
             continue
-        ymd = row.trade_dt.strftime("%Y%m%d")
+        ymd = pe_row.trade_dt.strftime("%Y%m%d")
         if ymd in revised:
             seen_revised.add(ymd)
-            if Decimal(revised[ymd]["wx2_pe_ttm"]) == row.pe_ttm:
+            if Decimal(revised[ymd]["wx2_pe_ttm"]) == pe_row.pe_ttm:
                 problems.append(f"ERP {ymd}: 登记为已修订，但本地 PE_TTM 与 wx2 相同")
             continue
-        ep = 100.0 / float(row.pe_ttm)
-        erp_lines[ymd[:4]].append(f"{ymd}|{ep:.10f}|{_q4(r)}|{ep - float(r):.10f}")
+        ep = 100.0 / float(pe_row.pe_ttm)
+        erp_lines[ymd[:4]].append(f"{ymd}|{ep:.10f}|{_q4(risk_free)}|{ep - float(risk_free):.10f}")
     missing = sorted(set(revised) - seen_revised)
     if missing:
         problems.append(f"ERP 登记的修订日期本地缺失: {missing[:5]}")
