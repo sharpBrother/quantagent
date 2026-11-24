@@ -83,8 +83,19 @@ JYDB_SPECS: dict[str, SrcTableWriteSpec] = {
         keys=("ID",),
         system_columns=("JSID", "UpdateTime", "InsertTime"),
     ),
+    "QT_OSIndexQuote": SrcTableWriteSpec(
+        dataset="src.jydb.qt_osindexquote",
+        pg_schema="src_jydb",
+        pg_table="QT_OSIndexQuote",
+        native_columns=_jydb.QT_OSIndexQuote_COLUMNS,
+        keys=("ID",),
+        system_columns=("JSID", "UpdateTime", "InsertTime"),
+    ),
 }
 
+# 朝阳永续 P0/P1。主键一律是源端 id；分页游标是 (tmstamp, id)，
+# 所以 tmstamp 属于游标而不是业务列。entrytime、updatetime 是源端同步时间，
+# 变化不算业务修订。rpt_earnings_adjust 只建镜像，不写可见性契约。
 TRADE_CAL = SrcTableWriteSpec(
     dataset="src.tushare.trade_cal",
     pg_schema="src_tushare",

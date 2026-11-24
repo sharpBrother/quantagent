@@ -15,6 +15,7 @@ from orchestration.assets.jydb import (
     src_jydb_c_in_indicatordatav,
     src_jydb_c_in_indicatormain,
     src_jydb_ed_moneysupply,
+    src_jydb_qt_osindexquote,
 )
 from orchestration.assets.macro import (
     src_macro_fred_observation_vintage,
@@ -88,6 +89,7 @@ defs = Definitions(
         src_jydb_c_in_indicatormain,
         src_jydb_c_in_indicatordatav,
         src_jydb_ed_moneysupply,
+        src_jydb_qt_osindexquote,
         feature_pf_single_cutamp,
         feature_pf_single_tr_umr,
         src_eastmoney_minute,

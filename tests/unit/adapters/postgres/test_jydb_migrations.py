@@ -65,3 +65,20 @@ def test_every_jydb_paged_table_has_jsid_id_index(repo_root: Path) -> None:
             f'CREATE INDEX "{name}__jsid_id_idx" ON src_jydb."{name}" ("JSID", "ID")'
             in statements
         ), name
+
+
+@pytest.mark.unit
+def test_qt_osindexquote_rebuild_has_pk_and_read_index(repo_root: Path) -> None:
+    statements: list[str] = []
+    for item in list_migration_files(repo_root, "src"):
+        statements.extend(split_sql_statements(item.path.read_text(encoding="utf-8")))
+    create = next(
+        stmt
+        for stmt in reversed(statements)
+        if stmt.startswith('CREATE TABLE src_jydb."QT_OSIndexQuote"')
+    )
+    assert 'PRIMARY KEY ("ID")' in create
+    assert (
+        'CREATE INDEX "QT_OSIndexQuote__IndexCode_TradingDay_idx" '
+        'ON src_jydb."QT_OSIndexQuote" ("IndexCode", "TradingDay")'
+    ) in statements

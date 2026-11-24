@@ -8,6 +8,7 @@ from orchestration.assets.jydb import (
     src_jydb_c_in_indicatordatav,
     src_jydb_c_in_indicatormain,
     src_jydb_ed_moneysupply,
+    src_jydb_qt_osindexquote,
 )
 
 jydb_daily = define_asset_job(
@@ -18,6 +19,7 @@ jydb_daily = define_asset_job(
         src_jydb_c_in_indicatormain,
         src_jydb_c_in_indicatordatav,
         src_jydb_ed_moneysupply,
+        src_jydb_qt_osindexquote,
     ),
     executor_def=multiprocess_executor.configured({"max_concurrent": 1}),
 )

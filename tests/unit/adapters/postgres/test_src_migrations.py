@@ -130,7 +130,10 @@ _BOND_FX_REBUILD = (
     'src_wind."CBONDREPO"',
     'src_wind."FXEODPRICES"',
 )
-_PAIR_REBUILD = {"0019_bond_fx_wind_tables.sql": _BOND_FX_REBUILD}
+_PAIR_REBUILD = {
+    "0019_bond_fx_wind_tables.sql": _BOND_FX_REBUILD,
+    "0033_qt_osindexquote.sql": ('src_jydb."QT_OSIndexQuote"',),
+}
 
 # 0020 删掉 0003 的空物理表 AINDEXINDUSTRIESCITICS，并在同文件建同名视图。每条 DROP 紧跟同名 CREATE VIEW。
 _DROP_TO_VIEW = {

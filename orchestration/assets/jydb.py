@@ -99,3 +99,13 @@ def src_jydb_c_in_indicatordatav(config: JydbRunConfig) -> MaterializeResult[Non
 )
 def src_jydb_ed_moneysupply(config: JydbRunConfig) -> MaterializeResult[None]:
     return _ingest("ED_MoneySupply", config)
+
+
+@asset(
+    name="src_jydb_qt_osindexquote",
+    group_name=_GROUP,
+    deps=[src_jydb_ed_moneysupply],
+    metadata={"reads": "jydb.QT_OSIndexQuote", "checkpoint": "src_batch_source_cursor"},
+)
+def src_jydb_qt_osindexquote(config: JydbRunConfig) -> MaterializeResult[None]:
+    return _ingest("QT_OSIndexQuote", config)

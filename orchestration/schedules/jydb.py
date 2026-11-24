@@ -22,6 +22,7 @@ from orchestration.assets.jydb import (
     src_jydb_c_in_indicatordatav,
     src_jydb_c_in_indicatormain,
     src_jydb_ed_moneysupply,
+    src_jydb_qt_osindexquote,
 )
 from orchestration.jobs.jydb import jydb_daily
 
@@ -39,6 +40,7 @@ _ASSETS = (
     src_jydb_c_in_indicatormain,
     src_jydb_c_in_indicatordatav,
     src_jydb_ed_moneysupply,
+    src_jydb_qt_osindexquote,
 )
 
 

@@ -13,6 +13,7 @@ JYDB_SYNC: tuple[str, ...] = (
     "ED_MoneySupply",
     "C_IN_IndicatorDataV",
     "C_IN_IndicatorMain",
+    "QT_OSIndexQuote",
 )
 
 C_ED_MacroIndicatorData_COLUMNS: tuple[str, ...] = (
@@ -106,6 +107,27 @@ C_IN_IndicatorMain_COLUMNS: tuple[str, ...] = (
     "UnitCodeReport",
     "DisclosureFrequency",
     "IndiRemark",
+    "UpdateTime",
+    "JSID",
+    "InsertTime",
+)
+
+QT_OSIndexQuote_COLUMNS: tuple[str, ...] = (
+    "ID",
+    "IndexCode",
+    "TradingDay",
+    "RevealIndices",
+    "RevealInstiCode",
+    "TransCurrency",
+    "PrevClosePrice",
+    "OpenPrice",
+    "HighPrice",
+    "LowPrice",
+    "ClosePrice",
+    "TurnoverVolume",
+    "TurnoverValue",
+    "ChangeOF",
+    "ChangePCT",
     "UpdateTime",
     "JSID",
     "InsertTime",

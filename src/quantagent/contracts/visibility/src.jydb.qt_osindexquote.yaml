@@ -1,0 +1,13 @@
+dataset: src.jydb.qt_osindexquote
+doc_ref: docs/adr/2026-11-23-overseas-daily-next-day.md
+temporal_kind: point_event
+event_field: TradingDay
+visibility:
+  rule: source_field
+  field: TradingDay
+  strict: true
+  grade: A
+  rationale: >
+    境外与香港指数交易日 T 的数据在 T+1 可见。日、韩等早于 A 股收盘的市场也按次日处理，
+    偏保守但不会引入未来信息。见 docs/adr/2026-11-23-overseas-daily-next-day.md。
+pit_recoverable: true

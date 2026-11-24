@@ -46,3 +46,15 @@ def test_catalog_tables_do_not_have_visibility() -> None:
     visibilities = load_bundle().visibilities
     assert "src.jydb.c_ed_indicatormain" not in visibilities
     assert "src.jydb.c_in_indicatormain" not in visibilities
+
+
+@pytest.mark.contracts
+def test_qt_osindexquote_is_next_day_visible() -> None:
+    bundle = load_bundle()
+    visibility = bundle.visibilities["src.jydb.qt_osindexquote"]
+    assert visibility.visibility.rule == "source_field"
+    assert visibility.visibility.field == "TradingDay"
+    assert visibility.visibility.strict is True
+    assert visibility.visibility.grade == "A"
+    assert visibility.temporal_kind == "point_event"
+    assert visibility.event_field == "TradingDay"

@@ -1,0 +1,111 @@
+dataset: src.jydb.qt_osindexquote
+layer: pg
+doc_ref: docs/migration/jydb-ingest-plan.md
+temporal_kind: point_event
+event_field: TradingDay
+keys:
+  - ID
+reads: []
+columns:
+  ID:
+    dtype: int64
+    nullable: false
+    description: 聚源源表主键
+  IndexCode:
+    dtype: int64
+    nullable: false
+    description: 境外/香港指数内部代码
+  TradingDay:
+    dtype: datetime
+    nullable: false
+    description: 交易日；T 日数据 T+1 可见
+  RevealIndices:
+    dtype: string
+    nullable: true
+    description: 指数揭示名称
+  RevealInstiCode:
+    dtype: int64
+    nullable: true
+    description: 指数发布机构代码
+  TransCurrency:
+    dtype: int64
+    nullable: true
+    description: 交易币种代码
+  PrevClosePrice:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: 前收盘价
+  OpenPrice:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: 开盘价
+  HighPrice:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: 最高价
+  LowPrice:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: 最低价
+  ClosePrice:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: 收盘价
+  TurnoverVolume:
+    dtype: decimal
+    precision: 19
+    scale: 6
+    nullable: true
+    description: 成交量
+  TurnoverValue:
+    dtype: decimal
+    precision: 19
+    scale: 6
+    nullable: true
+    description: 成交额
+  ChangeOF:
+    dtype: decimal
+    precision: 19
+    scale: 4
+    nullable: true
+    description: 涨跌额
+  ChangePCT:
+    dtype: decimal
+    precision: 19
+    scale: 6
+    nullable: true
+    description: 涨跌幅
+  UpdateTime:
+    dtype: datetime
+    nullable: false
+    description: 源端更新时间；系统列，不参与业务修订判断
+  JSID:
+    dtype: int64
+    nullable: false
+    description: 源端同步序列；分页游标组成部分
+  InsertTime:
+    dtype: datetime
+    nullable: true
+    description: 源端插入时间；系统列，不参与业务修订判断
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间，不是 PIT 依据
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 主键与业务列的内容指纹

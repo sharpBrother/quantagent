@@ -85,6 +85,7 @@ _REBUILD_PAIRS: dict[str, frozenset[str]] = {
             'src_wind."FXEODPRICES"',
         }
     ),
+    "0033_qt_osindexquote.sql": frozenset({'src_jydb."QT_OSIndexQuote"'}),
 }
 # 删物理表并在同一文件建同名视图的白名单。视图只做筛选、不存数据，与重建表的规则不同：
 # 不要求 _batch_id 索引，但仍要求每条 DROP 紧跟同名 CREATE VIEW，且表集合与白名单完全一致。
