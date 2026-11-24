@@ -200,3 +200,35 @@ def test_start_needs_twenty_opens_of_history() -> None:
     opens, minute, prices = _world(4, 26, codes)
     with pytest.raises(FeatureLookupError, match="不足 20"):
         _run(opens, minute, prices, start=opens[10], end=opens[11], ids=(_CORR,), codes=codes)
+
+
+class _RecordingMinute(_FakeMinute):
+    def __init__(self, inner: _FakeMinute) -> None:
+        super().__init__(inner._data, inner._excluded)
+        self.days: list[date] = []
+
+    def scan_window(
+        self,
+        *,
+        as_of: date,
+        start: date,
+        end: date,
+        codes: Sequence[str] | None = None,
+        columns: Sequence[str] | None = None,
+    ) -> _Table:
+        self.days.append(start)
+        return super().scan_window(as_of=as_of, start=start, end=end, codes=codes, columns=columns)
+
+
+@pytest.mark.unit
+def test_corr_only_reads_five_minute_days_back() -> None:
+    # 只算 corr 时不得回看 20 日分钟：源端分钟数据起点之前的日子没有分区，多读会 fail-closed 报错。
+    codes = [f"{i:06d}.SZ" for i in range(30)]
+    opens, minute, prices = _world(9, 26, codes)
+    recording = _RecordingMinute(minute)
+    target = opens[25]
+    _run(opens, recording, prices, start=target, end=target, ids=(_CORR,), codes=codes)
+    assert min(recording.days) == opens[21]
+    recording_core = _RecordingMinute(minute)
+    _run(opens, recording_core, prices, start=target, end=target, ids=(_CORE_UP,), codes=codes)
+    assert min(recording_core.days) == opens[6]

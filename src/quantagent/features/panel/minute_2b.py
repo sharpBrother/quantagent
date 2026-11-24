@@ -103,12 +103,15 @@ def build_minute_2b_values(
         raise FeatureLookupError("feature_ids 为空")
     universe = {ordered[i]: frozenset(universe_at(ordered[i])) for i in targets}
 
+    # 分钟数据只读所选因子需要的窗口：只算 corr 时回看 5 日，含 core 时回看 20 日。
+    # 多读会碰到窗口外没有分钟数据的日子（源端 2024-07-30 起），读取端按 fail-closed 报错。
+    lookback = WINDOW_CORE if wanted_ids & _CORE_IDS else CORR_WINDOW
     daily: dict[date, dict[str, MinuteDay2b]] = {}
-    for idx in range(first - (WINDOW_CORE - 1), last + 1):
+    for idx in range(first - (lookback - 1), last + 1):
         day = ordered[idx]
         # 读取范围：所有窗口包含 day 的截面日股票池的并集。
         wanted: set[str] = set()
-        for t in range(max(first, idx), min(last, idx + WINDOW_CORE - 1) + 1):
+        for t in range(max(first, idx), min(last, idx + lookback - 1) + 1):
             wanted.update(universe[ordered[t]])
         daily[day] = load_daily_2b(repo, as_of=as_of, day=day, codes=wanted)
 
