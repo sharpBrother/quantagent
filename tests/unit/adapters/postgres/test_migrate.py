@@ -207,6 +207,7 @@ def test_list_migration_files_on_repo(repo_root: Path) -> None:
         "0028_jydb_cursor_indexes.sql",
         "0029_jydb_column_comments.sql",
         "0033_qt_osindexquote.sql",
+        "0034_asharemoneyflow_code_date_index.sql",
     ]
     assert [item.filename for item in ops] == [
         "0001_schema.sql",

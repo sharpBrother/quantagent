@@ -15,6 +15,7 @@ from quantagent.domain.ports.index_returns import IndexReturnRepository
 from quantagent.domain.ports.index_valuation import IndexValuationRepository
 from quantagent.domain.ports.macro import MacroRepository
 from quantagent.domain.ports.minute_bar import MinuteBarRepository
+from quantagent.domain.ports.money_flow import MoneyFlowRepository
 from quantagent.domain.ports.overseas_index import OverseasIndexQuoteRepository
 from quantagent.domain.ports.prices import DailyPriceRepository
 from quantagent.domain.ports.st import StStatusRepository
@@ -31,6 +32,7 @@ __all__ = [
     "IndexValuationRepository",
     "MacroRepository",
     "MinuteBarRepository",
+    "MoneyFlowRepository",
     "OverseasIndexQuoteRepository",
     "StStatusRepository",
     "UniverseRepository",

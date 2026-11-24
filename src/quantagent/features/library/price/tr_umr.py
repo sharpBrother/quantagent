@@ -4,7 +4,7 @@
 再按 60 日半衰期权重求和。Current-20 的消费窗口是 1、方向是 +1，长表直接存
 这个原始值，不再套 mean、std、diff 或 pctchg。
 
-v2 起，计算窗口内任一所需输入缺失即不产值，不再跳过缺失项求和（见 ``_weighted_umr``）。
+v2 起，计算窗口内任一所需输入缺失即不产值，不再跳过缺失项求和（见 ``umr_math.weighted_umr``）。
 """
 
 from __future__ import annotations
@@ -13,10 +13,9 @@ import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-import numpy as np
-
 from quantagent.domain.errors import FeatureLookupError
 from quantagent.domain.feature_lineage import derive_feature_lineage
+from quantagent.features.library.umr_math import risk_coef, weighted_umr
 from quantagent.platform.identity import digest_json
 
 if TYPE_CHECKING:
@@ -105,9 +104,15 @@ def tr_umr_value(
         raise FeatureLookupError("TR_UMR 一次只接受一只股票")
     ordered = tuple(sorted(open_days))
     tr, excess = _market_series(ordered, prices, index_returns)
-    coef = _risk_coef(tr)
+    coef = risk_coef(tr, risk_window=RISK_WINDOW)
     # lookback = 60 + 10 - 1。前 9 日风险窗不满，加权只用最后 60 日。
-    value = _weighted_umr(coef[-RET_WINDOW:], excess[-RET_WINDOW:])
+    value = weighted_umr(
+        coef[-RET_WINDOW:],
+        excess[-RET_WINDOW:],
+        ret_window=RET_WINDOW,
+        half_life=HALF_LIFE,
+        sign=float(SIGN),
+    )
     if value is None:
         return None
     asset_id = next(iter(codes), None)
@@ -182,45 +187,6 @@ def _excess(row: DailyPrice | None, index_row: IndexReturn | None) -> float:
     if not math.isfinite(value):
         return math.nan
     return value
-
-
-def _risk_coef(values: Sequence[float]) -> list[float]:
-    # pandas Series.rolling(10, min_periods=10).mean() - series。
-    # 窗口里有限值不足 10 个就是 NaN。缺口不补 0，也不用前值。
-    coef = [math.nan] * len(values)
-    for end in range(RISK_WINDOW - 1, len(values)):
-        window = values[end - RISK_WINDOW + 1 : end + 1]
-        if any(not math.isfinite(item) for item in window):
-            continue
-        mean = float(np.mean(np.asarray(window, dtype=np.float64)))
-        coef[end] = mean - window[-1]
-    return coef
-
-
-def _weighted_umr(risk_tail: Sequence[float], excess_tail: Sequence[float]) -> float | None:
-    # 逐位复制旧仓 get_exp_weight。最新一天权重最大。
-    window = RET_WINDOW
-    half_life = HALF_LIFE
-    exp_wt = np.asarray([0.5 ** (1 / half_life)] * window) ** np.arange(window)
-    weights = exp_wt[::-1] / np.sum(exp_wt)
-    products = (
-        weights
-        * np.asarray(risk_tail, dtype=np.float64)
-        * np.asarray(excess_tail, dtype=np.float64)
-    )
-    # v1 用 nansum 跳过缺失乘积，分母仍是满权重，等于把缺失当 0 贡献，违反 AGENTS.md §7.5
-    # （缺失就是缺失，不补 0）。负责人 2026-11-22 裁定 v2：60 天中任一天的风险系数或超额收益
-    # 不是有限值，整个截面不产值。风险系数第 t 天由 tr[t-9..t] 算出，因此这 60 个风险系数
-    # 用到的真实波幅正好覆盖 69 日窗口的全部输入。超额收益前 9 日不进入公式，缺失不影响结果。
-    if not all(math.isfinite(item) for item in risk_tail) or not all(
-        math.isfinite(item) for item in excess_tail
-    ):
-        return None
-    total = float(np.sum(products))
-    signed = float(SIGN) * total
-    if not math.isfinite(signed):
-        raise FeatureLookupError("TR_UMR 结果不是有限值")
-    return signed
 
 
 def _lineage(

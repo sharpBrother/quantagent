@@ -13,6 +13,7 @@ from quantagent.adapters.postgres.errors import PostgresAdapterError
 from quantagent.cli.cutamp_materialize import materialize_cutamp
 from quantagent.cli.forward_return_materialize import materialize_forward_return_cli
 from quantagent.cli.minute_factors_materialize import materialize_minute_factors
+from quantagent.cli.moneyflow_materialize import materialize_moneyflow_factors
 from quantagent.cli.tr_umr_materialize import materialize_tr_umr
 from quantagent.domain.errors import DomainError
 from quantagent.lake.layout_bench import SCALES, run_layout_benchmark
@@ -185,6 +186,46 @@ def lake_materialize_minute_factors(
             end=datetime.strptime(end.strip(), "%Y-%m-%d").date(),
             as_of=datetime.strptime(as_of.strip(), "%Y-%m-%d").date(),
             codes=code_tuple,
+        )
+    except (
+        LakeLayoutError,
+        DomainError,
+        PostgresAdapterError,
+        ConfigError,
+        RunLogError,
+        ValueError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"wrote dataset=feature.value rows={row_count} digest={digest}")
+
+
+@materialize_app.command("moneyflow-factors")
+def lake_materialize_moneyflow_factors(
+    start: Annotated[str, typer.Option("--start", help="截面起点 YYYY-MM-DD")],
+    end: Annotated[str, typer.Option("--end", help="截面终点 YYYY-MM-DD")],
+    as_of: Annotated[str, typer.Option("--as-of", help="行情与资金流可见日 YYYY-MM-DD，必填")],
+    codes: Annotated[
+        str | None,
+        typer.Option("--codes", help="逗号分隔的 Wind 代码；不传则取截面日 end 的 all_a 成员"),
+    ] = None,
+) -> None:
+    """把 abso_umr、moneyflowh、actlargemedcut 三个资金流因子写入 feature.value。
+    窗口不足或缺失输入的股票不落行。
+    """
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    code_tuple = (
+        None if codes is None else tuple(part.strip() for part in codes.split(",") if part.strip())
+    )
+    try:
+        row_count, digest = materialize_moneyflow_factors(
+            settings=settings,
+            paths=paths,
+            start=datetime.strptime(start.strip(), "%Y-%m-%d").date(),
+            end=datetime.strptime(end.strip(), "%Y-%m-%d").date(),
+            wind_codes=code_tuple,
+            as_of=datetime.strptime(as_of.strip(), "%Y-%m-%d").date(),
         )
     except (
         LakeLayoutError,

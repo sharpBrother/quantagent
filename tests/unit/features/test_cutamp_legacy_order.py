@@ -12,7 +12,9 @@ import random
 import numpy as np
 import pytest
 
-from quantagent.features.library.price.cutamp import _legacy_quicksort_order
+from quantagent.features.library._legacy_sort import (
+    legacy_quicksort_order as _legacy_quicksort_order,
+)
 
 
 def _numpy_quicksort(keys: list[float]) -> list[int]:
