@@ -116,3 +116,7 @@ applies_to:
 2. **研究脚本：** `notebooks/2026-11-24-erp-dividend-growth.py`，复用 `erp_lib`，落 run log 与 pit_report。
    先断言中证红利上 V + R0 的主口径结果与报告四相同。
 3. 实现交给 impl-deepseek，我负责审阅、复核和写报告。
+
+## 结果
+
+见 [报告五](erp-dividend-growth.md)。
