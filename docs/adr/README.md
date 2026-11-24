@@ -121,3 +121,4 @@ applies_to:
 | 2026-11-24 | [朝阳永续接入范围与一致预期可见性](2026-11-24-suntime-visibility.md) |
 | 2026-11-22 | [中信一级行业成分改用 AINDEXMEMBERSCITICSZL](2026-11-22-citics-l1-members-zl.md) |
 | 2026-11-22 | [股票前瞻收益按 open-to-open 落 mart，端点停牌不落行](2026-11-22-forward-return-open2open.md) |
+| 2026-11-24 | [tr_umr 升 v2，窗口内缺输入不产值](2026-11-24-tr-umr-v2-no-missing-as-zero.md) |

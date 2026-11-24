@@ -30,7 +30,7 @@ from quantagent.adapters.postgres.index_returns import (
 )
 from quantagent.adapters.postgres.src_dml import assert_src_dml_sql
 from quantagent.domain.calendar import open_dates
-from quantagent.features.library.price.tr_umr import BENCHMARK, LOOKBACK
+from quantagent.features.library.price.tr_umr import BENCHMARK, LOOKBACK, RET_WINDOW
 from quantagent.features.panel.cutamp import build_cutamp_values
 from quantagent.features.panel.tr_umr import build_tr_umr_values
 from quantagent.platform.config import get_settings
@@ -38,11 +38,13 @@ from quantagent.platform.pg import connect
 from quantagent.platform.storage import detect_repo_root, resolve_var_paths
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
 
     import psycopg
 
     from quantagent.domain.feature_value import FeatureValue
+    from quantagent.domain.index_returns.types import IndexReturn
+    from quantagent.domain.prices.types import DailyPrice
 
 _GOLDEN = Path(__file__).parents[1] / "golden" / "market_data"
 _CUTAMP_FIXTURE = _GOLDEN / "cutamp_wx2_20240105.json"
@@ -148,6 +150,32 @@ def _explained_missing(
     bj_old_code = {code for code in expected if code.endswith(".BJ") and code not in described}
     delisted = {code for code, delist in described.items() if delist and delist < _AS_OF_YMD}
     return bj_old_code, delisted
+
+
+def _window_missing_input(
+    window: Sequence[date],
+    stock_rows: Mapping[date, DailyPrice],
+    index_rows: Mapping[date, IndexReturn],
+) -> bool:
+    """截面窗口内是否缺任一所需输入，独立于 tr_umr 实现，只看原始行。
+    69 日真实波幅需要复权高、复权低、复权前收（前收为 0 视为无定义）。
+    最后 60 日的超额收益需要个股涨跌幅与指数涨跌幅。前 9 日超额收益不进公式，不计入。
+    """
+    for position, day in enumerate(window):
+        row = stock_rows.get(day)
+        if (
+            row is None
+            or row.adj_high is None
+            or row.adj_low is None
+            or row.adj_preclose is None
+            or row.adj_preclose == 0
+        ):
+            return True
+        if position >= LOOKBACK - RET_WINDOW:
+            index_row = index_rows.get(day)
+            if row.pct_change is None or index_row is None or index_row.pct_change is None:
+                return True
+    return False
 
 
 @pytest.mark.integration
@@ -260,19 +288,34 @@ def test_tr_umr_cross_section_matches_wx2_20240105() -> None:
     # 已知差异必须仍然不一致。若某只变成一致，说明上游或实现已变，需要人工复核后再改常量。
     unexpected = [item for item in mismatches if item.split(":", 1)[0] not in _TR_UMR_KNOWN_DIFF]
     stale_known = sorted(_TR_UMR_KNOWN_DIFF - mismatch_codes)
+    # 已裁定差异：旧仓 nansum 把缺失当 0，wx2 因此有值；v2 起窗口内有缺失输入即不产值。
+    # 只有窗口内确有缺失输入的代码才归入这一类，其余缺失仍判失败。
+    window = tuple(opens[cross_index - (LOOKBACK - 1) : cross_index + 1])
+    stock_rows: dict[str, dict[date, DailyPrice]] = {}
+    for price in prices:
+        stock_rows.setdefault(price.wind_code, {})[price.trade_dt] = price
+    index_by_day = {item.trade_dt: item for item in index_returns}
+    input_gap = {
+        code
+        for code in missing
+        if _window_missing_input(window, stock_rows.get(code, {}), index_by_day)
+    }
+    unexplained = [code for code in missing if code not in input_gap]
     print(
         f"\ntr_umr 2024-01-05: wx2 {len(expected)} 行，本地 {len(local)} 行，"
         f"一致 {len(expected) - len(mismatches) - len(missing)}，"
         f"不一致 {len(mismatches)}（其中已知 {len(mismatch_codes & _TR_UMR_KNOWN_DIFF)}，"
-        f"未知 {len(unexpected)}），缺失 {len(missing)}，多出 {len(extra)}"
+        f"未知 {len(unexpected)}），"
+        f"缺失 {len(missing)}（窗口内有缺失输入 {len(input_gap)}，未解释 {len(unexplained)}），"
+        f"多出 {len(extra)}"
     )
-    assert not (unexpected or missing or extra or stale_known), (
+    assert not (unexpected or unexplained or extra or stale_known), (
         _format_failure(
             name="tr_umr",
             expected_count=len(expected),
             local_count=len(local),
             mismatches=unexpected,
-            missing=missing,
+            missing=unexplained,
             extra=extra,
         )
         + f"\n已知差异中已不再不一致的（需复核后移出 _TR_UMR_KNOWN_DIFF）: {stale_known}"

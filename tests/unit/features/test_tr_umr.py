@@ -152,8 +152,8 @@ def _components(
     return tr, excess
 
 
-def _oracle(tr: list[float], excess: list[float]) -> float:
-    """独立预言：pandas rolling，权重按旧函数逐位写出。"""
+def _oracle(tr: list[float], excess: list[float]) -> float | None:
+    """独立预言：pandas rolling，权重按旧函数逐位写出。v2：60 个乘积任一缺失即无值。"""
     risk = pd.Series(tr, dtype="float64")
     coef = risk.rolling(RISK_WINDOW, min_periods=RISK_WINDOW).mean() - risk
     window = RET_WINDOW
@@ -164,7 +164,9 @@ def _oracle(tr: list[float], excess: list[float]) -> float:
         coef.iloc[-window:].to_numpy() * np.asarray(excess[-window:], dtype=np.float64) * weights,
         dtype="float64",
     )
-    return float(products.sum(skipna=True))
+    if products.isna().any():
+        return None
+    return float(products.sum(skipna=False))
 
 
 def _assert_relative(actual: float, expected: float) -> None:
@@ -195,6 +197,7 @@ def test_matches_pandas_rolling_oracle() -> None:
     index_returns = tuple(_index(day, index) for index, day in enumerate(days))
     tr, excess = _components(prices, index_returns, days)
     expected = _oracle(tr, excess)
+    assert expected is not None
     assert abs(expected) > 1e-8
     got = tr_umr_value(
         days,
@@ -261,34 +264,112 @@ def test_short_open_day_window_produces_no_value() -> None:
 
 
 @pytest.mark.unit
-def test_missing_stock_day_stays_missing() -> None:
+def test_missing_stock_day_in_window_is_none() -> None:
+    # v1 用 nansum 跳过缺失项，等于把缺失当 0。v2 起窗口内缺一天整个截面不产值。
     days = _days(LOOKBACK)
     prices = tuple(_price(day, index) for index, day in enumerate(days) if index != 20)
     index_returns = tuple(_index(day, index) for index, day in enumerate(days))
     tr, excess = _components(prices, index_returns, days)
     assert math.isnan(tr[20]) and math.isnan(excess[20])
-    expected = _oracle(tr, excess)
-    filled = _oracle(
-        pd.Series(tr, dtype="float64").ffill().to_list(),
-        pd.Series(excess, dtype="float64").ffill().to_list(),
+    assert _oracle(tr, excess) is None
+    assert (
+        tr_umr_value(
+            days,
+            prices,
+            index_returns,
+            price_contract=_price_contract(),
+            index_contract=_index_contract(),
+        )
+        is None
     )
-    assert abs(filled - expected) > 1e-8
-    got = tr_umr_value(
+    assert (
+        build_tr_umr_values(
+            prices,
+            index_returns,
+            days,
+            price_contract=_price_contract(),
+            index_contract=_index_contract(),
+            start=days[-1],
+            end=days[-1],
+            computed_at=_COMPUTED_AT,
+            run_id=_RUN_ID,
+        )
+        == ()
+    )
+
+
+@pytest.mark.unit
+def test_missing_index_return_in_window_is_none() -> None:
+    days = _days(LOOKBACK)
+    prices = tuple(_price(day, index) for index, day in enumerate(days))
+    full_index = tuple(_index(day, index) for index, day in enumerate(days))
+    no_row = tuple(row for row in full_index if row.trade_dt != days[40])
+    null_pct = tuple(
+        IndexReturn(row.trade_dt, BENCHMARK, None) if row.trade_dt == days[40] else row
+        for row in full_index
+    )
+    for index_returns in (no_row, null_pct):
+        assert (
+            tr_umr_value(
+                days,
+                prices,
+                index_returns,
+                price_contract=_price_contract(),
+                index_contract=_index_contract(),
+            )
+            is None
+        )
+
+
+@pytest.mark.unit
+def test_missing_risk_input_before_last_60_days_is_none() -> None:
+    # 第 3 日的真实波幅进入第 9 日风险系数（tr[0..9] 的均值），第 9 日属于加权的 60 日，缺失必须无值。
+    days = _days(LOOKBACK)
+    prices = tuple(_price(day, index) for index, day in enumerate(days) if index != 3)
+    index_returns = tuple(_index(day, index) for index, day in enumerate(days))
+    assert (
+        tr_umr_value(
+            days,
+            prices,
+            index_returns,
+            price_contract=_price_contract(),
+            index_contract=_index_contract(),
+        )
+        is None
+    )
+
+
+@pytest.mark.unit
+def test_missing_excess_before_weighting_window_does_not_matter() -> None:
+    # 超额收益只用最后 60 日（第 9 至 68 日）。第 3 日的指数缺失不进入公式，结果不变。
+    days = _days(LOOKBACK)
+    prices = tuple(_price(day, index) for index, day in enumerate(days))
+    full_index = tuple(_index(day, index) for index, day in enumerate(days))
+    without_head = tuple(row for row in full_index if row.trade_dt != days[3])
+    expected = tr_umr_value(
         days,
         prices,
-        index_returns,
+        full_index,
         price_contract=_price_contract(),
         index_contract=_index_contract(),
     )
+    got = tr_umr_value(
+        days,
+        prices,
+        without_head,
+        price_contract=_price_contract(),
+        index_contract=_index_contract(),
+    )
+    assert expected is not None
     assert got is not None
-    _assert_relative(got.value, expected)
+    assert got.value == expected.value
 
 
 @pytest.mark.unit
 def test_all_missing_is_none_not_zero() -> None:
     days = _days(LOOKBACK)
     blank = [math.nan] * LOOKBACK
-    assert _oracle(blank, blank) == 0.0
+    assert _oracle(blank, blank) is None
     index_returns = tuple(_index(day, index) for index, day in enumerate(days))
     assert (
         tr_umr_value(

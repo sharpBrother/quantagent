@@ -3,6 +3,8 @@
 旧仓 ``TR_UMR`` 在市场开市日上计算真实波幅相对 10 日均值的偏离，乘超额收益，
 再按 60 日半衰期权重求和。Current-20 的消费窗口是 1、方向是 +1，长表直接存
 这个原始值，不再套 mean、std、diff 或 pctchg。
+
+v2 起，计算窗口内任一所需输入缺失即不产值，不再跳过缺失项求和（见 ``_weighted_umr``）。
 """
 
 from __future__ import annotations
@@ -26,7 +28,7 @@ if TYPE_CHECKING:
     from quantagent.domain.prices.types import DailyPrice
 
 FEATURE_ID = "pf_single_tr_umr_1_mean_pos"
-DEFINITION_VERSION = "v1"
+DEFINITION_VERSION = "v2"
 RISK_WINDOW = 10
 RET_WINDOW = 60
 HALF_LIFE = 30
@@ -91,6 +93,7 @@ def tr_umr_value(
     index_contract: VisibilityContract,
 ) -> TrUmrValue | None:
     """``open_days`` 是含截面日在内的开市日。不足 69 日则没有值。
+    窗口内任一所需输入缺失（股票当日无行或字段为空，指数当日无收益）也没有值。
 
     不接受调用方传入 ``knowledge_dt`` 或 ``pit_grade``。
     """
@@ -205,11 +208,15 @@ def _weighted_umr(risk_tail: Sequence[float], excess_tail: Sequence[float]) -> f
         * np.asarray(risk_tail, dtype=np.float64)
         * np.asarray(excess_tail, dtype=np.float64)
     )
-    # pandas Series.sum 在全是 NaN 时返回 0。那不是“没有因子”，写出去会变成假的零。
-    # 60 个乘积都不是有限值时返回 None，调用方不产行。部分缺失则跳过这些天。
-    if not bool(np.any(np.isfinite(products))):
+    # v1 用 nansum 跳过缺失乘积，分母仍是满权重，等于把缺失当 0 贡献，违反 AGENTS.md §7.5
+    # （缺失就是缺失，不补 0）。负责人 2026-11-22 裁定 v2：60 天中任一天的风险系数或超额收益
+    # 不是有限值，整个截面不产值。风险系数第 t 天由 tr[t-9..t] 算出，因此这 60 个风险系数
+    # 用到的真实波幅正好覆盖 69 日窗口的全部输入。超额收益前 9 日不进入公式，缺失不影响结果。
+    if not all(math.isfinite(item) for item in risk_tail) or not all(
+        math.isfinite(item) for item in excess_tail
+    ):
         return None
-    total = float(np.nansum(products))
+    total = float(np.sum(products))
     signed = float(SIGN) * total
     if not math.isfinite(signed):
         raise FeatureLookupError("TR_UMR 结果不是有限值")
