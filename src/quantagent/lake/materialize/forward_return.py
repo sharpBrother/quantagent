@@ -37,7 +37,7 @@ from quantagent.platform.identity import digest_json
 from quantagent.platform.runlog import RunLog, persist_run_log
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
     from datetime import date
     from pathlib import Path
 
@@ -70,9 +70,11 @@ def select_forward_returns(
     as_of: date,
     wind_codes: tuple[str, ...],
     horizons: Sequence[str] = HORIZONS,
+    keep_row: Callable[[ForwardReturn], bool] | None = None,
 ) -> tuple[ForwardReturn, ...]:
     """信号日取 ``[start, end]`` 内的 SSE 开市日，且终点不晚于 ``as_of``。
     ``as_of`` 之后未成熟的区间不产行。没有成熟区间时返回空元组，由调用方决定如何报错。
+    ``keep_row`` 为 None 时保留全部行；否则只保留它返回真的行，用于按截面日股票池过滤输出。
     """
     if start > end:
         raise InvalidQueryError("start 晚于 end")
@@ -96,7 +98,7 @@ def select_forward_returns(
         end=window[1],
         wind_codes=wind_codes,
     )
-    return build_forward_returns(
+    built = build_forward_returns(
         rows,
         days,
         signal_dates=signal_dates,
@@ -104,6 +106,9 @@ def select_forward_returns(
         as_of=as_of,
         horizons=horizons,
     )
+    if keep_row is None:
+        return built
+    return tuple(row for row in built if keep_row(row))
 
 
 def write_forward_returns(rows: Sequence[ForwardReturn], dest: Path) -> ForwardReturnWriteResult:
@@ -230,9 +235,11 @@ def materialize_forward_return(
     end: date,
     as_of: date,
     wind_codes: tuple[str, ...],
+    keep_row: Callable[[ForwardReturn], bool] | None = None,
 ) -> ForwardReturnWriteResult:
     """选取、写入、写 run log。``dest`` 固定为 ``lake/mart/forward_return``。
-    连接与默认代码池由调用方（CLI）组装，这里只接收端口，便于用内存实现测试。
+    连接与代码池由调用方（CLI）组装，这里只接收端口，便于用内存实现测试。
+    ``keep_row`` 由 CLI 按截面日股票池构造，选取后过滤输出行。
     """
     started = datetime.now(UTC)
     dest = paths.lake / "mart" / "forward_return"
@@ -245,6 +252,7 @@ def materialize_forward_return(
             end=end,
             as_of=as_of,
             wind_codes=wind_codes,
+            keep_row=keep_row,
         )
         result = write_forward_returns(rows, dest)
     except Exception as exc:

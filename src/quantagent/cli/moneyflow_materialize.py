@@ -18,9 +18,12 @@ from quantagent.adapters.postgres.money_flow import (
     PostgresMoneyFlowRepository,
     load_money_flow_visibility,
 )
-from quantagent.adapters.postgres.universe import PostgresUniverseRepository
+from quantagent.cli._universe import (
+    all_a_members_by_day,
+    keep_rows_in_membership,
+    union_codes,
+)
 from quantagent.domain.calendar import open_dates
-from quantagent.domain.universe.all_a import ALL_A_UNIVERSE_ID
 from quantagent.features.library.money_flow.abso_umr import LOOKBACK
 from quantagent.features.library.price.tr_umr import BENCHMARK
 from quantagent.features.panel.money_flow import build_money_flow_factor_values
@@ -30,12 +33,11 @@ from quantagent.platform.pg import connect
 from quantagent.platform.runlog import RunLog, persist_run_log
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Sequence
     from datetime import date
 
     import psycopg
 
-    from quantagent.domain.feature_value import FeatureValue
     from quantagent.domain.index_returns.types import IndexReturn
     from quantagent.domain.money_flow.types import MoneyFlow
     from quantagent.domain.prices.types import DailyPrice
@@ -80,7 +82,7 @@ def materialize_moneyflow_factors(
         try:
             members_by_day: dict[date, frozenset[str]] | None = None
             if wind_codes is None:
-                members_by_day = _all_a_members_by_day(conn, as_of=as_of, days=events)
+                members_by_day = all_a_members_by_day(conn, as_of=as_of, days=events)
                 codes = union_codes(members_by_day)
             else:
                 codes = wind_codes
@@ -182,36 +184,6 @@ def read_moneyflow_inputs(
         wind_codes=(BENCHMARK,),
     )
     return prices, money_flows, index_returns
-
-
-def _all_a_members_by_day(
-    conn: psycopg.Connection[object], *, as_of: date, days: Sequence[date]
-) -> dict[date, frozenset[str]]:
-    repo = PostgresUniverseRepository(conn)
-    return {
-        day: frozenset(
-            member.asset_id
-            for member in repo.members_at(as_of=as_of, dt=day, universe_id=ALL_A_UNIVERSE_ID)
-        )
-        for day in days
-    }
-
-
-def union_codes(members_by_day: Mapping[date, frozenset[str]]) -> tuple[str, ...]:
-    """区间内各截面日 all_a 成员的并集，升序。只决定读哪些股票，不决定产出哪些行。"""
-    merged: set[str] = set()
-    for members in members_by_day.values():
-        merged |= members
-    return tuple(sorted(merged))
-
-
-def keep_rows_in_membership(
-    rows: Sequence[FeatureValue], members_by_day: Mapping[date, frozenset[str]]
-) -> tuple[FeatureValue, ...]:
-    """只保留截面日当天属于 all_a 的行。截面日不在映射里的行一律丢弃（fail-closed）。"""
-    return tuple(
-        row for row in rows if row.asset_id in members_by_day.get(row.event_dt, frozenset())
-    )
 
 
 def read_start_for(open_days: Sequence[date], *, start: date, end: date) -> date:
