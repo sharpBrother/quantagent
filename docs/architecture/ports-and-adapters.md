@@ -2,7 +2,7 @@
 title: 端口与适配器
 status: active
 created: 2026-09-16
-updated: 2026-11-23
+updated: 2026-11-24
 applies_to:
   - src/quantagent/domain/ports/
   - src/quantagent/adapters/
@@ -100,6 +100,7 @@ flowchart TB
 | `IndexValuationRepository` | 指数日频估值（`AINDEXVALUATION`，目前只读 `PE_TTM` 与 `DIVIDEND_YIELD`）。源表含非交易日行，原样返回 |
 | `FundamentalRepository` | 财务与一致预期，按 `period_end` 与版本 |
 | `MacroRepository` | 宏观序列。领域序列 ID（`cn_cgb_10y`、`us_ust_10y`、`us_tips_10y`、`cn_cpi_yoy`、`cn_cpi_yoy_nbs`、`cn_ppi_yoy_nbs`、`cn_cpi_nonfood_yoy_nbs`、`cn_ibo_7d`、`cn_usdcny_fix`、`de_bund_10y`、`jp_jgb_10y`）到源表的映射只在 `adapters/postgres/macro.py`；有修订的源（ALFRED）返回 `as_of` 当时生效的版本，版本选择在 `domain/macro`；带发布时刻的源（聚源）按发布日的日期当天可见 |
+| `OverseasIndexQuoteRepository` | 境外指数日收盘（聚源 `QT_OSIndexQuote`，代码是 `SecuMainAll.InnerCode`）。交易日 T 的收盘在 T+1 可见；只取回 `as_of` 可见的行，不补缺失交易日、不按 A 股交易日对齐 |
 | `FeatureRepository` | 因子长表读写 |
 | `SignalRepository` | 信号与回测结果 |
 | `PortfolioRepository` | 组合权重与持仓 |
