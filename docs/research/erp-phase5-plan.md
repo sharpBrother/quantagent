@@ -142,3 +142,8 @@ applies_to:
       这是新增端口，不改现有接口。
    3. 补 D 的脚本。
 3. 实现交给 impl-deepseek，我负责审阅、复核和写报告。
+
+## 结果
+
+- C：见[报告六](erp-style-predict.md)，不能预测。
+- D：等待 `QT_OSIndexQuote` 接入。
