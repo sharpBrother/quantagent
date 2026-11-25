@@ -40,8 +40,10 @@ _LAKE_ASSETS = frozenset(
 )
 
 _EXPECTED_SCHEDULES = {
-    "office": {"wind_source_daily_close", "wind_source_daily_morning"},
+    "office": set(),
     "local": {
+        "wind_source_daily_close",
+        "wind_source_daily_morning",
         "tushare_daily_evening",
         "macro_daily_morning",
         "macro_wgc_sunday",

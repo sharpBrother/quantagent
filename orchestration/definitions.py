@@ -69,8 +69,12 @@ def _resources() -> dict[str, WindIngestResource | TradeCalendarResource]:
 # 调度仍按 profile 注册，写入目标不再按机器限制。
 # 各机队列独立，同一来源的自动采集只能在一台机器启用。
 PROFILE_SCHEDULES: dict[str, tuple[ScheduleDefinition, ...]] = {
-    "office": (wind_source_daily_close, wind_source_daily_morning),
+    # 负责人 2026-11-25：Wind、朝阳永续、聚源、Tushare、公开源与因子日更都挂在 Mac（local）。
+    # 公司电脑不再注册调度，避免两边同时采集同一来源。
+    "office": (),
     "local": (
+        wind_source_daily_close,
+        wind_source_daily_morning,
         tushare_daily_evening,
         macro_daily_morning,
         macro_wgc_sunday,
