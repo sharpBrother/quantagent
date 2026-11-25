@@ -53,14 +53,14 @@ applies_to:
 
 | 机器 | profile | 调度 | 托管 | 状态 |
 |---|---|---|---|---|
-| 公司电脑 | `office` | Wind 16:30、06:00（交接期间暂停） | Windows 计划任务 | 经 ToDesk 连 PG |
-| Mac mini | `local` | Tushare 19:00、宏观 08:00 | launchd `com.quantagent.dagster-daemon` | Wind 回填交接中 |
+| 公司电脑 | `office` | 无（11-25 起不注册调度） | Windows 计划任务 | 须拉新代码或停掉守护进程，避免与 Mac 重复采集 |
+| Mac mini | `local` | 源：Wind 16:30、06:00，分钟 16:00、17:00，Tushare 19:00，朝阳永续 01:10，聚源 03:30，宏观 08:00、WGC 周日 12:00；因子：前瞻收益 17:30、00:00、02:00，分钟因子 19:30，cutamp/mif/moneyflowh/actlargemedcut 04:10，tr_umr/abso_umr 04:30 | launchd `com.quantagent.dagster-daemon`；网页 http://127.0.0.1:3000/ | 11-25 起承担全部日更 |
 
 2026-11-21 负责人取消按机器划分源的写入职责；目标表白名单及写库保护保留。
 两机队列独立，同一来源的自动采集不得跨机同时启用。
 
 Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-local-run-storage.md)）。
-采集在子进程里跑，600 秒无新页即终止重试。
+Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM，10 秒后 SIGKILL）。因子日更按输入就绪判定增量，未就绪即跳过，次日补。
 
 ### P2 数据入湖明细
 
@@ -112,7 +112,7 @@ Dagster 运行存储都是各机本地 SQLite（[ADR](../adr/2026-11-17-dagster-
 | 旧网关 golden（已有新端口的方法） | ✅ 股票池、成分池、ST、日行情、交易日历（8,770 天）、指数涨跌幅（`000985.CSI`、`h30269.CSI`）均与 wx2 一致（11-22）。`core/` 三个网关共 51 个公开读取方法，12 个无现役调用；其余多为择时/宏观研究线读取，随 P4 各线迁移、建端口时先做 golden | — |
 | `pit_grade` 木桶、长表写入校验 | ✅ 两层依赖图含 D 输出 D；写入拒绝 A–D 以外的等级与早于 `event_dt` 的 `knowledge_dt`（11-22）。写入时比对完整血缘需改接口，未做 | — |
 | `mart.forward_return` 股票 open-to-open | ✅ 代码与 wx2 对拍完成（29 个样本日 5D/10D，all_a 内差异全部登记核验；[ADR](../adr/2026-11-22-forward-return-open2open.md)）。已物化 2018-01-02 起、as_of 2026-11-20，按年取当年每日 all_a 并集，四个周期共 37,360,480 行，9 份 run log（11-22） | 日更未接 |
-| `alpha_factory` 因子批量移植 | 🔄 Current-20 共 20 个，已迁 13 个，均与 wx2 对拍（其他差异 0，各类差异逐行核验）并物化到 lake（as_of 2026-11-20 前后）：cutamp v2、tr_umr v2（[ADR](../adr/2026-11-24-tr-umr-v2-no-missing-as-zero.md)）；分钟 7 个，2024-08 起（[第一批](../adr/2026-11-24-minute-factors-first-batch.md)、[2b](../adr/2026-11-24-minute-factors-batch-2b.md)，core_up/down 按 pxret21 中性化存残差）；资金流 3 个，2018 起（[ADR](../adr/2026-11-24-moneyflow-factors-batch-2a.md)）；mif，2018 起（[ADR](../adr/2026-11-24-mif.md)）。lake 物化均为一次性，日更未接。剩第三批 7 个：did_ratio、event_sue、event_delta_roe、event_aog、barra ERNQLT、barra SENTIMENT、nap_adj_ratio | 第三批要财报、事件、研报、一致预期数据与相应端口 |
+| `alpha_factory` 因子批量移植 | 🔄 Current-20 共 20 个，已迁 13 个，均与 wx2 对拍（其他差异 0，各类差异逐行核验）并物化到 lake（as_of 2026-11-20 前后）：cutamp v2、tr_umr v2（[ADR](../adr/2026-11-24-tr-umr-v2-no-missing-as-zero.md)，11-25 补齐 2018 起全历史）；分钟 7 个，2024-08 起（[第一批](../adr/2026-11-24-minute-factors-first-batch.md)、[2b](../adr/2026-11-24-minute-factors-batch-2b.md)，core_up/down 按 pxret21 中性化存残差）；资金流 3 个，2018 起（[ADR](../adr/2026-11-24-moneyflow-factors-batch-2a.md)）；mif，2018 起（[ADR](../adr/2026-11-24-mif.md)）。11-25 起本机日更（输入就绪才增量）。剩第三批 7 个：did_ratio、event_sue、event_delta_roe、event_aog、barra ERNQLT、barra SENTIMENT、nap_adj_ratio | 第三批要财报、事件、研报、一致预期数据与相应端口 |
 
 ### 下一步（按顺序）
 
