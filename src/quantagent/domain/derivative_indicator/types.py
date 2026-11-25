@@ -18,3 +18,12 @@ class Turnover:
     trade_dt: date
     wind_code: str
     turnover: Decimal | None
+
+
+@dataclass(frozen=True, slots=True)
+class MarketValue:
+    """衍生指标中的总市值行，单位与源端 ``S_VAL_MV`` 一致（万元）。空值保留为 None。"""
+
+    trade_dt: date
+    wind_code: str
+    total_mv: Decimal | None

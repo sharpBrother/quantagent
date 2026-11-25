@@ -9,7 +9,7 @@ import pytest
 
 from quantagent.adapters.memory.derivative_indicator import MemoryDerivativeIndicatorRepository
 from quantagent.contracts.spec import VisibilityContract
-from quantagent.domain.derivative_indicator.types import Turnover
+from quantagent.domain.derivative_indicator.types import MarketValue, Turnover
 from quantagent.domain.errors import DerivativeIndicatorLookupError, InvalidQueryError
 
 
@@ -115,6 +115,65 @@ def test_duplicate_key_is_rejected() -> None:
     )
     with pytest.raises(DerivativeIndicatorLookupError, match="衍生指标键重复"):
         repo.list_turnover(
+            as_of=date(2024, 1, 2),
+            start=date(2024, 1, 2),
+            end=date(2024, 1, 2),
+            wind_codes=("000001.SZ",),
+        )
+
+
+def _mv(day: date, code: str, *, value: str | None = "1000.5") -> MarketValue:
+    return MarketValue(
+        trade_dt=day,
+        wind_code=code,
+        total_mv=None if value is None else Decimal(value),
+    )
+
+
+@pytest.mark.contracts
+def test_market_value_uses_same_visibility_and_keeps_null_rows() -> None:
+    repo = MemoryDerivativeIndicatorRepository(
+        (),
+        contract=_contract(),
+        market_values=(
+            _mv(date(2024, 1, 2), "000001.SZ", value="100"),
+            _mv(date(2024, 1, 3), "000001.SZ", value="200"),
+            _mv(date(2024, 1, 4), "000001.SZ", value="300"),
+            _mv(date(2024, 1, 3), "600000.SH", value=None),
+        ),
+    )
+    rows = repo.list_market_value(
+        as_of=date(2024, 1, 3),
+        start=date(2024, 1, 2),
+        end=date(2024, 1, 5),
+        wind_codes=("600000.SH", "000001.SZ"),
+    )
+    # as_of 之后的 2024-01-04 不可见；空市值保留为 None，不丢行。
+    assert [(row.trade_dt, row.wind_code, row.total_mv) for row in rows] == [
+        (date(2024, 1, 2), "000001.SZ", Decimal("100")),
+        (date(2024, 1, 3), "000001.SZ", Decimal("200")),
+        (date(2024, 1, 3), "600000.SH", None),
+    ]
+
+
+@pytest.mark.contracts
+def test_market_value_missing_code_and_duplicate_key() -> None:
+    repo = MemoryDerivativeIndicatorRepository(
+        (),
+        contract=_contract(),
+        market_values=(_mv(date(2024, 1, 2), "000001.SZ"), _mv(date(2024, 1, 2), "000001.SZ")),
+    )
+    assert (
+        repo.list_market_value(
+            as_of=date(2024, 1, 5),
+            start=date(2024, 1, 2),
+            end=date(2024, 1, 5),
+            wind_codes=("999999.SZ",),
+        )
+        == ()
+    )
+    with pytest.raises(DerivativeIndicatorLookupError, match="衍生指标键重复"):
+        repo.list_market_value(
             as_of=date(2024, 1, 2),
             start=date(2024, 1, 2),
             end=date(2024, 1, 2),

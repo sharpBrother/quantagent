@@ -15,7 +15,7 @@ from psycopg.rows import dict_row
 from quantagent.adapters.postgres.sql_types import quote_ident
 from quantagent.adapters.postgres.src_dml import assert_src_dml_sql
 from quantagent.adapters.postgres.universe import load_derivative_visibility
-from quantagent.domain.derivative_indicator.types import Turnover
+from quantagent.domain.derivative_indicator.types import MarketValue, Turnover
 from quantagent.domain.errors import DerivativeIndicatorLookupError
 from quantagent.domain.prices import normalize_wind_codes, visible_price_bounds
 
@@ -67,6 +67,70 @@ class PostgresDerivativeIndicatorRepository:
             fetched = cur.fetchall()
         rows = tuple(_row_from_mapping(item) for item in fetched)
         return _reject_duplicate_turnover(rows)
+
+    def list_market_value(
+        self,
+        *,
+        as_of: date,
+        start: date,
+        end: date,
+        wind_codes: tuple[str, ...],
+    ) -> tuple[MarketValue, ...]:
+        codes = normalize_wind_codes(wind_codes)
+        if codes is None:
+            return ()
+        bounds = visible_price_bounds(
+            contract=self._contract,
+            as_of=as_of,
+            start=start,
+            end=end,
+        )
+        if bounds is None:
+            return ()
+        column, visible_start, visible_end = bounds
+        with self._conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                _market_value_select_sql(column),
+                (_ymd(visible_start), _ymd(visible_end), list(codes)),
+            )
+            fetched = cur.fetchall()
+        rows = tuple(_market_value_from_mapping(item) for item in fetched)
+        _reject_duplicate_market_value(rows)
+        return rows
+
+
+def _market_value_select_sql(cutoff_column: str) -> str:
+    statement = (
+        f"SELECT {quote_ident('TRADE_DT')}, {quote_ident('S_INFO_WINDCODE')}, "
+        f"{quote_ident('S_VAL_MV')} "
+        f"FROM {quote_ident('src_wind')}.{quote_ident('ASHAREEODDERIVATIVEINDICATOR')} "
+        f"WHERE {quote_ident(cutoff_column)} BETWEEN %s AND %s "
+        f"AND {quote_ident('S_INFO_WINDCODE')} = ANY(%s) "
+        f"ORDER BY {quote_ident('TRADE_DT')}, {quote_ident('S_INFO_WINDCODE')}"
+    )
+    return assert_src_dml_sql(statement)
+
+
+def _market_value_from_mapping(row: dict[str, object]) -> MarketValue:
+    wind_code = row.get("S_INFO_WINDCODE")
+    if not isinstance(wind_code, str) or not wind_code.strip():
+        raise DerivativeIndicatorLookupError("衍生指标代码为空")
+    return MarketValue(
+        trade_dt=_parse_trade_dt(row.get("TRADE_DT")),
+        wind_code=wind_code,
+        total_mv=_decimal(row.get("S_VAL_MV"), "S_VAL_MV"),
+    )
+
+
+def _reject_duplicate_market_value(rows: tuple[MarketValue, ...]) -> None:
+    seen: set[tuple[date, str]] = set()
+    for row in rows:
+        key = (row.trade_dt, row.wind_code)
+        if key in seen:
+            raise DerivativeIndicatorLookupError(
+                f"衍生指标键重复: {row.wind_code} {row.trade_dt.isoformat()}"
+            )
+        seen.add(key)
 
 
 def _select_sql(cutoff_column: str) -> str:
