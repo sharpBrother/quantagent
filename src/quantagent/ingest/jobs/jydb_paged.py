@@ -107,6 +107,8 @@ def ingest_jydb_paged(  # noqa: PLR0915 - 单函数持有连接、页循环与�
             raise SourceFetchError(f"{spec.pg_table} 有 {null_jsid} 行 JSID 为空，无法分页")
         cursor = _start_cursor(resolved_store, spec, from_cursor)
         while page_limit is None or pages < page_limit:
+            # 阶段标记只供看门狗报错时说明停在哪一步，不刷新提交时钟。
+            _mark_phase(on_page, "source_fetch", pages + 1, cursor.encode())
             rows = resolved_source.fetch_page(
                 table=spec.pg_table,
                 columns=spec.native_columns,
@@ -116,6 +118,13 @@ def ingest_jydb_paged(  # noqa: PLR0915 - 单函数持有连接、页循环与�
             if not rows:
                 break
             end_cursor = cursor_from_row(rows[-1])
+            _mark_phase(
+                on_page,
+                "pg_write_and_verify" if write_db else "dry_run",
+                pages + 1,
+                cursor.encode(),
+                end_cursor.encode(),
+            )
             page_result = write_src_follow(
                 spec=spec,
                 rows=rows,
@@ -218,6 +227,19 @@ def ingest_jydb_paged(  # noqa: PLR0915 - 单函数持有连接、页循环与�
         error=None,
     )
     return result
+
+
+def _mark_phase(
+    on_page: Callable[[int], None] | None,
+    phase: str,
+    page: int,
+    start_cursor: str,
+    end_cursor: str | None = None,
+) -> None:
+    # 与 wind_paged._mark_phase 同样的鸭子类型：回调若带 mark_phase 就记录阶段，否则忽略。
+    marker = getattr(on_page, "mark_phase", None)
+    if callable(marker):
+        marker(phase, page, start_cursor, end_cursor)
 
 
 def _resolve_spec(table: str) -> SrcTableWriteSpec:

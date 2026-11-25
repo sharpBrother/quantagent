@@ -7,6 +7,7 @@
 from dagster import Config, MaterializeResult, asset
 
 from orchestration.assets.wind import _pit_grade
+from orchestration.resources.jydb import JydbIngestResource
 
 _GROUP = "jydb"
 
@@ -21,16 +22,14 @@ _CATALOG_TABLES = frozenset({"C_ED_IndicatorMain", "C_IN_IndicatorMain"})
 
 
 def _ingest(table: str, config: JydbRunConfig) -> MaterializeResult[None]:
-    from quantagent.ingest.jobs.jydb_paged import ingest_jydb_paged
+    # 采集在看门狗保护的子进程里跑，超时终止时抛 IngestStalledError，资产失败、队列释放。
     from quantagent.platform.config import get_settings
     from quantagent.platform.storage import detect_repo_root, resolve_var_paths
 
     settings = get_settings()
     paths = resolve_var_paths(settings, repo_root=detect_repo_root())
-    result = ingest_jydb_paged(
-        settings=settings,
-        paths=paths,
-        table=table,
+    result = JydbIngestResource(settings=settings, paths=paths).ingest(
+        table,
         write_db=config.write_db,
         page_size=config.page_size,
         max_pages=config.max_pages,
