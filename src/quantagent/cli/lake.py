@@ -132,13 +132,18 @@ def lake_materialize_trade_calendar(
 def lake_materialize_cutamp(
     start: Annotated[str, typer.Option("--start", help="截面起点 YYYY-MM-DD")],
     end: Annotated[str, typer.Option("--end", help="截面终点 YYYY-MM-DD")],
-    codes: Annotated[str, typer.Option("--codes", help="逗号分隔的 Wind 代码")],
     as_of: Annotated[str, typer.Option("--as-of", help="行情可见日 YYYY-MM-DD，必填")],
+    codes: Annotated[
+        str | None,
+        typer.Option("--codes", help="逗号分隔的 Wind 代码；不传则每个截面日取该日 all_a 成员"),
+    ] = None,
 ) -> None:
     """把切段振幅写入 feature.value。窗口不足的日期不落行。"""
     settings = get_settings()
     paths = resolve_var_paths(settings, repo_root=detect_repo_root())
-    wind_codes = tuple(part.strip() for part in codes.split(",") if part.strip())
+    wind_codes = (
+        None if codes is None else tuple(part.strip() for part in codes.split(",") if part.strip())
+    )
     try:
         row_count, digest = materialize_cutamp(
             settings=settings,
@@ -338,13 +343,18 @@ def lake_materialize_mif(
 def lake_materialize_tr_umr(
     start: Annotated[str, typer.Option("--start", help="截面起点 YYYY-MM-DD")],
     end: Annotated[str, typer.Option("--end", help="截面终点 YYYY-MM-DD")],
-    codes: Annotated[str, typer.Option("--codes", help="逗号分隔的 Wind 代码")],
     as_of: Annotated[str, typer.Option("--as-of", help="行情可见日 YYYY-MM-DD，必填")],
+    codes: Annotated[
+        str | None,
+        typer.Option("--codes", help="逗号分隔的 Wind 代码；不传则每个截面日取该日 all_a 成员"),
+    ] = None,
 ) -> None:
     """把真实波幅 UMR 写入 feature.value。窗口不足的日期不落行。"""
     settings = get_settings()
     paths = resolve_var_paths(settings, repo_root=detect_repo_root())
-    wind_codes = tuple(part.strip() for part in codes.split(",") if part.strip())
+    wind_codes = (
+        None if codes is None else tuple(part.strip() for part in codes.split(",") if part.strip())
+    )
     try:
         row_count, digest = materialize_tr_umr(
             settings=settings,

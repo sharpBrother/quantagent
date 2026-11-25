@@ -142,6 +142,41 @@ class LakeFeatureRepository:
             message=(f"因子截面为空: event_dt={event_dt.isoformat()} as_of={as_of.isoformat()}"),
         )
 
+    def latest_event_dt(
+        self,
+        *,
+        as_of: date,
+        feature_id: str,
+        definition_version: str,
+        param_hash: str,
+    ) -> date | None:
+        """某个因子身份在 ``as_of`` 可见的最大 ``event_dt``。没有任何行时返回 ``None``。
+        用作日更增量的水位线：起点是它之后的开市日。仍按 PIT 截止列过滤，不存在无 ``as_of`` 的读取。
+        """
+        _require_identity(feature_id, definition_version, param_hash)
+        if not any(self._source.rglob("*.parquet")):
+            return None
+        cutoff = pit_cutoff(self._contract, as_of=as_of)
+        column = assert_ident(cutoff.column)
+        with duck_session() as conn:
+            register_parquet(conn, FEATURE_VALUE_VIEW, self._source)
+            row = conn.execute(
+                f"SELECT max(event_dt) FROM {assert_ident(FEATURE_VALUE_VIEW)} "
+                "WHERE feature_id = $feature_id "
+                "  AND definition_version = $definition_version "
+                "  AND param_hash = $param_hash "
+                f"  AND {column} <= $visible_on_or_before",
+                {
+                    "feature_id": feature_id,
+                    "definition_version": definition_version,
+                    "param_hash": param_hash,
+                    "visible_on_or_before": cutoff.on_or_before,
+                },
+            ).fetchone()
+        if row is None or row[0] is None:
+            return None
+        return _as_date(row[0])
+
     def build_training_matrix(
         self,
         *,

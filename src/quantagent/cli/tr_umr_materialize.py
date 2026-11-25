@@ -1,4 +1,7 @@
-"""组装真实波幅 UMR 物化：读日历、行情、指数收益，计算，写长表。业务规则不在这里。"""
+"""组装真实波幅 UMR 物化：读日历、行情、指数收益，计算，写长表。业务规则不在这里。
+
+``wind_codes`` 为 ``None`` 时按每个截面日取 all_a 成员，口径与其他因子一致（见 ``cli/_universe.py``）。
+"""
 
 from __future__ import annotations
 
@@ -14,6 +17,7 @@ from quantagent.adapters.postgres.index_returns import (
     PostgresIndexReturnRepository,
     load_index_visibility,
 )
+from quantagent.cli._universe import all_a_members_by_day, keep_rows_in_membership, union_codes
 from quantagent.domain.calendar import open_dates
 from quantagent.features.library.price.tr_umr import BENCHMARK, LOOKBACK
 from quantagent.features.panel.tr_umr import build_tr_umr_values
@@ -41,7 +45,7 @@ def materialize_tr_umr(
     paths: VarPaths,
     start: date,
     end: date,
-    wind_codes: tuple[str, ...],
+    wind_codes: tuple[str, ...] | None,
     as_of: date,
 ) -> tuple[int, str]:
     started = datetime.now(UTC)
@@ -58,13 +62,20 @@ def materialize_tr_umr(
         )
         opens = open_dates(days)
         read_start = _read_start(opens, start=start, end=end)
+        members_by_day: dict[date, frozenset[str]] | None = None
         conn = connect(settings, "src")
         try:
+            if wind_codes is None:
+                events = tuple(day for day in opens if start <= day <= end)
+                members_by_day = all_a_members_by_day(conn, as_of=as_of, days=events)
+                codes = union_codes(members_by_day)
+            else:
+                codes = wind_codes
             prices = PostgresDailyPriceRepository(conn).list_prices(
                 as_of=as_of,
                 start=read_start,
                 end=end,
-                wind_codes=wind_codes,
+                wind_codes=codes,
             )
             index_returns = PostgresIndexReturnRepository(conn).list_returns(
                 as_of=as_of,
@@ -85,6 +96,8 @@ def materialize_tr_umr(
             computed_at=computed_at,
             run_id=run_id,
         )
+        if members_by_day is not None:
+            rows = keep_rows_in_membership(rows, members_by_day)
         write_feature_values(rows, dest)
     except Exception as exc:
         _log(
@@ -144,7 +157,7 @@ def _log(
     start: date,
     end: date,
     as_of: date,
-    wind_codes: tuple[str, ...],
+    wind_codes: tuple[str, ...] | None,
     run_id: str,
     status: Literal["success", "failure"],
     row_count: int | None = None,
@@ -165,7 +178,7 @@ def _log(
                 "start": start.isoformat(),
                 "end": end.isoformat(),
                 "as_of": as_of.isoformat(),
-                "wind_codes": list(wind_codes),
+                "wind_codes": None if wind_codes is None else list(wind_codes),
             }
         ),
         output_digest=output_digest,

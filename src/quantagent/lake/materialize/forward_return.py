@@ -236,10 +236,12 @@ def materialize_forward_return(
     as_of: date,
     wind_codes: tuple[str, ...],
     keep_row: Callable[[ForwardReturn], bool] | None = None,
+    horizons: Sequence[str] = HORIZONS,
 ) -> ForwardReturnWriteResult:
     """选取、写入、写 run log。``dest`` 固定为 ``lake/mart/forward_return``。
     连接与代码池由调用方（CLI）组装，这里只接收端口，便于用内存实现测试。
     ``keep_row`` 由 CLI 按截面日股票池构造，选取后过滤输出行。
+    ``horizons`` 默认全部；日更增量按 horizon 分别取起点时只传一个。
     """
     started = datetime.now(UTC)
     dest = paths.lake / "mart" / "forward_return"
@@ -253,6 +255,7 @@ def materialize_forward_return(
             as_of=as_of,
             wind_codes=wind_codes,
             keep_row=keep_row,
+            horizons=horizons,
         )
         result = write_forward_returns(rows, dest)
     except Exception as exc:
@@ -263,6 +266,7 @@ def materialize_forward_return(
             end=end,
             as_of=as_of,
             wind_codes=wind_codes,
+            horizons=horizons,
             error=str(exc),
         )
         raise
@@ -273,6 +277,7 @@ def materialize_forward_return(
         end=end,
         as_of=as_of,
         wind_codes=wind_codes,
+        horizons=horizons,
         result=result,
     )
     return result
@@ -286,6 +291,7 @@ def _log(
     end: date,
     as_of: date,
     wind_codes: tuple[str, ...],
+    horizons: Sequence[str] = HORIZONS,
     result: ForwardReturnWriteResult | None = None,
     error: str | None = None,
 ) -> None:
@@ -302,7 +308,7 @@ def _log(
                 "end": end.isoformat(),
                 "as_of": as_of.isoformat(),
                 "wind_codes": list(wind_codes),
-                "horizons": list(HORIZONS),
+                "horizons": list(horizons),
                 "return_leg": RETURN_LEG,
             }
         ),

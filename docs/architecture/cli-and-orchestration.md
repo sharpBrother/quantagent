@@ -2,7 +2,7 @@
 title: CLI 与编排
 status: active
 created: 2026-09-16
-updated: 2026-09-18
+updated: 2026-11-25
 applies_to:
   - src/quantagent/cli/
   - orchestration/
@@ -163,6 +163,11 @@ uv run python -c "import json, datetime as d; from orchestration.schedules.wind 
 uv run dagster job launch -w var/dagster/workspace.yaml -j wind_source_daily -c var/dagster/run_now.json
 ```
 标准日历只保留到 `as_of + 7` 天，每天把新出现的日期追加为新分片，已写分片不动；已写日期的开市标记被源端改动时失败（fail-closed）。远期行不落盘，所以年底公布休市安排不影响日更。
+
+### 本机日更增量（因子与前瞻收益）
+只在 `QUANTAGENT_PROFILE=local` 注册，按 SSE 交易日历触发。前瞻收益 17:30、00:00、02:00；分钟因子 19:30；主因子 04:10；UMR 04:30。每个因子一个资产，作业内串行。
+每次运行：起点是 lake 中该身份的最大 `event_dt` 之后的第一个开市日；截止是从起点开始、输入连续就绪的最后一天。就绪判定：每个输入源当日行数 ≥ 前 5 个开市日最大行数的 99%；分钟输入只看分区是否登记；前瞻收益的起点与终点行情都须就绪。遇到第一个未就绪日即停。
+lake 中没有该身份的行时报错，要求先做历史回填，不从头计算。规则在 `domain/incremental.py`，编排入口在 `cli/daily_increment.py`。
 
 ### 远端部署
 

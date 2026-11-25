@@ -9,6 +9,7 @@ from __future__ import annotations
 from dagster import Definitions, ScheduleDefinition
 
 from orchestration.assets.cutamp import feature_pf_single_cutamp
+from orchestration.assets.daily_feature import FEATURE_DAILY_ASSETS, feature_daily_forward_return
 from orchestration.assets.jydb import (
     src_jydb_c_ed_indicatormain,
     src_jydb_c_ed_macroindicatordata,
@@ -27,6 +28,12 @@ from orchestration.assets.tr_umr import feature_pf_single_tr_umr
 from orchestration.assets.tushare import src_tushare_shibor, src_tushare_us_treasury_yield
 from orchestration.assets.wind import WIND_SOURCE_ASSETS, std_trade_calendar
 from orchestration.jobs.cutamp import feature_cutamp
+from orchestration.jobs.daily_feature import (
+    feature_daily_main,
+    feature_forward_return_daily,
+    feature_minute_daily,
+    feature_umr_daily,
+)
 from orchestration.jobs.jydb import jydb_daily
 from orchestration.jobs.macro import macro_daily, macro_wgc_weekly
 from orchestration.jobs.minprice import minprice_daily
@@ -35,6 +42,12 @@ from orchestration.jobs.tushare import tushare_daily
 from orchestration.jobs.wind import wind_source_daily, wind_source_refresh
 from orchestration.jobs.wind_initial import wind_initial_backfill
 from orchestration.resources.wind import TradeCalendarResource, WindIngestResource
+from orchestration.schedules.daily_feature import (
+    feature_daily_main_schedule,
+    feature_forward_return_daily_schedule,
+    feature_minute_daily_schedule,
+    feature_umr_daily_schedule,
+)
 from orchestration.schedules.jydb import jydb_daily_night
 from orchestration.schedules.macro import macro_daily_morning, macro_wgc_sunday
 from orchestration.schedules.minprice import minprice_first, minprice_retry
@@ -64,6 +77,10 @@ PROFILE_SCHEDULES: dict[str, tuple[ScheduleDefinition, ...]] = {
         minprice_first,
         minprice_retry,
         jydb_daily_night,
+        feature_forward_return_daily_schedule,
+        feature_minute_daily_schedule,
+        feature_daily_main_schedule,
+        feature_umr_daily_schedule,
     ),
 }
 
@@ -93,6 +110,8 @@ defs = Definitions(
         feature_pf_single_cutamp,
         feature_pf_single_tr_umr,
         src_eastmoney_minute,
+        *FEATURE_DAILY_ASSETS.values(),
+        feature_daily_forward_return,
     ],
     jobs=[
         wind_source_refresh,
@@ -105,6 +124,10 @@ defs = Definitions(
         feature_cutamp,
         feature_tr_umr,
         minprice_daily,
+        feature_forward_return_daily,
+        feature_minute_daily,
+        feature_daily_main,
+        feature_umr_daily,
     ],
     schedules=list(schedules_for_profile(get_settings().profile)),
     resources=_resources(),

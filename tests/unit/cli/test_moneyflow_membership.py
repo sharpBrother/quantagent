@@ -10,7 +10,7 @@ from decimal import Decimal
 
 import pytest
 
-from quantagent.cli.moneyflow_materialize import keep_rows_in_membership, union_codes
+from quantagent.cli._universe import keep_rows_in_membership, union_codes
 from quantagent.contracts.spec import VisibilityContract
 from quantagent.domain.index_returns.types import IndexReturn
 from quantagent.domain.money_flow.types import MoneyFlow

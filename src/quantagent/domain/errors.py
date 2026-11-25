@@ -45,3 +45,7 @@ class DerivativeIndicatorLookupError(DomainError):
 
 class MacroLookupError(DomainError):
     """宏观观测缺键、日期非法，或同一观测有多个同时生效的版本。"""
+
+
+class IncrementError(DomainError):
+    """日更增量无法判定：lake 没有历史、开市日历不足以判定就绪、区间参数不合法。fail-closed。"""

@@ -60,11 +60,15 @@ def materialize_moneyflow_factors(
     end: date,
     wind_codes: tuple[str, ...] | None,
     as_of: date,
+    feature_ids: Sequence[str] | None = None,
 ) -> tuple[int, str]:
     """``wind_codes`` 为 None 时，按每个截面日取 all_a 成员：读取范围取区间内各截面日成员的并集，
     输出只保留截面日当天属于 all_a 的行。不用 ``end`` 日成员回填整个区间，否则区间中途退出 all_a 的股票
     会丢掉退出前的截面，造成幸存者偏差。口径与分钟因子（``minute_factors_materialize._universe_at``）一致。
+    ``feature_ids`` 非空时只写这些因子（计算仍覆盖三个因子）；增量运行按因子分别取起点时使用。
     """
+    if feature_ids is not None and not feature_ids:
+        raise ValueError("feature_ids 为空，拒绝写入")
     started = datetime.now(UTC)
     dest = paths.lake / "feature" / "value"
     run_id = new_run_id()
@@ -111,6 +115,9 @@ def materialize_moneyflow_factors(
         )
         if members_by_day is not None:
             rows = keep_rows_in_membership(rows, members_by_day)
+        if feature_ids is not None:
+            wanted = frozenset(feature_ids)
+            rows = tuple(row for row in rows if row.feature_id in wanted)
         write_feature_values(rows, dest)
     except Exception as exc:
         _log(
@@ -120,6 +127,7 @@ def materialize_moneyflow_factors(
             end=end,
             as_of=as_of,
             wind_codes=wind_codes,
+            feature_ids=feature_ids,
             run_id=run_id,
             status="failure",
             error=str(exc),
@@ -145,6 +153,7 @@ def materialize_moneyflow_factors(
         end=end,
         as_of=as_of,
         wind_codes=wind_codes,
+        feature_ids=feature_ids,
         run_id=run_id,
         status="success",
         row_count=len(rows),
@@ -206,6 +215,7 @@ def _log(
     end: date,
     as_of: date,
     wind_codes: tuple[str, ...] | None,
+    feature_ids: Sequence[str] | None,
     run_id: str,
     status: Literal["success", "failure"],
     row_count: int | None = None,
@@ -214,6 +224,9 @@ def _log(
     error: str | None = None,
 ) -> None:
     finished = datetime.now(UTC)
+    extra: dict[str, object] = {}
+    if feature_ids is not None:
+        extra["feature_ids"] = sorted(set(feature_ids))
     record = RunLog(
         run_id=run_id,
         action=ACTION,
@@ -227,6 +240,7 @@ def _log(
                 "end": end.isoformat(),
                 "as_of": as_of.isoformat(),
                 "wind_codes": None if wind_codes is None else list(wind_codes),
+                **extra,
             }
         ),
         output_digest=output_digest,

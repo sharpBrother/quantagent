@@ -11,11 +11,12 @@ from quantagent.adapters.postgres.daily_prices import (
 )
 from quantagent.cli._universe import all_a_members_by_day, in_membership, union_codes
 from quantagent.domain.calendar import open_dates
+from quantagent.domain.forward_return import HORIZONS
 from quantagent.lake.materialize.forward_return import EXCHANGE, materialize_forward_return
 from quantagent.platform.pg import connect
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
     from datetime import date
 
     from quantagent.domain.forward_return import ForwardReturn
@@ -33,6 +34,7 @@ def materialize_forward_return_cli(
     end: date,
     as_of: date,
     wind_codes: tuple[str, ...] | None,
+    horizons: Sequence[str] = HORIZONS,
 ) -> ForwardReturnWriteResult:
     """``wind_codes`` 为 ``None`` 时，按每个信号日取 all_a 成员：读取范围取各信号日成员的并集，
     输出只保留信号日当天属于 all_a 的行。区间中途退出 all_a 的股票，在退出前的信号日仍产出，
@@ -60,6 +62,7 @@ def materialize_forward_return_cli(
             as_of=as_of,
             wind_codes=codes,
             keep_row=keep_row,
+            horizons=horizons,
         )
     finally:
         conn.close()

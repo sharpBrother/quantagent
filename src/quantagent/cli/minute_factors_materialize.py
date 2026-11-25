@@ -41,8 +41,13 @@ def materialize_minute_factors(
     end: date,
     as_of: date,
     codes: Sequence[str] | None,
+    feature_ids: Sequence[str] | None = None,
 ) -> tuple[int, str]:
-    """``codes`` 为 ``None`` 时，每个截面日的股票范围取该日 ``all_a`` 成员。"""
+    """``codes`` 为 ``None`` 时，每个截面日的股票范围取该日 ``all_a`` 成员。
+    ``feature_ids`` 非空时只写这些因子（计算仍覆盖四个因子）；增量运行按因子分别取起点时使用。
+    """
+    if feature_ids is not None and not feature_ids:
+        raise ValueError("feature_ids 为空，拒绝写入")
     started = datetime.now(UTC)
     run_id = new_run_id()
     computed_at = started.replace(tzinfo=None)
@@ -74,6 +79,9 @@ def materialize_minute_factors(
             )
         finally:
             conn.close()
+        if feature_ids is not None:
+            wanted = frozenset(feature_ids)
+            rows = tuple(row for row in rows if row.feature_id in wanted)
         write_feature_values(rows, dest)
     except Exception as exc:
         _log(
@@ -83,6 +91,7 @@ def materialize_minute_factors(
             end=end,
             as_of=as_of,
             codes=codes,
+            feature_ids=feature_ids,
             run_id=run_id,
             status="failure",
             error=str(exc),
@@ -108,6 +117,7 @@ def materialize_minute_factors(
         end=end,
         as_of=as_of,
         codes=codes,
+        feature_ids=feature_ids,
         run_id=run_id,
         status="success",
         row_count=len(rows),
@@ -144,6 +154,7 @@ def _log(
     end: date,
     as_of: date,
     codes: Sequence[str] | None,
+    feature_ids: Sequence[str] | None,
     run_id: str,
     status: Literal["success", "failure"],
     row_count: int | None = None,
@@ -152,6 +163,9 @@ def _log(
     error: str | None = None,
 ) -> None:
     finished = datetime.now(UTC)
+    extra: dict[str, object] = {}
+    if feature_ids is not None:
+        extra["feature_ids"] = sorted(set(feature_ids))
     record = RunLog(
         run_id=run_id,
         action=ACTION,
@@ -166,6 +180,7 @@ def _log(
                 "as_of": as_of.isoformat(),
                 "universe": "all_a_per_open_day" if codes is None else sorted(set(codes)),
                 "dataset": DATASET,
+                **extra,
             }
         ),
         output_digest=output_digest,

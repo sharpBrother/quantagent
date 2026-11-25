@@ -19,7 +19,25 @@ _PREFIX_TO_SCHEMA = {
     "src_eastmoney_": "src_minprice",
 }
 # lake 产物，不写源 schema，不受 PROFILE_WRITABLE_SCHEMAS 约束。
-_LAKE_ASSETS = frozenset({"std_trade_calendar"})
+_LAKE_ASSETS = frozenset(
+    {
+        "std_trade_calendar",
+        "feature_daily_forward_return",
+        "feature_daily_cutamp",
+        "feature_daily_mif",
+        "feature_daily_moneyflowh",
+        "feature_daily_actlargemedcut",
+        "feature_daily_abso_umr",
+        "feature_daily_tr_umr",
+        "feature_daily_corr_vrlag",
+        "feature_daily_real_kurt",
+        "feature_daily_ratio_realupvar",
+        "feature_daily_ratio_realdownvar",
+        "feature_daily_corr_vrlaglarge",
+        "feature_daily_core_up",
+        "feature_daily_core_down",
+    }
+)
 
 _EXPECTED_SCHEDULES = {
     "office": {"wind_source_daily_close", "wind_source_daily_morning"},
@@ -30,6 +48,10 @@ _EXPECTED_SCHEDULES = {
         "minprice_first",
         "minprice_retry",
         "jydb_daily_night",
+        "feature_forward_return_daily",
+        "feature_minute_daily",
+        "feature_daily_main",
+        "feature_umr_daily",
     },
 }
 
@@ -74,6 +96,10 @@ def test_every_registered_schedule_belongs_to_some_profile() -> None:
         "minprice_first",
         "minprice_retry",
         "jydb_daily_night",
+        "feature_forward_return_daily",
+        "feature_minute_daily",
+        "feature_daily_main",
+        "feature_umr_daily",
     }
 
 

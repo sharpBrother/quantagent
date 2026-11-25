@@ -9,7 +9,12 @@ from quantagent.adapters.lake.visibility import load_dataset_visibility
 from quantagent.contracts.loader import load_bundle
 from quantagent.contracts.pandera_schema import to_pandera
 from quantagent.domain.errors import EmptyDomainError, InvalidQueryError
-from quantagent.domain.forward_return import ForwardReturn
+from quantagent.domain.forward_return import (
+    BENCHMARK_NONE,
+    RETURN_KIND,
+    RETURN_LEG,
+    ForwardReturn,
+)
 from quantagent.domain.pit import pit_cutoff
 from quantagent.domain.query import require_text, require_window
 from quantagent.platform.duck import assert_ident, duck_session, register_parquet
@@ -83,6 +88,35 @@ class LakeForwardReturnRepository:
             # 同一 horizon 在不同收益腿上是不同的标签。接口还没有收益腿参数，混读就是口径错误。
             raise InvalidQueryError(f"前瞻收益窗口含多个收益腿，需显式指定: {legs}")
         return tuple(_row_from_raw(raw) for raw in frame.to_dict(orient="records"))
+
+    def latest_event_dt(self, *, as_of: date, horizon: str) -> date | None:
+        """某个 horizon 在 ``as_of`` 可见的最大信号日 ``event_dt``，没有行时为 ``None``。
+        可见性用 ``knowledge_dt``（即 ``end_dt``）：未到期的区间不算已写入。
+        """
+        require_text(horizon)
+        if not any(self._source.rglob("*.parquet")):
+            return None
+        cutoff = pit_cutoff(self._contract, as_of=as_of)
+        with duck_session() as conn:
+            register_parquet(conn, _VIEW, self._source)
+            row = conn.execute(
+                f"SELECT max(event_dt) FROM {assert_ident(_VIEW)} "
+                "WHERE horizon = $horizon "
+                "  AND return_kind = $return_kind "
+                "  AND benchmark_id = $benchmark_id "
+                "  AND return_leg = $return_leg "
+                f"  AND {assert_ident(cutoff.column)} <= $visible_on_or_before",
+                {
+                    "horizon": horizon,
+                    "return_kind": RETURN_KIND,
+                    "benchmark_id": BENCHMARK_NONE,
+                    "return_leg": RETURN_LEG,
+                    "visible_on_or_before": cutoff.on_or_before,
+                },
+            ).fetchone()
+        if row is None or row[0] is None:
+            return None
+        return as_date(row[0])
 
 
 def _row_from_raw(raw: Mapping[object, object]) -> ForwardReturn:
