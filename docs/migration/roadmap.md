@@ -2,7 +2,7 @@
 title: 迁移路线 P0–P6
 status: active
 created: 2026-09-16
-updated: 2026-11-23
+updated: 2026-11-25
 applies_to:
   - src/quantagent/
   - orchestration/
@@ -33,7 +33,7 @@ applies_to:
 | P5 | 发布与前端 | 冻结制品迁入、publish 契约、apps/web |
 | P6 | 旧仓封存 | pycharm_workspace 转只读归档 |
 
-## 当前进度 · 2026-11-19（晚）
+## 当前进度 · 2026-11-25
 
 **本节是项目唯一的进度入口（pipeline）。** 每完成一项就改这里：勾掉、补日期与提交号，新出现的阻塞写进
 “阻塞与待裁定”。细节与证据放在下面链接的专题文档里，本节只写结论。各表实时行数用
@@ -45,8 +45,8 @@ applies_to:
 |---|---|---|
 | P0 骨架 | ✅ 完成 | 门禁 ruff / mypy / import-linter / pytest 全绿 |
 | P1 存储底座 | ✅ 完成 | 两面迁移、DuckDB 会话、缺规则 fail-closed、因子布局 ADR |
-| P2 处置与入湖 | 🔄 进行中 | Wind 回填暂停；Tushare 两表与宏观两源已日更；聚源 P0/P1 已接入并回填 |
-| P3 口径与因子 | 🔄 提前起步 | 股票池与 ST 读取已实现并对拍 wx2；等数据进库做真实库验收 |
+| P2 处置与入湖 | 🔄 进行中 | Wind 已追平，11-25 起本机日更；Tushare 两表与宏观两源已日更；聚源 P0/P1 已接入并回填 |
+| P3 口径与因子 | 🔄 进行中 | 股票池、成分、ST、前瞻收益与 14 个因子已对拍 wx2；剩 6 个因子与因子评价层 |
 | P4–P6 | ⏳ 未开始 | |
 
 ### 运行环境
@@ -73,10 +73,10 @@ Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM
 | 3 | `ASHAREDESCRIPTION`、`ASHAREEODPRICES`、`ASHARECALENDAR`、`AINDEXEODPRICES` | ✅ 已追平。描述表 8,621 行对 wx2 8,635 行，差 14 行待核 |
 | 3 | `AINDEXMEMBERS`、中信一二三级成分、`SWINDEXMEMBERS` | ✅（申万负责人已核验，11-22） |
 | 3 | `AINDEXMEMBERSCITICSZL`（中信一级 canonical） | ✅ 8,633 行（11-22）；106 个月末与 wx2 一致。wx2 多 5 行是当前 Wind 源已不提供的旧行，测试中逐行登记核验 |
-| 4 | 利润表、资产负债表、现金流量表、财务指标、业绩预告 | ⏳ 未回填 |
-| 4 | `ASHAREDIVIDEND` | 🔄 约 15.7 万 / wx2 16 万 |
+| 4 | 利润表、资产负债表、现金流量表、财务指标、业绩预告 | 🔄 利润表 2,478,908 行、财务指标 388,934 行已入库（11-22），其余三张未逐表核对；与 wx2 的键差见 [did_ratio ADR](../adr/2026-11-25-did-ratio.md) |
+| 4 | `ASHAREDIVIDEND` | ✅ 156,872 行；wx2 多出的 3,448 键多为北交所与已退市旧代码，是否另有漏采待核（见交接第五节第 1 条） |
 | 5 | 指数估值、中信行业行情、两融明细、两融汇总、停牌 | 🔄 部分；两融明细仅 5 万行 |
-| 6 | `ASHAREMONEYFLOW` | 🔄 461 万 / 1,328 万，无新仓消费者 |
+| 6 | `ASHAREMONEYFLOW` | ✅ 13,309,225 行，2012 起；0034 补 `(S_INFO_WINDCODE, TRADE_DT)` 索引；资金流三因子在用 |
 | 6 | `CHINAMUTUALFUNDSTOCKPORTFOLIO` | 🔄 1,984 万行，旧仓仅一处读取 |
 | 5 | `CBONDCURVECNBD`（只同步曲线 1232 的 10 个期限）、`CBONDCURVECSI`（只同步 0901、02502）、`FXEODPRICES`、`CBONDREPO`、`CBONDPRICESREPO`、`CBONDREPOANDIBLEODPRICES` | ✅ 已接采集与契约；0019 已执行（11-19），主键、`_batch_id` 索引、ingest 权限就绪；过滤条件在 wx2 上覆盖旧表全部行；随初始化回填进库 |
 | 3 | `AINDEXDESCRIPTION`、`AINDEXDESCRIPTIONZL`（全表，各约 12 万行，not_pit） | ✅ 已接，0020 已执行（11-19）；`AINDEXINDUSTRIESCITICS` 改为视图（按中信一二三级成分筛选），随初始化回填出数 |
@@ -111,15 +111,98 @@ Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM
 | cutamp、tr_umr | ✅ 2024-01-05 全截面 golden：cutamp 5,076 只全部一致（278 只旧表多出：北交所旧代码 234、已退市 44）；tr_umr 4,861 只中 4,858 一致，3 只已知差异。cutamp 按旧仓 quicksort 并列顺序升 `v2`（[ADR](../adr/2026-11-22-cutamp-legacy-quicksort-order.md)），lake 已补 34 行 v2 | — |
 | 旧网关 golden（已有新端口的方法） | ✅ 股票池、成分池、ST、日行情、交易日历（8,770 天）、指数涨跌幅（`000985.CSI`、`h30269.CSI`）均与 wx2 一致（11-22）。`core/` 三个网关共 51 个公开读取方法，12 个无现役调用；其余多为择时/宏观研究线读取，随 P4 各线迁移、建端口时先做 golden | — |
 | `pit_grade` 木桶、长表写入校验 | ✅ 两层依赖图含 D 输出 D；写入拒绝 A–D 以外的等级与早于 `event_dt` 的 `knowledge_dt`（11-22）。写入时比对完整血缘需改接口，未做 | — |
-| `mart.forward_return` 股票 open-to-open | ✅ 代码与 wx2 对拍完成（29 个样本日 5D/10D，all_a 内差异全部登记核验；[ADR](../adr/2026-11-22-forward-return-open2open.md)）。已物化 2018-01-02 起、as_of 2026-11-20，按年取当年每日 all_a 并集，四个周期共 37,360,480 行，9 份 run log（11-22） | 日更未接 |
-| `alpha_factory` 因子批量移植 | 🔄 Current-20 共 20 个，已迁 13 个，均与 wx2 对拍（其他差异 0，各类差异逐行核验）并物化到 lake（as_of 2026-11-20 前后）：cutamp v2、tr_umr v2（[ADR](../adr/2026-11-24-tr-umr-v2-no-missing-as-zero.md)，11-25 补齐 2018 起全历史）；分钟 7 个，2024-08 起（[第一批](../adr/2026-11-24-minute-factors-first-batch.md)、[2b](../adr/2026-11-24-minute-factors-batch-2b.md)，core_up/down 按 pxret21 中性化存残差）；资金流 3 个，2018 起（[ADR](../adr/2026-11-24-moneyflow-factors-batch-2a.md)）；mif，2018 起（[ADR](../adr/2026-11-24-mif.md)）。11-25 起本机日更（输入就绪才增量）。剩第三批 7 个：did_ratio、event_sue、event_delta_roe、event_aog、barra ERNQLT、barra SENTIMENT、nap_adj_ratio | 第三批要财报、事件、研报、一致预期数据与相应端口 |
+| `mart.forward_return` 股票 open-to-open | ✅ 代码与 wx2 对拍完成（29 个样本日 5D/10D，all_a 内差异全部登记核验；[ADR](../adr/2026-11-22-forward-return-open2open.md)）。已物化 2018-01-02 起，四个周期共 37,360,480 行；11-25 起日更（17:30、00:00、02:00） | — |
+| `alpha_factory` 因子批量移植 | 🔄 Current-20 共 20 个，已迁 14 个，均与 wx2 对拍（其他差异 0，各类差异逐行核验）并物化到 lake（as_of 2026-11-20 前后）：cutamp v2、tr_umr v2（[ADR](../adr/2026-11-24-tr-umr-v2-no-missing-as-zero.md)，11-25 补齐 2018 起全历史）；分钟 7 个，2024-08 起（[第一批](../adr/2026-11-24-minute-factors-first-batch.md)、[2b](../adr/2026-11-24-minute-factors-batch-2b.md)，core_up/down 按 pxret21 中性化存残差）；资金流 3 个，2018 起（[ADR](../adr/2026-11-24-moneyflow-factors-batch-2a.md)）；mif，2018 起（[ADR](../adr/2026-11-24-mif.md)）。11-25 起本机日更（输入就绪才增量）。did_ratio 代码与 golden 已提交（[ADR](../adr/2026-11-25-did-ratio.md)），待源端漏行核查后物化。剩 6 个：event_sue、event_delta_roe、event_aog、barra ERNQLT、barra SENTIMENT、nap_adj_ratio | 见交接第二节 B |
 
-### 下一步（按顺序）
+### 下一步
 
-1. ~~真实库跑 `all_a`、成分池、ST 集成测试~~（11-22 完成）。
-2. ~~2024-01-05 全截面固化 cutamp、tr_umr 对 wx2 的 golden~~（11-22 完成）。
-3. ~~P3 已有端口的网关 golden 与 `pit_grade` 木桶测试~~（11-22 完成）；`AINDEXMEMBERSCITICSZL` 对拍完成。
-4. 量价因子批量移植；财报表回填后移植基本面因子。
+见下文「交接与后续规划」第二节，按 A → B → C 推进，D、E 可穿插。
+
+### 交接与后续规划（2026-11-25，接任者先读本节）
+
+#### 一、状态快照（2026-11-25 21:30）
+
+- **调度**：全部日更挂在 Mac 本机 Dagster（`local`），共 13 个调度，网页 http://127.0.0.1:3000/（Overview → Timeline 能看到未来的计划触发）。
+  11-25 首日：Wind 16:30 成功（12 分钟，补齐 11-23 至 11-25 日行情）；前瞻收益 17:30 成功，已增量到 `end_dt` 11-25；分钟因子 19:30 成功，增量到 11-24；
+  东财分钟 16:00、17:00 两次失败（HTTP 502 / ProxyError，另一会话处理中），所以分钟因子停在 11-24。cutamp/mif/资金流 04:10 与 UMR 04:30 今晚首次增量。
+  `AINDEXEODPRICES` 在 16:30 只到一部分（11-25 2,134 / 6,730 行），06:00 那轮补齐；日更就绪判定会按基准代码等待。
+- **lake 已物化**：前瞻收益 open-to-open 四个周期（2018 起）；13 个因子（cutamp v2、tr_umr v2、mif、资金流 3 个为 2018 起；分钟 7 个为 2024-08 起）。
+  did_ratio 代码与 golden 已提交（`3721961`），**尚未物化**（见待裁定）。
+- **Current-20 进度**：14 / 20 已迁（含 did_ratio 代码）。剩 6 个：`event_sue`、`event_delta_roe`、`event_aog`、`barra_cne6_ernqlt`、`barra_cne6_sentiment`、`nap_adj_ratio`。
+- **工作区里有其他会话的未提交改动**（朝阳永续、东财分钟、`universe.py` 与 `domain/ports/universe.py`、`AGENTS.md`、`settings.py` 等）。
+  它们让 3 个迁移清单测试在工作区失败（`test_migrate`、`test_src_migrations` ×2），提交后应恢复；不要替它们提交或回退。
+
+#### 二、后续规划（按优先级）
+
+**A. 运维加固（先做，1–2 天）**
+1. **失败告警**：旧仓有 `task_monitor`（12:00 邮件汇总），新仓没有任何告警。建议用 Dagster run-failure sensor 加每日汇总（通知渠道由负责人定）。
+   今天 `jydb_daily` 卡了 7 小时堵住整个单并发队列，就是靠人工发现的。
+2. **其余来源的看门狗**：Wind、聚源已有（`orchestration/resources/watchdog.py`）；朝阳永续、东财分钟、Tushare、宏观没有。手动 `quantagent ingest jydb sync` CLI 也没有（约 10 行，等 `cli/ingest.py` 的他人改动提交后再加）。
+3. **公司电脑停掉守护进程**或拉新代码（office 调度已清空），否则与 Mac 重复采集。
+4. **daemon 的 PG 用户**从超级用户 `leo` 改为 `quantagent_ingest`（待负责人放密码）。
+5. **源数据修订不回溯**：因子日更只往后增量，Wind 事后修订的源值不会触发已写因子重算。需设计"源表 `_batch` 的修订行 → 受影响 (代码, 日期) → 新增修订身份或重算"的机制，写 ADR 后实施。
+6. 日更 run log 的就绪依据只进了 `input_digest`（不可读），可读版在 Dagster 元数据；如需审计，给 `RunLog` 加可读字段。
+
+**B. 收尾 Current-20（剩 6 个 + did_ratio 物化）**
+1. **did_ratio 物化**：先按待裁定第 1 条核查源端漏行，再用 `quantagent lake materialize did-ratio`（2018 起逐月，失败即停），然后加入 04:10 日更（`cli/daily_increment.py` 的因子表）。
+2. **事件三因子**（`event_sue`、`event_delta_roe`、`event_aog`，旧 `factors/factor_event_2.py:383-540`）：先读旧仓 `docs/decisions/2026-08-31-performance-factor-event-pit.md`（事件 PIT 以 `confirm_date` 截止）。
+   要重建旧派生表 `fin_income_gen`（仓内无生产代码，需从使用处反推）与业绩快报来源（契约里未见快报表，先确认 Wind `ASHAREPROFITEXPRESS` 是否需要接入，属于新增源表，要问负责人）。
+   `event_aog` 另需指数开盘价：`IndexReturnRepository` 只有涨跌幅，需窄扩展字段；旧代码开盘日判定 `'0925'` 与 `event_high250` 的 `'0930'` 不一致，迁移时要请负责人定。
+3. **nap_adj_ratio**（`factors/factor_rpt.py:49-56`）：数据来自朝阳永续 `rpt_earnings_adjust`（已镜像入库、未写可见性契约）。需先按旧仓下游反推可见性写契约；"报告数最多的年度"有并列，按 `_legacy_sort` 原则复现。
+4. **barra SENTIMENT**（`enhanced_optimizer/factors/exposure.py:707-750`）：一致预期四张表已入库（`con_forecast_*`，可见性 A）。旧值在 `wx2.barra_cne6`，trade_date t 映射 adj_date=next(t)（`alpha_factory/data_gateway.py:1112-1123`），对齐要先查清。
+5. **barra ERNQLT**：需要整套 CNE6 暴露引擎（`exposure.py` 的 `RAW` 族、行业 `l3integrate`、市值加权），工作量最大，放最后；可能要把 Barra 作为独立子项目（暴露全集而非单因子），先与负责人确认范围。
+
+**C. 因子评价层（P3 收尾的核心，B 进行中即可并行设计）**
+旧仓 `alpha_factory` 日更不止算因子，还产出 `alpha_factory_metric_d`（IC/RankIC 等）、`group_nav_d`（分组净值）、`factor_snapshot_d`、`alert_d`、`exposure_d`、`factor_corr_d`。
+新仓已有契约 `feature.metric`、`signal.group_nav`（`contracts/schemas/lake/`）与 domain 类型，但没有计算与物化。按 [多周期 ADR](../adr/2026-09-19-factor-horizons-and-admission.md)：
+主协议 `oo_5d`，逐周期（1/5/10/20D）独立报告 IC、ICIR、RankIC、G10-G1、单调性、覆盖率；`knowledge_dt` = max(因子, 前瞻收益 `end_dt`)。
+步骤：先对旧 `metric_engine.py`、`group_backtest.py`、`refresh_factor_metrics*.py` 做 golden（对拍 wx2 `alpha_factory_metric_d` 与 `group_nav_d`），再实现。注意旧 IC 用 total 收益、`ret_oo_5d`，旧 1D 路径（`stock_ratio`）有日期错位，见前瞻收益 ADR。
+
+**D. P2 剩余数据**
+JYDB P2/P3 七张、朝阳永续 P2 三张（含 `der_prob_excess_stock`，接入时实现"任一字段早于调仓日"可见性规则）、Tushare 其余接口（旧仓 `tushare_ths_industry` 18:20、`tushare_data` 08:30 只迁了两张）、第四类运维表。
+Wind 财报四张与业绩预告的回填是否追平未逐表核对（利润表本地 2,478,908 行对 wx2 2,726,201 行，差额主要是 wx2 同键重复与北交所旧代码，见 did_ratio ADR）。
+
+**E. P4 研究线与回测**
+旧调度里的研究展厅链路（风格轮动、宏观 regime、债券/黄金/美股择时、Core5 多资产、ETF 因子与行业轮动、`optimizer_exposure`、`style_crowd_data`、`stock_hq_score`）均未迁。
+按 roadmap P4：先定回测语义合同，再迁内核；每条研究线迁移前先为它用到的 `MarketDataService` 方法建端口与 golden（11-22 盘点：51 个公开读取方法，有端口的已全部 golden）。
+跨时区可见性（美债、ISM）的规则引擎扩展在第一个读取方出现时实现。旧仓推送类任务（企业微信、邮件）属于生产边界外，迁移前先问负责人。
+
+**F. P5 发布与 P6 封存**：按下文各阶段验收标准执行，P6 需新系统独立跑满一个完整业务周期（含月末、季末、财报季）。
+
+#### 三、环境与协作的坑（必读）
+
+1. **Mac 的 Dagster daemon 直接加载工作区代码**（`workspace.yaml` 的 `working_directory` 指向仓库）。未提交的改动会立刻生效，包括新调度。改 `orchestration/` 前想清楚会不会触发真实运行。
+2. **不要执行裸 `uv sync`**：它会卸掉可选依赖组（Dagster 在 `orchestration` extra 里），守护进程立即报 `No module named dagster`。需要同步时用 `uv sync --all-extras`。
+   **不要在仓库目录以外执行 `uv run`**（例如临时 git worktree 里）：它会把共享 `.venv` 的 editable 安装改指到别处。在别的目录验证时直接调用 `.venv/bin/python`、`.venv/bin/mypy`，加 `PYTHONPATH=<dir>/src:<dir>`。日常用 `uv run --no-sync`。
+3. **多会话共用一个工作区**：提交时只暂存自己的文件；共享文件（`roadmap.md`、`docs/adr/README.md`、`orchestration/definitions.py` 等）用"HEAD 版本 + 自己的改动"生成索引内容（`git hash-object -w` + `git update-index --cacheinfo`），不要整文件 `git add`。
+   提交前在干净 worktree 上跑一遍门禁（见第 2 条的调用方式）。
+4. **pre-commit 的 end-of-file-fixer** 会改 JSON fixture 末尾换行并中止提交，重新 `git add` 后再提交即可。
+5. **wx2 与 wind_db**：wx2 用 `get_settings().legacy_mssql_*`，wind_db 用 `wind_mssql_*`；端口以 `.env` 为准（11-24 起有变化）。负责人曾要求 Wind 同步期间不访问 wind_db（抢 ToDesk 带宽），访问前先问。脚本连接后用 `SELECT DB_NAME()` 断言库名。
+6. **写库与迁移**：`PGOPTIONS="-c lock_timeout=10s" QUANTAGENT_ALLOW_DB_WRITE=true uv run --no-sync quantagent db migrate --plane src --write-db`；变量只放在单条命令上，不 export。src 迁移当前到 0034（0030–0033 为他人）。
+7. **批量物化脚本**：每段命令检查退出码，失败即停（11-24 曾因管道吞掉退出码漏写一个月）。lake 写入不覆盖、遇重复身份报错；改口径就升 `definition_version`，旧版本行保留。
+8. **单并发队列**：任何一个卡住的 run 会堵住后面所有调度。终止方法：`instance.run_launcher.terminate(run_id)`；进程不退出时依次 KILL 步骤子进程与 run worker，再 `report_run_canceled`。
+9. 数据集查询要点：`ASHAREEODDERIVATIVEINDICATOR` 含非交易日行，按日计数先按交易日历过滤；`S_DQ_ADJCLOSE_BACKWARD` 是前复权，研究不得使用；分钟数据有排除股票日（分区元数据 + 常量），经 `MinuteBarRepository.excluded_codes` 取得。
+
+#### 四、口径与方案要点（已定，后续因子照此）
+
+1. **迁移先固化旧行为（§7.10）**，差异必须逐行解释。golden 做法：wx2 旧值按截面日列式存 fixture（每文件 < 512KB），差异分类后**逐行核验**：已裁定口径差异 / 源数据差异（存 wx2 原始行，代入新函数复现旧值）/ 旧表陈旧（wx2 自身输入复现不了旧值，且本地值等于 wx2 输入重算值）/ 其他（必须为 0）。
+   旧表有不可复现时段时按月抽样找出可复现区间，golden 只取区间内日期并写进 ADR。`tests/golden` 已约 15MB，后续优先存摘要、按需下钻。
+2. **缺失原则**：缺失不补 0、无定义不写 0（ratio 假 0、pandas 零方差峰度、缺输入回退都改为不产值）；有经济含义的 0 保留（did_ratio 的"未分红""亏损无派息能力"）。端点或窗口内停牌视为缺失。
+3. **股票域**：逐截面日取 `all_a`（`cli/_universe.py`），不用区间末日成员回填全区间。`all_a` 依赖当日衍生指标两个市值字段都有值。
+4. **并列顺序**：旧仓 pandas 默认 quicksort 的并列顺序用 `features/library/_legacy_sort.py` 的纯 Python 移植复现（含堆排序兜底），不调 `np.argsort`（x86 SIMD 下并列顺序随机器变）。
+5. **精度**：旧输入以舍入后的值存表时，按旧输入精度舍入（mif 的 `night_ratio` 四位）；比对按旧表存储精度。
+6. **中性化**只适用于带 `_neut_pxret21` 后缀的因子：IC 检验路径（MAD 去极值、样本下限 20、pxret21 两端价配对），长表存残差不存 z-score。
+7. **财报类**：同报告期取公告日最大的一条；同 (代码, 报告期, 公告日) 取值不同则跳过该股该日。
+8. **前瞻收益**：`event_dt` = 信号日 T，T+1 开盘到 T+h+1 开盘，后复权开盘价，`knowledge_dt = end_dt`，`return_leg` 进主键，只做 total；`usage: evaluation_only`，不得进训练特征。
+9. **日更**：从 lake 最大截面日往后增量；输入当日行数达前 5 个开市日最大值的 99% 才算就绪，遇第一个未就绪日停；lake 为空报错，不自动全量。
+
+#### 五、待负责人裁定
+
+1. **did_ratio 物化前的源端漏行**：wx2 有、本地没有的分红 3,448 键、利润表 3,559 键；按股票-日影响 0.27%，但逐年上升（2026 年 1.25%）。建议在 wind_db 抽查几十条：源端有则补采后物化，源端已删则直接物化。需允许访问 wind_db。
+2. **告警渠道**（A.1）：邮件、企业微信或其他。
+3. **源数据修订后的因子重算机制**（A.5）是否现在做。
+4. **事件因子**需要的新源表（业绩快报等）与开盘日判定阈值（`'0925'` / `'0930'`）。
+5. **Barra 范围**：只迁 ERNQLT、SENTIMENT 两个单因子，还是迁整套 CNE6 暴露（`optimizer_exposure` 也依赖）。
 
 ### 阻塞与待裁定
 
