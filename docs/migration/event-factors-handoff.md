@@ -4,6 +4,15 @@
 > `factors/factor_event_2.py` 逐行逆向，负责人裁定已记录。读完后即可直接实现，
 > 无需重新逆向。属一次性交接文档，三因子全部迁移完成后可删除。
 
+> **进度（2026-11-26）**：`event_sue` ✅ 完成（实现+golden 97.8%+物化+日更，见
+> `docs/adr/2026-11-26-event-sue.md`）；`event_aog` ✅ 实现+golden 100% 一致；
+> `event_delta_roe` 算法已逆向完毕（§4 已补全），待实现。
+>
+> **非交易日 declare 裁定（2026-11-26）**：财报可在任意自然日 declare（周末/节假日是披露
+> 高峰，wx2 事件行 19.3%-19.5% 来自非交易日 declare）。域判定**不在 declare 日**（非交易日无
+> all_a/ST 截面）：`event_aog` 在 open_date（裁定 A1）；`event_sue`/`event_delta_roe` 用 declare 后
+> 首个交易日（裁定 B1）。`event_dt` 不变（aog=open_date，sue/delta_roe=declare_date）。
+
 ## 1. 前置依赖：已就绪
 
 三张朝阳永续事件源表已由并行会话接入并回填（提交 `219a970`，roadmap 更新 `da2c52d`）：
@@ -65,11 +74,36 @@
 
 ## 4. event_delta_roe（factor_event_2.py:434-490）与 event_aog（factor_event_2.py:492-540）
 
-**delta_roe**：当期 ROE − 去年同期 ROE。优先用 Wind `ASHAREFINANCIALINDICATOR.S_QFA_ROE`
-（按 ANN_DT <= declare_date 截止）；当期 ROE 缺失时用 profit 重算 `100*profit_q/eqt`
-（eqt = 股东权益，`get_shrhldr_eqt` 取上一期；profit_q 单季，非 Q1 需减上一期累计）。
-**依赖 Wind 财务指标表（已接入）+ 股东权益**。`get_shrhldr_eqt`/`get_profit`/`get_last_period`
-需一并逆向（未读完）。
+**delta_roe**：当期 ROE − 去年同期 ROE，`confirm_date = declare_date`（非 open_date，不依赖行情）。
+`event_dt = declare_date`。已逆向完毕并验证（600000.SH 2024Q1：Wind ROE 2.373834 − 2.242767
+= 0.131 与 wx2 一致）。步骤：
+
+1. `period_ly` = 去年同期（period 年份 −1，mmdd 不变）。
+2. 查 `ASHAREFINANCIALINDICATOR.S_QFA_ROE`：`REPORT_PERIOD in (period, period_ly)`、
+   `ANN_DT <= declare_date`，按 ANN_DT 排序。**`roe_last` = period_ly 行的最后一个 S_QFA_ROE；
+   period_ly 不在结果中则整个事件不产值**（外层 `if period_ly in ... values` 是硬条件）。
+3. 当期 `roe`：
+   - 若 period 在结果中且 S_QFA_ROE 非空 → 用 Wind 值。
+   - 否则用 profit 重算 `roe = 100*profit_q/eqt`：
+     - `profit` 按来源分支（np_floor/np/np_shareholder÷10000，同 sue）。
+     - `eqt = get_shrhldr_eqt(stock, get_last_period(period))`（**上一期**股东权益，÷10000）。
+     - `profit_q`：Q1（mmdd=0331）直接用 profit；否则 `profit − get_profit(stock, last_period, declare_date)`。
+4. `delta_roe = roe − roe_last`，两者皆非空才产出。
+
+辅助函数（`factor_event_2.py:639-700`）：
+
+- `get_last_period(period)`：上一报告期。mmdd 0331→前年1231；0630→0331；0930→0630；1231→0930。
+- `get_profit(stock, period, cutoff)`：`fin_income_gen` 查 `report_type in (1001,1003)`、
+  `declare_date <= cutoff`，`order by report_type desc` 取首行 ÷10000（1003 调整版优先）。
+- `get_profit_q`：`profit − (0 if 0331 else get_profit(last_period))`。
+- `get_shrhldr_eqt(stock, period)`：`ASHAREBALANCESHEET.TOT_SHRHLDR_EQY_EXCL_MIN_INT`，
+  `STATEMENT_TYPE = 408001000`（合并报表）、`REPORT_PERIOD = period` ÷10000。
+  **注意：无 ANN_DT 截止**——股东权益按 REPORT_PERIOD 直接取，不看公告日（潜在前视，
+  复现旧行为，golden 登记）。
+
+**依赖源表均已接入**：`ASHAREFINANCIALINDICATOR`（388,947 行，有 S_QFA_ROE/ANN_DT/REPORT_PERIOD）、
+`ASHAREBALANCESHEET`（892,279 行，有 TOT_SHRHLDR_EQY_EXCL_MIN_INT/STATEMENT_TYPE/REPORT_PERIOD）、
+`fin_income_gen`（已接入）。需新建两个 adapter（ROE 与股东权益）。列名大写，需 `quote_ident`。
 
 **aog**：公告次日开盘涨幅 − 中证500次日开盘涨幅。开盘日判定用 `entrytime`：
 `entrytime < declare_date` 或（同日且 `%H%M <= '0925'`）→ 公告**当日**首个交易日；
