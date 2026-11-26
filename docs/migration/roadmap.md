@@ -2,7 +2,7 @@
 title: 迁移路线 P0–P6
 status: active
 created: 2026-09-16
-updated: 2026-11-25
+updated: 2026-11-26
 applies_to:
   - src/quantagent/
   - orchestration/
@@ -45,7 +45,7 @@ applies_to:
 |---|---|---|
 | P0 骨架 | ✅ 完成 | 门禁 ruff / mypy / import-linter / pytest 全绿 |
 | P1 存储底座 | ✅ 完成 | 两面迁移、DuckDB 会话、缺规则 fail-closed、因子布局 ADR |
-| P2 处置与入湖 | 🔄 进行中 | Wind 已追平，11-25 起本机日更；Tushare 两表与宏观两源已日更；聚源 P0/P1 已接入并回填 |
+| P2 处置与入湖 | 🔄 进行中 | Wind 已追平，11-25 起本机日更；Tushare 两表与宏观两源已日更；聚源 P0/P1 已回填；朝阳永续 P0/P1 已接入 |
 | P3 口径与因子 | 🔄 进行中 | 股票池、成分、ST、前瞻收益与 14 个因子已对拍 wx2；剩 6 个因子与因子评价层 |
 | P4–P6 | ⏳ 未开始 | |
 
@@ -99,7 +99,9 @@ Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM
 
 **A 股 1 分钟行情**：▶ 2026-11-26 起暂用 MySQL 增量，16:00 首次、17:00 补跑；历史已追平至 2026-11-25，当日 1,344,536 行已入库并回读校验。东财暂缓，见 [来源裁定](../adr/2026-11-26-minute-bars-mysql-incremental.md)。PG 已执行 `0023_minprice_manifest.sql`。开盘价低于最低价不超过 0.5% 时保留源值并记录；MySQL 历史数据有负成交额的股票，置 0 后逐只与日成交额对比，差异严格小于 0.5% 才修正入库，否则排除当天该股票；缺少可比日行情同样排除，见 [处理 ADR](../adr/2026-11-22-minute-bar-negative-amount-daily-check.md)。2024-07-29 源表为空；2025-10-17 的 45 条与 2026-01-13 的 75 条负成交额经负责人单独裁定置 0，整日入库核验，见 [10 月 ADR](../adr/2026-11-22-minute-bar-october-17-correction.md) 与 [1 月 ADR](../adr/2026-11-22-minute-bar-january-13-correction.md)。2026-01-19 的 152 条负成交额涉及 85 只股票，按新标准修正 6 只、排除 79 只后入库 1,302,825 行；2026-01-21 排除 67 只异常股票后写入其余 5,419 个代码、1,305,961 行，两个指数的 3 条负成交额按既有规则置 0；该分区读取会阻止将其误认为完整，见 [裁定](../adr/2026-11-22-minute-bar-january-21-exclusions.md)。2026-01-22 的 `002485.SZ` 15:00 成交量 -1 和成交额 -28 按负责人裁定置 0，当天 1,321,868 行已入库校验，见 [裁定](../adr/2026-11-22-minute-bar-january-22-correction.md)；2026-03-26 的 `920242.BJ` 15:00 成交量 -1、成交额 -31 按负责人裁定置 0，当天 1,326,683 行已入库校验，见 [裁定](../adr/2026-11-22-minute-bar-march-26-correction.md)；2026-04-16 的 `920855.BJ` 15:00 成交量 -1、成交额 -37 按负责人裁定置 0，当天 1,329,580 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-april-16-correction.md)；2026-04-30 的 `920608.BJ` 15:00 成交量 -1、成交额 422 按负责人裁定置 0，当天 1,331,222 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-april-30-correction.md)；2026-06-02 的 `920112.BJ` 15:00 成交量 -1、成交额 1037 按负责人裁定置 0，当天 1,334,389 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-june-02-correction.md)；2026-06-08 的 `920608.BJ` 15:00 成交量 -1、成交额 -51 按负责人裁定置 0，当天 1,334,635 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-june-08-correction.md)；2026-06-22 的 `920855.BJ` 15:00 成交量 -1、成交额 -7 按负责人裁定置 0，当天 1,335,353 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-june-22-correction.md)；2026-06-29 的 `920608.BJ` 15:00 成交量 -1、成交额 11 按负责人裁定置 0，当天 1,335,113 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-june-29-correction.md)；2026-07-06 的 `920455.BJ` 和 `920541.BJ` 15:00 记录成交量和成交额按负责人裁定置 0，当天 1,335,120 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-july-06-correction.md)；2026-07-08 的 `920132.BJ` 15:00 成交量 -1、成交额 -56 按负责人裁定置 0，当天 1,335,361 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-july-08-correction.md)；2026-07-09 的 `920422.BJ` 15:00 成交量 -1、成交额 337 按负责人指示置 0，当天 1,335,361 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-july-09-correction.md)；2026-07-14 的 `920422.BJ` 15:00 成交量 -1、成交额 11 按负责人指示置 0，当天 1,335,126 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-july-14-correction.md)；2026-07-15 的 `920112.BJ`、`920168.BJ` 15:00 记录成交量与成交额按负责人指示置 0，当天 1,335,368 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-july-15-correction.md)；2026-07-17 的 `920121.BJ` 15:00 成交量 -1、成交额 2063 按负责人指示置 0，当天 1,335,124 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-july-17-correction.md)；2026-07-22 的 `603869.SH`、`920108.BJ` 15:00 记录成交量与成交额按负责人指示置 0，当天 1,335,849 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-july-22-correction.md)；2026-07-24 的 `920112.BJ` 15:00 成交量 -1、成交额 -12 按负责人指示置 0，当天 1,335,608 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-july-24-correction.md)；2026-07-28 的 `920370.BJ` 15:00 成交量 -1、成交额 129 按负责人指示置 0，当天 1,336,322 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-july-28-correction.md)；2026-08-04 的 `920395.BJ` 15:00 成交量 -1、成交额 91 按负责人指示置 0，当天 1,337,051 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-august-04-correction.md)；2026-08-17 的 `920121.BJ` 15:00 成交量 -1、成交额 1462 与 `920679.BJ` 15:00 成交量 -1、成交额 10 按负责人指示置 0，当天 1,339,222 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-august-17-correction.md)；2026-08-20 的 `920146.BJ` 15:00 成交量 -1、成交额 37 与 `920395.BJ` 15:00 成交量 -1、成交额 -42 按负责人指示置 0，其中 920395.BJ 负成交额按日行情对比通过（分钟与日成交额均为 2,857,887 元），当天 1,339,943 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-august-20-correction.md)；2026-08-24 首次出现三条 15:00「成交量 -1」记录（`920168.BJ` 378、`920275.BJ` -62、`920679.BJ` -37），类型与此前一致，按负责人惯例指示置 0，两条负成交额经日行情对比均完全一致，当天 1,340,428 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-august-24-correction.md)；2026-09-10 的 `920177.BJ` 15:00 成交量 -1、成交额 971 按负责人指示置 0，当天 1,340,191 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-september-10-correction.md)；2026-09-15 的三条 15:00「成交量 -1」记录（`920121.BJ` 205、`920166.BJ` 2、`920168.BJ` 542，成交额均为正）按负责人惯例指示置 0，当天 1,339,950 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-september-15-correction.md)；2026-09-17 的 `920242.BJ` 15:00 成交量 -1、成交额 -3 按负责人指示置 0，负成交额经日行情对比通过，当天 1,341,155 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-september-17-correction.md)；2026-09-28 的 `920055.BJ` 15:00 成交量 -1、成交额 168 按负责人指示置 0，当天 1,340,680 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-september-28-correction.md)；2026-09-30 的 `920163.BJ` 15:00（-1 手、-3 元）、`920541.BJ` 15:00（-1 手、-17 元）按负责人指示置 0，同日 `920395.BJ` 15:00（成交量 0、成交额 -24）只由既有日行情对比规则处理；三条均通过对比，当天 1,341,403 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-september-30-correction.md)；2026-10-08 的三条 15:00「成交量 -1」记录（`920033.BJ` -29、`920541.BJ` -7、`920781.BJ` -17）按负责人指示置 0，三条负成交额均通过日行情对比，当天 1,340,439 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-october-08-correction.md)；2026-10-12 的 `920166.BJ`（-1 手、404 元）、`920541.BJ`（-1 手、619 元）按负责人指示置 0，当天 1,341,644 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-october-12-correction.md)；2026-10-13 的 `920069.BJ`（-1 手、-44 元）、`920080.BJ`（-1 手、-41 元）按负责人指示置 0，同日 `920541.BJ`（成交量 0、成交额 -54）只由既有日行情对比处理；三条均通过对比，当天 1,341,403 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-october-13-correction.md)；2026-10-14 的 `920020.BJ` 15:00（-1 手、13 元）按负责人指示置 0，同日 `920108.BJ`（成交量 0、成交额 -55）只由既有日行情对比处理，当天 1,342,126 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-october-14-correction.md)；2026-10-19 的 `920242.BJ` 15:00（-1 手、20 元）按负责人指示置 0，当天 1,342,125 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-october-19-correction.md)；2026-10-21 的 `920145.BJ`（-1 手、18 元）、`920957.BJ`（-1 手、761 元）按负责人指示置 0，当天 1,343,090 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-october-21-correction.md)；2026-10-22 的 `920751.BJ` 15:00（-1 手、37 元）按负责人指示置 0，当天 1,343,572 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-october-22-correction.md)；2026-10-27 的三条 15:00「成交量 -1」记录（`920027.BJ` -53、`920455.BJ` -56、`920675.BJ` -31）按负责人指示置 0，三条负成交额均通过日行情对比，当天 1,343,572 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-october-27-correction.md)；2026-10-29 的 `920871.BJ` 15:00（-1 手、37 元）按负责人指示置 0，当天 1,343,572 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-october-29-correction.md)；2026-11-03 的 `920275.BJ`（-1 手、-35 元）、`920931.BJ`（-1 手、263 元）按负责人指示置 0，同日 `920030.BJ`（成交量 0、成交额 -55）只由既有日行情对比处理，当天 1,343,571 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-november-03-correction.md)；2026-11-11 的 `920608.BJ` 15:00（-1 手、-19 元）按负责人指示置 0，负成交额经日行情对比通过，当天 1,344,777 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-november-11-correction.md)；2026-11-18 的 `920121.BJ` 15:00（-1 手、1775 元）按负责人指示置 0，当天 1,344,295 行已入库校验，见 [裁定](../adr/2026-11-23-minute-bar-november-18-correction.md)；2026-11-19 入库 1,344,295 行，2026-11-20 与 11-21 已登记分区内容一致、按既有逻辑跳过未覆盖。**历史回填已到目标终点 2026-11-20**：07-29 至 11-20 共 77 个交易日全部分区在册，`ingest minprice verify` 报已登记 560、未登记 0、错误 0，全程日志 `var/logs/minprice-backfill-after-20260804.log`；2026-11-23 经负责人追加同步，当日源数据无负成交量、负成交额和重复键，1,343,572 行已入库校验，覆盖扩展为 07-29 至 11-23 共 78 个交易日、`verify` 已登记 561、未登记 0、错误 0。2026-11-24 的 `920608.BJ` 15:00 成交量 -1、成交额 353 按负责人既定同类处理裁定置 0，当天 1,345,018 行已入库校验，见 [裁定](../adr/2026-11-25-minute-bar-november-24-correction.md)。源数据含三板做市指数，股票与指数范围需另行裁定。2026-11-25 东财 16:00 首次及 17:00 补跑均在股票列表分页遭 HTTP 502 失败，随后已从 MySQL 补齐当日，见 [修正裁定](../adr/2026-11-26-minute-bar-november-25-correction.md)；负责人改用 Wind 上市描述表生成当日采集名单，当前态仅用于采集不作为 PIT 研究池，见 [裁定](../adr/2026-11-25-minute-bar-wind-stock-list.md)；切换 Wind 名单后东财第一只股票分钟接口仍报 ProxyError，东财来源未成功登记分区；东财域名被系统 Clash Fake IP 解析到 198.19 网段，禁用 requests 系统代理后连接仍被关闭，直接指定 DNS 解析地址也返回 502，尚无法区分东财端故障与网络网关问题。东财全市场验证仍待完成；两项日更调度已切换 MySQL 并启用，代码默认状态仍为停止。见 [来源 ADR](../adr/2026-11-21-minute-bars-source-split.md) 与 [接入方案](minute-bar-ingest-plan.md)。
 
-**其他**：JYDB P2/P3 七张表、朝阳永续 7 张、Tushare 其余接口 ⏳ 未接；第四类运维表 ⏳ 未动。
+**朝阳永续 Suntime P0/P1（2026-11-24）**：按[交接文档](suntime-ingest-plan.md)接入五张表。个股两张与 `rpt_earnings_adjust` 用 0006 已建的表；指数两张（`con_forecast_idx`、`con_forecast_roll_idx`）由 0030 新建，源库有、wx2 没有，负责人裁定为 P0。0031 给五张表加 `(tmstamp, id)` 游标索引，0032 写契约列注释。可见性只配四张一致预期：`source_field con_date`、非 strict、等级 A，个股年度表的 `con_date` 是 timestamp，按日期比较；`rpt_earnings_adjust` 只建镜像、不写契约。`con_forecast_stk_ttm` 不同步、不进写入白名单。中文用 pymssql `charset=utf8` 直接读取，不再做旧仓的 latin1/GBK 再解码。日更 01:10，避开旧仓 22:00、02:00、04:30 与聚源 03:30，只在 Mac 注册。P2（`FIN_APPO_RELE_DATE`、`der_prob_excess_stock`、`der_diver_stk`）未动。
+
+**其他**：JYDB P2/P3 七张表、朝阳永续 P2 三张、Tushare 其余接口 ⏳ 未接；第四类运维表 ⏳ 未动。
 
 ### P3 口径与因子
 
@@ -112,7 +114,7 @@ Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM
 | 旧网关 golden（已有新端口的方法） | ✅ 股票池、成分池、ST、日行情、交易日历（8,770 天）、指数涨跌幅（`000985.CSI`、`h30269.CSI`）均与 wx2 一致（11-22）。`core/` 三个网关共 51 个公开读取方法，12 个无现役调用；其余多为择时/宏观研究线读取，随 P4 各线迁移、建端口时先做 golden | — |
 | `pit_grade` 木桶、长表写入校验 | ✅ 两层依赖图含 D 输出 D；写入拒绝 A–D 以外的等级与早于 `event_dt` 的 `knowledge_dt`（11-22）。写入时比对完整血缘需改接口，未做 | — |
 | `mart.forward_return` 股票 open-to-open | ✅ 代码与 wx2 对拍完成（29 个样本日 5D/10D，all_a 内差异全部登记核验；[ADR](../adr/2026-11-22-forward-return-open2open.md)）。已物化 2018-01-02 起，四个周期共 37,360,480 行；11-25 起日更（17:30、00:00、02:00） | — |
-| `alpha_factory` 因子批量移植 | 🔄 Current-20 共 20 个，已迁 14 个，均与 wx2 对拍（其他差异 0，各类差异逐行核验）并物化到 lake（as_of 2026-11-20 前后）：cutamp v2、tr_umr v2（[ADR](../adr/2026-11-24-tr-umr-v2-no-missing-as-zero.md)，11-25 补齐 2018 起全历史）；分钟 7 个，2024-08 起（[第一批](../adr/2026-11-24-minute-factors-first-batch.md)、[2b](../adr/2026-11-24-minute-factors-batch-2b.md)，core_up/down 按 pxret21 中性化存残差）；资金流 3 个，2018 起（[ADR](../adr/2026-11-24-moneyflow-factors-batch-2a.md)）；mif，2018 起（[ADR](../adr/2026-11-24-mif.md)）。11-25 起本机日更（输入就绪才增量）。did_ratio 代码与 golden 已提交（[ADR](../adr/2026-11-25-did-ratio.md)），待源端漏行核查后物化。剩 6 个：event_sue、event_delta_roe、event_aog、barra ERNQLT、barra SENTIMENT、nap_adj_ratio | 见交接第二节 B |
+| `alpha_factory` 因子批量移植 | 🔄 Current-20 共 20 个，已迁 14 个，均与 wx2 对拍（其他差异 0，各类差异逐行核验）并物化到 lake（as_of 2026-11-20 前后）：cutamp v2、tr_umr v2（[ADR](../adr/2026-11-24-tr-umr-v2-no-missing-as-zero.md)，11-25 补齐 2018 起全历史）；分钟 7 个，2024-08 起（[第一批](../adr/2026-11-24-minute-factors-first-batch.md)、[2b](../adr/2026-11-24-minute-factors-batch-2b.md)，core_up/down 按 pxret21 中性化存残差）；资金流 3 个，2018 起（[ADR](../adr/2026-11-24-moneyflow-factors-batch-2a.md)）；mif，2018 起（[ADR](../adr/2026-11-24-mif.md)）；did_ratio 2018 起（[ADR](../adr/2026-11-25-did-ratio.md)，11-26 物化 872 万行 + 接入 04:10 日更）。11-25 起本机日更（输入就绪才增量）。剩 6 个：event_sue、event_delta_roe、event_aog、barra ERNQLT、barra SENTIMENT、nap_adj_ratio | 见交接第二节 B |
 
 ### 下一步
 
@@ -126,25 +128,24 @@ Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM
   11-25 首日：Wind 16:30 成功（12 分钟，补齐 11-23 至 11-25 日行情）；前瞻收益 17:30 成功，已增量到 `end_dt` 11-25；分钟因子 19:30 成功，增量到 11-24；
   东财分钟 16:00、17:00 两次失败（HTTP 502 / ProxyError，另一会话处理中），所以分钟因子停在 11-24。cutamp/mif/资金流 04:10 与 UMR 04:30 今晚首次增量。
   `AINDEXEODPRICES` 在 16:30 只到一部分（11-25 2,134 / 6,730 行），06:00 那轮补齐；日更就绪判定会按基准代码等待。
-- **lake 已物化**：前瞻收益 open-to-open 四个周期（2018 起）；13 个因子（cutamp v2、tr_umr v2、mif、资金流 3 个为 2018 起；分钟 7 个为 2024-08 起）。
-  did_ratio 代码与 golden 已提交（`3721961`），**尚未物化**（见待裁定）。
-- **Current-20 进度**：14 / 20 已迁（含 did_ratio 代码）。剩 6 个：`event_sue`、`event_delta_roe`、`event_aog`、`barra_cne6_ernqlt`、`barra_cne6_sentiment`、`nap_adj_ratio`。
+- **lake 已物化**：前瞻收益 open-to-open 四个周期（2018 起）；14 个因子（cutamp v2、tr_umr v2、mif、资金流 3 个、did_ratio 为 2018 起；分钟 7 个为 2024-08 起）。
+  did_ratio 11-26 完成物化：2018-01~2026-10 共 106 个月、872 万行、pit_grade 全 B、golden 2024-05-15 一致率 99.32%；同日接入 04:10 日更（`8aa7679`），已增量到 2026-11-25。
+- **Current-20 进度**：14 / 20 已迁。剩 6 个：`event_sue`、`event_delta_roe`、`event_aog`、`barra_cne6_ernqlt`、`barra_cne6_sentiment`、`nap_adj_ratio`。
 - **工作区里有其他会话的未提交改动**（朝阳永续、东财分钟、`universe.py` 与 `domain/ports/universe.py`、`AGENTS.md`、`settings.py` 等）。
   它们让 3 个迁移清单测试在工作区失败（`test_migrate`、`test_src_migrations` ×2），提交后应恢复；不要替它们提交或回退。
 
 #### 二、后续规划（按优先级）
 
 **A. 运维加固（先做，1–2 天）**
-1. **失败告警**：旧仓有 `task_monitor`（12:00 邮件汇总），新仓没有任何告警。建议用 Dagster run-failure sensor 加每日汇总（通知渠道由负责人定）。
-   今天 `jydb_daily` 卡了 7 小时堵住整个单并发队列，就是靠人工发现的。
-2. **其余来源的看门狗**：Wind、聚源已有（`orchestration/resources/watchdog.py`）；朝阳永续、东财分钟、Tushare、宏观没有。手动 `quantagent ingest jydb sync` CLI 也没有（约 10 行，等 `cli/ingest.py` 的他人改动提交后再加）。
+1. **失败告警**：✅（11-26，`d2243f0`）`@run_failure_sensor` 监控全部日更作业，step 失败取首行错误摘要落 `var/logs/alerts/run_failures.jsonl`；`quantagent alert summary` 生成前日汇总到 `var/logs/alerts/summary/`。daemon 已重启，sensor 运行中。**通知渠道（邮件/企业微信）仍待负责人定**——渠道接入后读同一 JSONL/汇总文件。东财分钟、Tushare、宏观采集不走 ToDesk 分页链路，无看门狗需求。
+2. **其余来源的看门狗**：✅（11-26）朝阳永续随 `0b85ce0` 接入看门狗（`resources/suntime.py`）；手动 `quantagent ingest jydb/suntime sync` CLI 已接看门狗（`4fb61ae`，机制下沉 `quantagent.ingest.watchdog` 为唯一事实源，`orchestration.resources.watchdog` 改为 re-export）。
 3. **公司电脑停掉守护进程**或拉新代码（office 调度已清空），否则与 Mac 重复采集。
 4. **daemon 的 PG 用户**从超级用户 `leo` 改为 `quantagent_ingest`（待负责人放密码）。
 5. **源数据修订不回溯**：因子日更只往后增量，Wind 事后修订的源值不会触发已写因子重算。需设计"源表 `_batch` 的修订行 → 受影响 (代码, 日期) → 新增修订身份或重算"的机制，写 ADR 后实施。
 6. 日更 run log 的就绪依据只进了 `input_digest`（不可读），可读版在 Dagster 元数据；如需审计，给 `RunLog` 加可读字段。
 
-**B. 收尾 Current-20（剩 6 个 + did_ratio 物化）**
-1. **did_ratio 物化**：先按待裁定第 1 条核查源端漏行，再用 `quantagent lake materialize did-ratio`（2018 起逐月，失败即停），然后加入 04:10 日更（`cli/daily_increment.py` 的因子表）。
+**B. 收尾 Current-20（剩 6 个）**
+1. ~~**did_ratio 物化**~~ ✅（11-26）物化完成 + 接入 04:10 日更，见上。
 2. **事件三因子**（`event_sue`、`event_delta_roe`、`event_aog`，旧 `factors/factor_event_2.py:383-540`）：先读旧仓 `docs/decisions/2026-08-31-performance-factor-event-pit.md`（事件 PIT 以 `confirm_date` 截止）。
    要重建旧派生表 `fin_income_gen`（仓内无生产代码，需从使用处反推）与业绩快报来源（契约里未见快报表，先确认 Wind `ASHAREPROFITEXPRESS` 是否需要接入，属于新增源表，要问负责人）。
    `event_aog` 另需指数开盘价：`IndexReturnRepository` 只有涨跌幅，需窄扩展字段；旧代码开盘日判定 `'0925'` 与 `event_high250` 的 `'0930'` 不一致，迁移时要请负责人定。
@@ -198,7 +199,7 @@ Wind 财报四张与业绩预告的回填是否追平未逐表核对（利润表
 
 #### 五、待负责人裁定
 
-1. **did_ratio 物化前的源端漏行**：wx2 有、本地没有的分红 3,448 键、利润表 3,559 键；按股票-日影响 0.27%，但逐年上升（2026 年 1.25%）。建议在 wind_db 抽查几十条：源端有则补采后物化，源端已删则直接物化。需允许访问 wind_db。
+1. ~~**did_ratio 物化前的源端漏行**~~ ✅ **已裁定可物化**（11-26 核查，负责人已放行 wind_db）：直接对 wind_db 源端 OBJECT_ID 差集对比本地 PG（不经 wx2）。分红漏采 4 行、利润表漏采 66 行，**全部是当日（11-26）新增待日更**，非历史漏采；本地零残留；共有键抽 300 行值零不一致。wx2 独有的 3,448/3,559 键是 wx2 陈旧快照残留（北交所旧代码、已退市，Wind 源端已删）——反证：wx2 多余北交所分红键数超过源端全部北交所行数（2,448 行）。证据见 [did_ratio ADR 核查结论](../adr/2026-11-25-did-ratio.md)。**无需补采，可物化。**
 2. **告警渠道**（A.1）：邮件、企业微信或其他。
 3. **源数据修订后的因子重算机制**（A.5）是否现在做。
 4. **事件因子**需要的新源表（业绩快报等）与开盘日判定阈值（`'0925'` / `'0930'`）。

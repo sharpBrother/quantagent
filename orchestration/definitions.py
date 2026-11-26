@@ -23,7 +23,7 @@ from orchestration.assets.macro import (
     src_macro_gpr_daily,
     src_macro_wgc_gold_demand,
 )
-from orchestration.assets.minprice import src_eastmoney_minute
+from orchestration.assets.minprice import src_eastmoney_minute, src_mysql_minute
 from orchestration.assets.tr_umr import feature_pf_single_tr_umr
 from orchestration.assets.tushare import src_tushare_shibor, src_tushare_us_treasury_yield
 from orchestration.assets.wind import WIND_SOURCE_ASSETS, std_trade_calendar
@@ -115,6 +115,7 @@ defs = Definitions(
         feature_pf_single_cutamp,
         feature_pf_single_tr_umr,
         src_eastmoney_minute,
+        src_mysql_minute,
         *FEATURE_DAILY_ASSETS.values(),
         feature_daily_forward_return,
     ],
