@@ -130,9 +130,10 @@ Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM
   11-25 首日：Wind 16:30 成功（12 分钟，补齐 11-23 至 11-25 日行情）；前瞻收益 17:30 成功，已增量到 `end_dt` 11-25；分钟因子 19:30 成功，增量到 11-24；
   东财分钟 16:00、17:00 两次失败（HTTP 502 / ProxyError，另一会话处理中），所以分钟因子停在 11-24。cutamp/mif/资金流 04:10 与 UMR 04:30 今晚首次增量。
   `AINDEXEODPRICES` 在 16:30 只到一部分（11-25 2,134 / 6,730 行），06:00 那轮补齐；日更就绪判定会按基准代码等待。
-- **lake 已物化**：前瞻收益 open-to-open 四个周期（2018 起）；15 个因子（cutamp v2、tr_umr v2、mif、资金流 3 个、did_ratio、nap_adj_ratio 为 2018 起；分钟 7 个为 2024-08 起）。
+- **lake 已物化**：前瞻收益 open-to-open 四个周期（2018 起）；16 个因子（cutamp v2、tr_umr v2、mif、资金流 3 个、did_ratio、nap_adj_ratio、event_sue 为 2018 起；分钟 7 个为 2024-08 起）。
   did_ratio 11-26 完成物化：2018-01~2026-10 共 106 个月、872 万行、pit_grade 全 B、golden 2024-05-15 一致率 99.32%；同日接入 04:10 日更（`8aa7679`），已增量到 2026-11-25。
   nap_adj_ratio 11-26 完成物化：2018-01~2026-10 共 106 个月、224 万行、pit_grade 全 A、golden 2024-05-15 严格一致 97.1%（2070/2132）+ 消除前视 2.9%（62）+ 其他 0；同日接入 04:10 日更（`9cd94c0`）。
+  event_sue 11-26 完成物化：2018-01~2026-10 共 14.8 万行（事件驱动稀疏，披露期 63 月产值、非披露 43 月合法空）、pit_grade 全 A、golden 2024-04-30 一致率 97.8%（差异为财报修订快照时差）；同日接入 04:10 日更（`bda0871` 接线 + `adc4521` 空批次修复）。
 - **Current-20 进度**：15 / 20 已迁。剩 5 个：`event_sue`、`event_delta_roe`、`event_aog`、`barra_cne6_ernqlt`、`barra_cne6_sentiment`。
 - **工作区里有其他会话的未提交改动**（朝阳永续、东财分钟、`universe.py` 与 `domain/ports/universe.py`、`AGENTS.md`、`settings.py` 等）。
   它们让 3 个迁移清单测试在工作区失败（`test_migrate`、`test_src_migrations` ×2），提交后应恢复；不要替它们提交或回退。
@@ -149,9 +150,10 @@ Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM
 
 **B. 收尾 Current-20（剩 6 个）**
 1. ~~**did_ratio 物化**~~ ✅（11-26）物化完成 + 接入 04:10 日更，见上。
-2. **事件三因子**（`event_sue`、`event_delta_roe`、`event_aog`，旧 `factors/factor_event_2.py:383-540`）：先读旧仓 `docs/decisions/2026-08-31-performance-factor-event-pit.md`（事件 PIT 以 `confirm_date` 截止）。
-   要重建旧派生表 `fin_income_gen`（仓内无生产代码，需从使用处反推）与业绩快报来源（契约里未见快报表，先确认 Wind `ASHAREPROFITEXPRESS` 是否需要接入，属于新增源表，要问负责人）。
-   `event_aog` 另需指数开盘价：`IndexReturnRepository` 只有涨跌幅，需窄扩展字段；旧代码开盘日判定 `'0925'` 与 `event_high250` 的 `'0930'` 不一致，迁移时要请负责人定。
+2. **事件三因子**（`event_sue`、`event_delta_roe`、`event_aog`，旧 `factors/factor_event_2.py:383-540`）：~~`fin_income_gen` 是朝阳永续源镜像非派生表、业绩快报同为朝阳永续非 Wind（已核实，源表接入 `219a970`）~~。
+   ~~**event_sue**~~ ✅（11-26）完成：实现 + golden 97.8% + 物化 14.8 万行 + 接入 04:10 日更，见 [ADR](../adr/2026-11-26-event-sue.md) 与 [交接文档](event-factors-handoff.md)。
+   `event_aog` 开盘日判定沿用旧代码 `'0925'`（负责人 2026-11-26 裁定，不再问）。`event_aog` 另需指数开盘价：`IndexReturnRepository` 只有涨跌幅，需窄扩展字段。
+   `event_delta_roe` 最复杂：ROE 重算 + 股东权益 + `get_profit`/`get_shrhldr_eqt`/`get_last_period` 辅助链未逆向（见交接文档 §8）。
 3. ~~**nap_adj_ratio**~~ ✅（11-26）已完成：可见性契约（entrytime 截止，grade A）+ 因子实现 + golden 对拍（97.1% 严格一致）+ 全历史物化 224 万行 + 接入 04:10 日更。见 [ADR](../adr/2026-11-26-nap-adj-ratio.md)。
 4. **barra SENTIMENT**（`enhanced_optimizer/factors/exposure.py:707-750`）：一致预期四张表已入库（`con_forecast_*`，可见性 A）。旧值在 `wx2.barra_cne6`，trade_date t 映射 adj_date=next(t)（`alpha_factory/data_gateway.py:1112-1123`），对齐要先查清。
 5. **barra ERNQLT**：需要整套 CNE6 暴露引擎（`exposure.py` 的 `RAW` 族、行业 `l3integrate`、市值加权），工作量最大，放最后；可能要把 Barra 作为独立子项目（暴露全集而非单因子），先与负责人确认范围。
