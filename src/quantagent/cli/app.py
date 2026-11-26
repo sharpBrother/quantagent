@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import typer
 
+from quantagent.cli.alert import alert_app
 from quantagent.cli.calendar import calendar_app
 from quantagent.cli.check import check_app
 from quantagent.cli.contracts import contracts_app
@@ -22,6 +23,7 @@ app = typer.Typer(
     help="QuantAgent：量化投研系统。入口只有 CLI 与 Dagster，没有 scripts/。",
     no_args_is_help=True,
 )
+app.add_typer(alert_app, name="alert", help="失败告警汇总")
 app.add_typer(calendar_app, name="calendar", help="交易日历研究读取")
 app.add_typer(check_app, name="check", help="契约与一致性校验")
 app.add_typer(contracts_app, name="contracts", help="从契约派生产物")

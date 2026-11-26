@@ -53,6 +53,7 @@ from orchestration.schedules.macro import macro_daily_morning, macro_wgc_sunday
 from orchestration.schedules.minprice import minprice_first, minprice_retry
 from orchestration.schedules.tushare import tushare_daily_evening
 from orchestration.schedules.wind import wind_source_daily_close, wind_source_daily_morning
+from orchestration.sensors.run_failure import run_failure_alert
 from quantagent.platform.config import get_settings
 from quantagent.platform.storage import detect_repo_root, resolve_var_paths
 
@@ -134,5 +135,6 @@ defs = Definitions(
         feature_umr_daily,
     ],
     schedules=list(schedules_for_profile(get_settings().profile)),
+    sensors=[run_failure_alert],
     resources=_resources(),
 )
