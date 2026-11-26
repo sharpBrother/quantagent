@@ -56,6 +56,9 @@ _MAX_DECLARE_LAG_DAYS = 4 * 31
 @dataclass(frozen=True, slots=True)
 class EventSueBuild:
     values: tuple[FeatureValue, ...]
+    # 经月份/时效过滤后的候选事件数。用于区分“合法空”（非披露期本无事件，候选为 0）
+    # 与“异常空”（有候选事件却全部未产值，属算法/数据问题，应 fail-closed）。
+    candidate_count: int
 
 
 def build_event_sue_values(
@@ -72,6 +75,7 @@ def build_event_sue_values(
     """
     profit_by_code = _group_profit_by_asset(profit_rows)
     candidates = _dedup_events(events)
+    candidate_count = len(candidates)
 
     # 第一遍：逐事件算 sue，按 (declare_date, asset_id) 分组收集。同股同公告日的多个报告期
     # （年报+一季报同日披露常见）各自是独立事件、各自算出 sue。
@@ -136,7 +140,7 @@ def build_event_sue_values(
                 run_id=run_id,
             )
         )
-    return EventSueBuild(values=tuple(values))
+    return EventSueBuild(values=tuple(values), candidate_count=candidate_count)
 
 
 def _dedup_events(events: Sequence[EarningsEventRecord]) -> list[EarningsEventRecord]:

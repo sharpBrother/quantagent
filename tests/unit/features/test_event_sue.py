@@ -219,3 +219,32 @@ def test_event_not_in_domain_dropped() -> None:
         run_id="t",
     )
     assert built.values == ()
+
+
+@pytest.mark.unit
+def test_candidate_count_distinguishes_legit_empty() -> None:
+    # 合法空/异常空区分依据 candidate_count：非披露期事件被月份过滤光 → candidate_count=0；
+    # 披露期有候选但股票不在域/缺历史 → candidate_count>0 但 values 可为空（materialize 据此报错）。
+    may = _event("000001.SZ", date(2024, 5, 15), 2024, 1001, 100.0)  # 5 月被月份过滤
+    apr = _event("000001.SZ", date(2024, 4, 15), 2024, 1001, 150.0)  # 4 月有效候选
+    domain_empty: dict = {}
+    # 5 月事件：过滤后候选 0
+    built_may = build_event_sue_values(
+        events=[may],
+        profit_rows=_full_history(),
+        domain_by_day=domain_empty,
+        computed_at=datetime(2024, 12, 31),
+        run_id="t",
+    )
+    assert built_may.candidate_count == 0
+    assert built_may.values == ()
+    # 4 月事件：候选 1，但域空导致未产值
+    built_apr = build_event_sue_values(
+        events=[apr],
+        profit_rows=_full_history(),
+        domain_by_day=domain_empty,
+        computed_at=datetime(2024, 12, 31),
+        run_id="t",
+    )
+    assert built_apr.candidate_count == 1
+    assert built_apr.values == ()  # 域空 → 异常空场景（candidate_count>0 却零产出）

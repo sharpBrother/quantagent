@@ -14,6 +14,7 @@ from quantagent.domain.calendar import open_dates
 from quantagent.features.library.fundamental.event_sue import LOOKBACK_YEARS
 from quantagent.features.panel.event_sue import build_event_sue_values
 from quantagent.lake.materialize.feature_value import write_feature_values
+from quantagent.lake.partitions import LakeLayoutError
 from quantagent.platform.identity import digest_json, new_run_id
 from quantagent.platform.pg import connect
 from quantagent.platform.runlog import RunLog, persist_run_log
@@ -96,6 +97,29 @@ def materialize_event_sue(
             run_id=run_id,
         )
         values = built.values
+        if not values:
+            # 空批次的合法/异常区分（负责人 2026-11-26 裁定）：事件驱动因子在非披露期本无事件。
+            # 候选为 0（经月份/时效过滤后无事件）是业务事实，返回 0 行成功不写文件；
+            # 候选非 0 却全部未产值是算法/数据问题，必须 fail-closed 报错。
+            if built.candidate_count == 0:
+                digest_empty = digest_json([])
+                _log(
+                    paths=paths,
+                    started=started,
+                    start=start,
+                    end=end,
+                    as_of=as_of,
+                    wind_codes=wind_codes,
+                    run_id=run_id,
+                    status="success",
+                    row_count=0,
+                    output_digest=digest_empty,
+                    dml_count=0,
+                )
+                return 0, digest_empty
+            raise LakeLayoutError(
+                f"有 {built.candidate_count} 个候选事件但全部未产值，属异常空，fail-closed"
+            )
         write_feature_values(values, dest)
     except Exception as exc:
         _log(
