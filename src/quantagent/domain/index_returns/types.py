@@ -15,3 +15,7 @@ class IndexReturn:
     trade_dt: date
     wind_code: str
     pct_change: Decimal | None
+    # 开盘价与前收盘价（S_DQ_OPEN/S_DQ_PRECLOSE），event_aog 算指数夜盘涨幅
+    # 100*(open/preclose-1) 所需。夜盘涨幅不能用 pct_change（收盘价涨跌）替代。
+    open: Decimal | None = None
+    preclose: Decimal | None = None

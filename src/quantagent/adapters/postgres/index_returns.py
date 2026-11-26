@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 DATASET = "src.wind.aindexeodprices"
 _YMD_LEN = 8
-_COLUMNS = ("TRADE_DT", "S_INFO_WINDCODE", "S_DQ_PCTCHANGE")
+_COLUMNS = ("TRADE_DT", "S_INFO_WINDCODE", "S_DQ_PCTCHANGE", "S_DQ_OPEN", "S_DQ_PRECLOSE")
 
 
 class PostgresIndexReturnRepository:
@@ -99,6 +99,8 @@ def _row_from_mapping(row: dict[str, object]) -> IndexReturn:
         trade_dt=_parse_trade_dt(row.get("TRADE_DT")),
         wind_code=wind_code,
         pct_change=_decimal(row.get("S_DQ_PCTCHANGE"), "S_DQ_PCTCHANGE"),
+        open=_decimal(row.get("S_DQ_OPEN"), "S_DQ_OPEN"),
+        preclose=_decimal(row.get("S_DQ_PRECLOSE"), "S_DQ_PRECLOSE"),
     )
 
 

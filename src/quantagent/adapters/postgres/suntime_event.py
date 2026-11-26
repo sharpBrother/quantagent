@@ -131,7 +131,8 @@ class PostgresEarningsEventRepository:
         lo, hi = window
         statement = (
             f"SELECT {quote_ident('stock_code')}, {quote_ident('report_year')},"
-            f" {quote_ident('report_period')}, {quote_ident('declare_date')}, {quote_ident('np_floor')}"
+            f" {quote_ident('report_period')}, {quote_ident('declare_date')}, {quote_ident('entrytime')},"
+            f" {quote_ident('np_floor')}"
             f" FROM {quote_ident('src_suntime')}.{quote_ident('fin_performance_forecast')}"
             f" WHERE {quote_ident('declare_date')}::date BETWEEN %s AND %s"
             f" AND {quote_ident('stock_code')} = ANY(%s)"
@@ -161,7 +162,8 @@ class PostgresEarningsEventRepository:
         lo, hi = window
         statement = (
             f"SELECT {quote_ident('stock_code')}, {quote_ident('report_year')},"
-            f" {quote_ident('report_quarter')}, {quote_ident('declare_date')}, {quote_ident('np_shareholder')}"
+            f" {quote_ident('report_quarter')}, {quote_ident('declare_date')}, {quote_ident('entrytime')},"
+            f" {quote_ident('np_shareholder')}"
             f" FROM {quote_ident('src_suntime')}.{quote_ident('fin_income_gen')}"
             f" WHERE {quote_ident('declare_date')}::date BETWEEN %s AND %s"
             f" AND {quote_ident('report_type')} = %s"
@@ -195,7 +197,8 @@ class PostgresEarningsEventRepository:
         lo, hi = window
         statement = (
             f"SELECT {quote_ident('stock_code')}, {quote_ident('report_year')},"
-            f" {quote_ident('report_period')}, {quote_ident('declare_date')}, {quote_ident('np')}"
+            f" {quote_ident('report_period')}, {quote_ident('declare_date')}, {quote_ident('entrytime')},"
+            f" {quote_ident('np')}"
             f" FROM {quote_ident('src_suntime')}.{quote_ident('fin_performance_express')}"
             f" WHERE {quote_ident('declare_date')}::date BETWEEN %s AND %s"
             f" AND {quote_ident('stock_code')} = ANY(%s)"
@@ -259,6 +262,9 @@ def _event_from_mapping(
     if profit_raw is not None:
         scaled = Decimal(str(profit_raw)) / Decimal(str(profit_scale))
         profit = scaled
+    entrytime = row.get("entrytime")
+    if not isinstance(entrytime, datetime):
+        entrytime = None
     return EarningsEventRecord(
         asset_id=wind_code,
         declare_dt=declare_dt,
@@ -266,4 +272,5 @@ def _event_from_mapping(
         report_quarter=report_quarter,
         profit=profit,
         source=source,
+        entrytime=entrytime,
     )

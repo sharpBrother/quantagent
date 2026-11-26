@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from datetime import date
+    from datetime import date, datetime
     from decimal import Decimal
 
 
@@ -77,6 +77,11 @@ class EarningsEventRecord:
     report_quarter: int
     profit: Decimal | None
     source: str  # "forecast" | "express" | "income"
+    # 入库时刻（带时分秒），仅 event_aog 判开盘日用——决定事件结果在哪个交易日的开盘价反映，
+    # 是市场微观结构建模，**不是** PIT 可见性字段（可见性截止仍是 declare_dt）。负责人 2026-11-26
+    # 裁定：沿用旧仓逻辑，entrytime < declare_dt 或同日 %H%M <= '0925'（集合竞价结束前入库）→
+    # 公告当日首个交易日开盘反映，否则次日首个交易日。三源 entrytime 全量非空（已实证）。
+    entrytime: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
