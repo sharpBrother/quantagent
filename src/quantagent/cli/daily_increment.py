@@ -17,6 +17,7 @@ from quantagent.adapters.lake.trade_calendar import LakeCalendarRepository
 from quantagent.adapters.postgres.readiness import PostgresSourceReadinessRepository
 from quantagent.cli.cutamp_materialize import materialize_cutamp
 from quantagent.cli.did_ratio_materialize import materialize_did_ratio
+from quantagent.cli.event_sue_materialize import materialize_event_sue
 from quantagent.cli.forward_return_materialize import materialize_forward_return_cli
 from quantagent.cli.mif_materialize import materialize_mif
 from quantagent.cli.minute_factors_2b_materialize import materialize_minute_factors_2b
@@ -39,7 +40,7 @@ from quantagent.domain.incremental import (
     plan_window,
 )
 from quantagent.domain.ports.readiness import DailySource
-from quantagent.features.library.fundamental import did_ratio, nap_adj_ratio
+from quantagent.features.library.fundamental import did_ratio, event_sue, nap_adj_ratio
 from quantagent.features.library.minute.batch_2b import PARAM_HASHES as MINUTE_2B_PARAM_HASHES
 from quantagent.features.library.minute.five_day import DEFINITION_VERSION as MINUTE_VERSION
 from quantagent.features.library.minute.five_day import SPECS as MINUTE_SPECS
@@ -75,7 +76,15 @@ Input = Literal[
     "minute",
 ]
 Materializer = Literal[
-    "cutamp", "mif", "tr_umr", "moneyflow", "minute", "minute_2b", "did_ratio", "nap_adj_ratio"
+    "cutamp",
+    "mif",
+    "tr_umr",
+    "moneyflow",
+    "minute",
+    "minute_2b",
+    "did_ratio",
+    "nap_adj_ratio",
+    "event_sue",
 ]
 
 _DAILY_SOURCES: frozenset[str] = frozenset(get_args(DailySource))
@@ -153,6 +162,16 @@ def _feature_increments() -> tuple[FeatureIncrement, ...]:
             nap_adj_ratio.DEFINITION_VERSION,
             nap_adj_ratio.PARAM_HASH,
             "nap_adj_ratio",
+            (DERIVATIVE,),
+        ),
+        # event_sue 的就绪依赖同理：all_a 域由当日衍生指标决定。财报三表与业绩预告/快报
+        # 都是事件驱动、按 declare_date 截止，无当日行数就绪概念，不作就绪输入；其采集血缘
+        # 在 orchestration 资产的 deps 里表达。事件驱动稀疏因子，只在新事件日产值。
+        FeatureIncrement(
+            event_sue.FEATURE_ID,
+            event_sue.DEFINITION_VERSION,
+            event_sue.PARAM_HASH,
+            "event_sue",
             (DERIVATIVE,),
         ),
     ]
@@ -350,8 +369,9 @@ def _materialize_feature(
         "cutamp": materialize_cutamp,
         "mif": materialize_mif,
         "tr_umr": materialize_tr_umr,
-        # nap_adj_ratio 返回 (行数, digest) 二元组，签名与三因子一致，可同表分发。
+        # nap_adj_ratio/event_sue 返回 (行数, digest) 二元组，签名与三因子一致，可同表分发。
         "nap_adj_ratio": materialize_nap_adj_ratio,
+        "event_sue": materialize_event_sue,
     }
     if kind in single:
         return single[kind](

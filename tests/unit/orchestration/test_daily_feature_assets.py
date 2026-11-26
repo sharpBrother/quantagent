@@ -40,6 +40,13 @@ _FUNDAMENTAL_LINEAGE = {
     "pf_single_nap_adj_ratio_1_mean_pos": {
         "src_suntime_rpt_earnings_adjust",
     },
+    # event_sue 额外依赖财报三源采集资产：血缘要求在采集之后跑，
+    # 但财报是事件驱动、不参与行数就绪判定。
+    "pf_single_event_sue_1_mean_pos": {
+        "src_suntime_fin_performance_forecast",
+        "src_suntime_fin_performance_express",
+        "src_suntime_fin_income_gen",
+    },
 }
 
 

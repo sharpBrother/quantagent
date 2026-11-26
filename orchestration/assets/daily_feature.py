@@ -13,7 +13,12 @@ from datetime import date, datetime
 from dagster import AssetsDefinition, Config, MaterializeResult, asset
 
 from orchestration.assets.minprice import src_eastmoney_minute
-from orchestration.assets.suntime import src_suntime_rpt_earnings_adjust
+from orchestration.assets.suntime import (
+    src_suntime_fin_income_gen,
+    src_suntime_fin_performance_express,
+    src_suntime_fin_performance_forecast,
+    src_suntime_rpt_earnings_adjust,
+)
 from orchestration.assets.wind import WIND_SOURCE_ASSETS, std_trade_calendar
 from quantagent.platform.config import get_settings
 from quantagent.platform.storage import detect_repo_root, resolve_var_paths
@@ -46,6 +51,14 @@ _DID_RATIO_FUNDAMENTAL_DEPS: tuple[AssetsDefinition, ...] = (
 # nap_adj_ratio 的朝阳永续血缘输入。调整行是事件驱动、按 entrytime 截止，不参与行数就绪判定，
 # 但必须在 deps 里：日更应在调整行采集之后跑，否则读到的还是昨天的数据。
 _NAP_ADJ_SUNTIME_DEPS: tuple[AssetsDefinition, ...] = (src_suntime_rpt_earnings_adjust,)
+
+# event_sue 的财报血缘输入。三源（业绩预告/快报/正式财报）都是事件驱动、按 declare_date 截止，
+# 不参与行数就绪判定，但必须在 deps 里：日更应在财报采集之后跑，否则读到的还是昨天的事件。
+_EVENT_SUE_SUNTIME_DEPS: tuple[AssetsDefinition, ...] = (
+    src_suntime_fin_performance_forecast,
+    src_suntime_fin_performance_express,
+    src_suntime_fin_income_gen,
+)
 
 # (资产名, feature_id, 输入)。输入决定 deps 与就绪判定，两处取值相同。
 # 凡按 all_a 取股票的因子，衍生指标表也是输入（all_a 成员由当日衍生指标代码决定）。
@@ -125,6 +138,11 @@ _FEATURES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
         "pf_single_nap_adj_ratio_1_mean_pos",
         ("ashareeodderivativeindicator",),
     ),
+    (
+        "feature_daily_event_sue",
+        "pf_single_event_sue_1_mean_pos",
+        ("ashareeodderivativeindicator",),
+    ),
 )
 
 
@@ -141,6 +159,9 @@ def _feature_asset(name: str, feature_id: str, inputs: tuple[str, ...]) -> Asset
     # nap_adj_ratio 额外依赖朝阳永续调整行采集资产，同理不参与行数就绪判定。
     if name == "feature_daily_nap_adj_ratio":
         deps = [*deps, *_NAP_ADJ_SUNTIME_DEPS]
+    # event_sue 额外依赖财报三源采集资产，同理不参与行数就绪判定。
+    if name == "feature_daily_event_sue":
+        deps = [*deps, *_EVENT_SUE_SUNTIME_DEPS]
 
     @asset(
         name=name,
