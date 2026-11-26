@@ -312,13 +312,13 @@ def test_written_run_persists_run_log_with_rows_and_digest(
 
 
 @pytest.mark.unit
-def test_registry_has_fourteen_distinct_factor_identities() -> None:
+def test_registry_has_fifteen_distinct_factor_identities() -> None:
     ids = [item.feature_id for item in d.FEATURE_INCREMENTS]
     identities = {
         (item.feature_id, item.definition_version, item.param_hash) for item in d.FEATURE_INCREMENTS
     }
-    assert len(ids) == len(set(ids)) == 14
-    assert len(identities) == 14
+    assert len(ids) == len(set(ids)) == 15
+    assert len(identities) == 15
     kinds = {item.feature_id: item.materializer for item in d.FEATURE_INCREMENTS}
     assert kinds["pf_single_abso_umr_1_mean_pos"] == "moneyflow"
     assert kinds["pf_single_core_up_20_mean_pos_neut_pxret21"] == "minute_2b"
@@ -326,6 +326,10 @@ def test_registry_has_fourteen_distinct_factor_identities() -> None:
     # did_ratio 的就绪输入只有衍生指标：all_a 成员与市值都由它决定；财报不参与行数就绪。
     did = next(item for item in d.FEATURE_INCREMENTS if item.materializer == "did_ratio")
     assert did.inputs == ("ashareeodderivativeindicator",)
+    # nap_adj_ratio 同理：all_a 成员由当日衍生指标决定，朝阳永续调整行不参与行数就绪。
+    nap = next(item for item in d.FEATURE_INCREMENTS if item.materializer == "nap_adj_ratio")
+    assert nap.feature_id == "pf_single_nap_adj_ratio_1_mean_pos"
+    assert nap.inputs == ("ashareeodderivativeindicator",)
 
 
 @pytest.mark.unit

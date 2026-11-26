@@ -22,6 +22,7 @@ from quantagent.cli.mif_materialize import materialize_mif
 from quantagent.cli.minute_factors_2b_materialize import materialize_minute_factors_2b
 from quantagent.cli.minute_factors_materialize import materialize_minute_factors
 from quantagent.cli.moneyflow_materialize import materialize_moneyflow_factors
+from quantagent.cli.nap_adj_ratio_materialize import materialize_nap_adj_ratio
 from quantagent.cli.tr_umr_materialize import materialize_tr_umr
 from quantagent.domain.calendar import open_dates
 from quantagent.domain.errors import IncrementError
@@ -38,7 +39,7 @@ from quantagent.domain.incremental import (
     plan_window,
 )
 from quantagent.domain.ports.readiness import DailySource
-from quantagent.features.library.fundamental import did_ratio
+from quantagent.features.library.fundamental import did_ratio, nap_adj_ratio
 from quantagent.features.library.minute.batch_2b import PARAM_HASHES as MINUTE_2B_PARAM_HASHES
 from quantagent.features.library.minute.five_day import DEFINITION_VERSION as MINUTE_VERSION
 from quantagent.features.library.minute.five_day import SPECS as MINUTE_SPECS
@@ -73,7 +74,9 @@ Input = Literal[
     "aindexeodprices",
     "minute",
 ]
-Materializer = Literal["cutamp", "mif", "tr_umr", "moneyflow", "minute", "minute_2b", "did_ratio"]
+Materializer = Literal[
+    "cutamp", "mif", "tr_umr", "moneyflow", "minute", "minute_2b", "did_ratio", "nap_adj_ratio"
+]
 
 _DAILY_SOURCES: frozenset[str] = frozenset(get_args(DailySource))
 # 指数源只统计基准代码。与 tr_umr / abso_umr 读取的基准一致。
@@ -140,6 +143,16 @@ def _feature_increments() -> tuple[FeatureIncrement, ...]:
             did_ratio.DEFINITION_VERSION,
             did_ratio.PARAM_HASH,
             "did_ratio",
+            (DERIVATIVE,),
+        ),
+        # nap_adj_ratio 的就绪依赖同 did_ratio：all_a 成员由当日衍生指标表决定。
+        # 朝阳永续调整行是事件驱动、按 entrytime 截止，没有“当日行数就绪”概念，
+        # 不作为就绪输入；其采集血缘在 orchestration 资产的 deps 里表达。
+        FeatureIncrement(
+            nap_adj_ratio.FEATURE_ID,
+            nap_adj_ratio.DEFINITION_VERSION,
+            nap_adj_ratio.PARAM_HASH,
+            "nap_adj_ratio",
             (DERIVATIVE,),
         ),
     ]
@@ -337,6 +350,8 @@ def _materialize_feature(
         "cutamp": materialize_cutamp,
         "mif": materialize_mif,
         "tr_umr": materialize_tr_umr,
+        # nap_adj_ratio 返回 (行数, digest) 二元组，签名与三因子一致，可同表分发。
+        "nap_adj_ratio": materialize_nap_adj_ratio,
     }
     if kind in single:
         return single[kind](

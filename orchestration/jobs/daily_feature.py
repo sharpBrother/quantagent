@@ -24,6 +24,7 @@ _MAIN = (
     "feature_daily_moneyflowh",
     "feature_daily_actlargemedcut",
     "feature_daily_did_ratio",
+    "feature_daily_nap_adj_ratio",
 )
 _UMR = ("feature_daily_tr_umr", "feature_daily_abso_umr")
 
