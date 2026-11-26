@@ -2,7 +2,7 @@
 title: 迁移路线 P0–P6
 status: active
 created: 2026-09-16
-updated: 2026-11-25
+updated: 2026-11-26
 applies_to:
   - src/quantagent/
   - orchestration/
@@ -135,9 +135,8 @@ Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM
 #### 二、后续规划（按优先级）
 
 **A. 运维加固（先做，1–2 天）**
-1. **失败告警**：旧仓有 `task_monitor`（12:00 邮件汇总），新仓没有任何告警。建议用 Dagster run-failure sensor 加每日汇总（通知渠道由负责人定）。
-   今天 `jydb_daily` 卡了 7 小时堵住整个单并发队列，就是靠人工发现的。
-2. **其余来源的看门狗**：Wind、聚源已有（`orchestration/resources/watchdog.py`）；朝阳永续、东财分钟、Tushare、宏观没有。手动 `quantagent ingest jydb sync` CLI 也没有（约 10 行，等 `cli/ingest.py` 的他人改动提交后再加）。
+1. **失败告警**：✅（11-26，`d2243f0`）`@run_failure_sensor` 监控全部日更作业，step 失败取首行错误摘要落 `var/logs/alerts/run_failures.jsonl`；`quantagent alert summary` 生成前日汇总到 `var/logs/alerts/summary/`。daemon 已重启，sensor 运行中。**通知渠道（邮件/企业微信）仍待负责人定**——渠道接入后读同一 JSONL/汇总文件。东财分钟、Tushare、宏观采集不走 ToDesk 分页链路，无看门狗需求。
+2. **其余来源的看门狗**：✅（11-26）朝阳永续随 `0b85ce0` 接入看门狗（`resources/suntime.py`）；手动 `quantagent ingest jydb/suntime sync` CLI 已接看门狗（`4fb61ae`，机制下沉 `quantagent.ingest.watchdog` 为唯一事实源，`orchestration.resources.watchdog` 改为 re-export）。
 3. **公司电脑停掉守护进程**或拉新代码（office 调度已清空），否则与 Mac 重复采集。
 4. **daemon 的 PG 用户**从超级用户 `leo` 改为 `quantagent_ingest`（待负责人放密码）。
 5. **源数据修订不回溯**：因子日更只往后增量，Wind 事后修订的源值不会触发已写因子重算。需设计"源表 `_batch` 的修订行 → 受影响 (代码, 日期) → 新增修订身份或重算"的机制，写 ADR 后实施。
