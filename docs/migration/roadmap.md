@@ -116,7 +116,7 @@ Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM
 | 旧网关 golden（已有新端口的方法） | ✅ 股票池、成分池、ST、日行情、交易日历（8,770 天）、指数涨跌幅（`000985.CSI`、`h30269.CSI`）均与 wx2 一致（11-22）。`core/` 三个网关共 51 个公开读取方法，12 个无现役调用；其余多为择时/宏观研究线读取，随 P4 各线迁移、建端口时先做 golden | — |
 | `pit_grade` 木桶、长表写入校验 | ✅ 两层依赖图含 D 输出 D；写入拒绝 A–D 以外的等级与早于 `event_dt` 的 `knowledge_dt`（11-22）。写入时比对完整血缘需改接口，未做 | — |
 | `mart.forward_return` 股票 open-to-open | ✅ 代码与 wx2 对拍完成（29 个样本日 5D/10D，all_a 内差异全部登记核验；[ADR](../adr/2026-11-22-forward-return-open2open.md)）。已物化 2018-01-02 起，四个周期共 37,360,480 行；11-25 起日更（17:30、00:00、02:00） | — |
-| `alpha_factory` 因子批量移植 | 🔄 Current-20 共 20 个，已迁 14 个，均与 wx2 对拍（其他差异 0，各类差异逐行核验）并物化到 lake（as_of 2026-11-20 前后）：cutamp v2、tr_umr v2（[ADR](../adr/2026-11-24-tr-umr-v2-no-missing-as-zero.md)，11-25 补齐 2018 起全历史）；分钟 7 个，2024-08 起（[第一批](../adr/2026-11-24-minute-factors-first-batch.md)、[2b](../adr/2026-11-24-minute-factors-batch-2b.md)，core_up/down 按 pxret21 中性化存残差）；资金流 3 个，2018 起（[ADR](../adr/2026-11-24-moneyflow-factors-batch-2a.md)）；mif，2018 起（[ADR](../adr/2026-11-24-mif.md)）；did_ratio 2018 起（[ADR](../adr/2026-11-25-did-ratio.md)，11-26 物化 872 万行 + 接入 04:10 日更）；nap_adj_ratio 2018 起（[ADR](../adr/2026-11-26-nap-adj-ratio.md)，11-26 物化 224 万行 + 接入 04:10 日更，朝阳永续 entrytime 截止消除前视）。11-25 起本机日更（输入就绪才增量）。剩 5 个：event_sue、event_delta_roe、event_aog、barra ERNQLT、barra SENTIMENT | 见交接第二节 B |
+| `alpha_factory` 因子批量移植 | 🔄 Current-20 共 20 个，已迁 18 个，均与 wx2 对拍（其他差异 0，各类差异逐行核验）并物化到 lake（as_of 2026-11-20 前后）：cutamp v2、tr_umr v2（[ADR](../adr/2026-11-24-tr-umr-v2-no-missing-as-zero.md)，11-25 补齐 2018 起全历史）；分钟 7 个，2024-08 起（[第一批](../adr/2026-11-24-minute-factors-first-batch.md)、[2b](../adr/2026-11-24-minute-factors-batch-2b.md)，core_up/down 按 pxret21 中性化存残差）；资金流 3 个，2018 起（[ADR](../adr/2026-11-24-moneyflow-factors-batch-2a.md)）；mif，2018 起（[ADR](../adr/2026-11-24-mif.md)）；did_ratio 2018 起（[ADR](../adr/2026-11-25-did-ratio.md)，11-26 物化 872 万行 + 接入 04:10 日更）；nap_adj_ratio 2018 起（[ADR](../adr/2026-11-26-nap-adj-ratio.md)，11-26 物化 224 万行 + 接入 04:10 日更，朝阳永续 entrytime 截止消除前视）。event_sue/event_aog/event_delta_roe 2018 起（[event_sue ADR](../adr/2026-11-26-event-sue.md)、[event_aog ADR](../adr/2026-11-26-event-aog.md)、[delta_roe ADR](../adr/2026-11-26-event-delta-roe.md)，11-26 事件驱动稀疏、非交易日 declare 覆盖、golden 97.8%/100%/98.6%、接入 04:10 日更）。11-25 起本机日更（输入就绪才增量）。剩 2 个：barra ERNQLT、barra SENTIMENT | 见交接第二节 B |
 
 ### 下一步
 
@@ -130,11 +130,13 @@ Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM
   11-25 首日：Wind 16:30 成功（12 分钟，补齐 11-23 至 11-25 日行情）；前瞻收益 17:30 成功，已增量到 `end_dt` 11-25；分钟因子 19:30 成功，增量到 11-24；
   东财分钟 16:00、17:00 两次失败（HTTP 502 / ProxyError，另一会话处理中），所以分钟因子停在 11-24。cutamp/mif/资金流 04:10 与 UMR 04:30 今晚首次增量。
   `AINDEXEODPRICES` 在 16:30 只到一部分（11-25 2,134 / 6,730 行），06:00 那轮补齐；日更就绪判定会按基准代码等待。
-- **lake 已物化**：前瞻收益 open-to-open 四个周期（2018 起）；16 个因子（cutamp v2、tr_umr v2、mif、资金流 3 个、did_ratio、nap_adj_ratio、event_sue 为 2018 起；分钟 7 个为 2024-08 起）。
+- **lake 已物化**：前瞻收益 open-to-open 四个周期（2018 起）；18 个因子（cutamp v2、tr_umr v2、mif、资金流 3 个、did_ratio、nap_adj_ratio、event_sue、event_aog、event_delta_roe 为 2018 起；分钟 7 个为 2024-08 起）。
   did_ratio 11-26 完成物化：2018-01~2026-10 共 106 个月、872 万行、pit_grade 全 B、golden 2024-05-15 一致率 99.32%；同日接入 04:10 日更（`8aa7679`），已增量到 2026-11-25。
   nap_adj_ratio 11-26 完成物化：2018-01~2026-10 共 106 个月、224 万行、pit_grade 全 A、golden 2024-05-15 严格一致 97.1%（2070/2132）+ 消除前视 2.9%（62）+ 其他 0；同日接入 04:10 日更（`9cd94c0`）。
-  event_sue 11-26 完成物化：2018-01~2026-10 共 14.8 万行（事件驱动稀疏，披露期 63 月产值、非披露 43 月合法空）、pit_grade 全 A、golden 2024-04-30 一致率 97.8%（差异为财报修订快照时差）；同日接入 04:10 日更（`bda0871` 接线 + `adc4521` 空批次修复）。
-- **Current-20 进度**：15 / 20 已迁。剩 5 个：`event_sue`、`event_delta_roe`、`event_aog`、`barra_cne6_ernqlt`、`barra_cne6_sentiment`。
+  event_sue 11-26 完成物化：2018-01~2026-10 共 18.5 万行（事件驱动稀疏，披露期产值、非披露合法空；初版漏非交易日 declare 经裁定 B1 修正回补，非交易日 event_dt 占 19.9% 与 wx2 吻合）、pit_grade 全 A、golden 2024-04-30 一致率 97.8%（差异为财报修订快照时差）；同日接入 04:10 日更。
+  event_aog 11-26 完成物化：2018-01~2026-10 共 29.9 万行（event_dt=open_date、非交易日 event_dt=0、跨月分区修复）、pit_grade 全 A、golden 2024-04-29 一致率 100%（1569/1569，纯行情无快照时差）；同日接入 04:10 日更。
+  event_delta_roe 11-26 完成实现+golden：golden 2024-04-30 一致率 98.6%（1306/1324，差异为财报修订快照时差）、接入 04:10 日更；全历史物化进行中。
+- **Current-20 进度**：18 / 20 已迁。剩 2 个：`barra_cne6_ernqlt`、`barra_cne6_sentiment`。
 - **工作区里有其他会话的未提交改动**（朝阳永续、东财分钟、`universe.py` 与 `domain/ports/universe.py`、`AGENTS.md`、`settings.py` 等）。
   它们让 3 个迁移清单测试在工作区失败（`test_migrate`、`test_src_migrations` ×2），提交后应恢复；不要替它们提交或回退。
 
