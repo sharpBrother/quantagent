@@ -1,0 +1,105 @@
+dataset: src.suntime.rpt_earnings_adjust
+layer: pg
+doc_ref: docs/migration/suntime-ingest-plan.md
+temporal_kind: point_event
+keys:
+  - id
+reads: []
+event_field: current_create_date
+columns:
+  id:
+    dtype: int64
+    nullable: false
+    description: 朝阳永续源表主键
+  report_id:
+    dtype: int64
+    nullable: true
+    description: 研报 ID
+  stock_code:
+    dtype: string
+    nullable: true
+    description: 股票代码，无交易所后缀（nap_adj_ratio 计算时按号段补 .BJ/.SH/.SZ）
+  stock_name:
+    dtype: string
+    nullable: true
+    description: 股票名称
+  title:
+    dtype: string
+    nullable: true
+    description: 研报标题
+  report_type:
+    dtype: int64
+    nullable: true
+    description: 研报类型
+  organ_id:
+    dtype: int64
+    nullable: true
+    description: 机构 ID；nap_adj_ratio 按 report_year 分组数它的数量
+  organ_name:
+    dtype: string
+    nullable: true
+    description: 机构名称
+  author:
+    dtype: string
+    nullable: true
+    description: 作者
+  report_year:
+    dtype: int64
+    nullable: true
+    description: 预测年度；nap_adj_ratio 取调整数最多的年度
+  current_create_date:
+    dtype: date
+    nullable: true
+    description: 当前研报日期（事件时间），业务窗口过滤字段
+  previous_create_date:
+    dtype: date
+    nullable: true
+    description: 前次研报日期
+  current_forecast_np:
+    dtype: float64
+    nullable: true
+    description: 当前预测净利润
+  previous_forecast_np:
+    dtype: float64
+    nullable: true
+    description: 前次预测净利润
+  np_adjust_rate:
+    dtype: float64
+    nullable: true
+    description: 净利润调整幅度；nap_adj_ratio 取最多年度该值的中位数
+  np_adjust_mark:
+    dtype: int64
+    nullable: true
+    description: 净利润调整标记
+  current_forecast_eps:
+    dtype: float64
+    nullable: true
+    description: 当前预测 EPS
+  previous_forecast_eps:
+    dtype: float64
+    nullable: true
+    description: 前次预测 EPS
+  eps_adjust_rate:
+    dtype: float64
+    nullable: true
+    description: EPS 调整幅度
+  eps_adjust_mark:
+    dtype: int64
+    nullable: true
+    description: EPS 调整标记
+  is_capital_different:
+    dtype: int64
+    nullable: true
+    description: 股本是否变动
+  entrytime:
+    dtype: datetime
+    nullable: true
+    description: 供应商首次入库时间戳，PIT 可见截止字段，按日期比较
+  updatetime:
+    dtype: datetime
+    nullable: true
+    description: 供应商最近修订时间戳
+  tmstamp:
+    dtype: int64
+    nullable: true
+    description: 供应商时间戳序号

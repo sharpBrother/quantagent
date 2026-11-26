@@ -1,0 +1,20 @@
+dataset: src.suntime.rpt_earnings_adjust
+doc_ref: docs/migration/suntime-ingest-plan.md
+temporal_kind: point_event
+event_field: current_create_date
+visibility:
+  rule: source_field
+  field: entrytime
+  date_only: true
+  grade: A
+  rationale: >
+    朝阳永续盈利预测调整记录。事件时间是研报日期 current_create_date（nap_adj_ratio
+    的 30 天业务窗口按它过滤），可见截止用入库时间 entrytime：负责人 2026-11-26 裁定，
+    解决旧仓按研报日期过滤引入的前视（ADR 2026-11-24 揭示入库常晚于研报日期，最长 60 天、
+    2019-06 一度平均 165 天）。entrytime 是供应商原生首次入库时间戳，从不早于研报日期，
+    为真实可见时点，grade A。一半的行 entrytime 晚于 updatetime（后续有修订），
+    可见性取首次入库的 entrytime 正确。当天入库多在凌晨，entrytime 日期当天即可见，
+    故按日期比较（date_only）。历史回补行的 entrytime 是供应商回补入库时间，
+    非原始发布当时的可见时点，风险记入此处、不降级，与一致预期表的处理一致
+    （docs/adr/2026-11-24-suntime-visibility.md）。
+pit_recoverable: true
