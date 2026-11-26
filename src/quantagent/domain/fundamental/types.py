@@ -99,3 +99,35 @@ class ProfitSeriesRecord:
     report_type: int
     declare_dt: date
     np_shareholder: Decimal | None
+
+
+@dataclass(frozen=True, slots=True)
+class RoeRecord:
+    """``ASHAREFINANCIALINDICATOR`` 的加权 ROE 行（``S_QFA_ROE``），event_delta_roe 用。
+
+    ``report_period`` 是报告期末日（``REPORT_PERIOD``，如 2024-03-31）。``ann_dt`` 是公告日，
+    可见性截止列——逐事件按 ``ann_dt <= declare_date`` 裁剪（在使用方，端口按 as_of 批量截止）。
+    同一 ``report_period`` 可能多行（业绩预告/快报/正式财报多次公告），使用方按 ann_dt 排序取最后一行
+    （复现旧代码 ``order by ANN_DT`` 后 ``iloc[-1]``）。``s_qfa_roe`` 单位 %，缺失保留 None。
+    """
+
+    asset_id: str
+    report_period: date
+    ann_dt: date
+    s_qfa_roe: Decimal | None
+
+
+@dataclass(frozen=True, slots=True)
+class ShareholderEquityRecord:
+    """``ASHAREBALANCESHEET`` 的归母股东权益行（``TOT_SHRHLDR_EQY_EXCL_MIN_INT``），event_delta_roe 重算 ROE 用。
+
+    只取 ``STATEMENT_TYPE = 408001000``（合并报表）。``report_period`` 是报告期末日。单位元，
+    **不在端口换算**——库函数复现旧代码 ÷10000 的时机。``ann_dt`` 同时取出供参考，但旧代码
+    ``get_shrhldr_eqt`` **不按 ann_dt 截止**（直接按 report_period 取，潜在前视，复现旧行为，
+    golden 登记——见 event-factors-handoff.md §4）。
+    """
+
+    asset_id: str
+    report_period: date
+    ann_dt: date
+    shrhldr_eqt: Decimal | None

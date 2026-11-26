@@ -13,6 +13,7 @@ from quantagent.adapters.postgres.errors import PostgresAdapterError
 from quantagent.cli.cutamp_materialize import materialize_cutamp
 from quantagent.cli.did_ratio_materialize import materialize_did_ratio
 from quantagent.cli.event_aog_materialize import materialize_event_aog
+from quantagent.cli.event_delta_roe_materialize import materialize_event_delta_roe
 from quantagent.cli.event_sue_materialize import materialize_event_sue
 from quantagent.cli.forward_return_materialize import materialize_forward_return_cli
 from quantagent.cli.mif_materialize import materialize_mif
@@ -489,6 +490,47 @@ def lake_materialize_event_aog(
     )
     try:
         row_count, digest = materialize_event_aog(
+            settings=settings,
+            paths=paths,
+            start=datetime.strptime(start.strip(), "%Y-%m-%d").date(),
+            end=datetime.strptime(end.strip(), "%Y-%m-%d").date(),
+            wind_codes=code_tuple,
+            as_of=datetime.strptime(as_of.strip(), "%Y-%m-%d").date(),
+        )
+    except (
+        LakeLayoutError,
+        DomainError,
+        PostgresAdapterError,
+        ConfigError,
+        RunLogError,
+        ValueError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"wrote dataset=feature.value rows={row_count} digest={digest}")
+
+
+@materialize_app.command("event-delta-roe")
+def lake_materialize_event_delta_roe(
+    start: Annotated[str, typer.Option("--start", help="事件公告日窗口起点 YYYY-MM-DD")],
+    end: Annotated[str, typer.Option("--end", help="事件公告日窗口终点 YYYY-MM-DD")],
+    as_of: Annotated[str, typer.Option("--as-of", help="可见日 YYYY-MM-DD，必填")],
+    codes: Annotated[
+        str | None,
+        typer.Option("--codes", help="逗号分隔的 Wind 代码；不传则每个交易日取该日 all_a 成员"),
+    ] = None,
+) -> None:
+    """把 pf_single_event_delta_roe_1_mean_pos（盈余公告 ROE 同比变化，方向 +1）写入 feature.value。
+    事件驱动稀疏因子：``event_dt = declare_date``（不依赖行情）。当期 ROE 优先用 Wind S_QFA_ROE，
+    缺失时用 profit/股东权益重算。缺失不补 0。
+    """
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    code_tuple = (
+        None if codes is None else tuple(part.strip() for part in codes.split(",") if part.strip())
+    )
+    try:
+        row_count, digest = materialize_event_delta_roe(
             settings=settings,
             paths=paths,
             start=datetime.strptime(start.strip(), "%Y-%m-%d").date(),
