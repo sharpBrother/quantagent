@@ -112,7 +112,7 @@ Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM
 | 旧网关 golden（已有新端口的方法） | ✅ 股票池、成分池、ST、日行情、交易日历（8,770 天）、指数涨跌幅（`000985.CSI`、`h30269.CSI`）均与 wx2 一致（11-22）。`core/` 三个网关共 51 个公开读取方法，12 个无现役调用；其余多为择时/宏观研究线读取，随 P4 各线迁移、建端口时先做 golden | — |
 | `pit_grade` 木桶、长表写入校验 | ✅ 两层依赖图含 D 输出 D；写入拒绝 A–D 以外的等级与早于 `event_dt` 的 `knowledge_dt`（11-22）。写入时比对完整血缘需改接口，未做 | — |
 | `mart.forward_return` 股票 open-to-open | ✅ 代码与 wx2 对拍完成（29 个样本日 5D/10D，all_a 内差异全部登记核验；[ADR](../adr/2026-11-22-forward-return-open2open.md)）。已物化 2018-01-02 起，四个周期共 37,360,480 行；11-25 起日更（17:30、00:00、02:00） | — |
-| `alpha_factory` 因子批量移植 | 🔄 Current-20 共 20 个，已迁 14 个，均与 wx2 对拍（其他差异 0，各类差异逐行核验）并物化到 lake（as_of 2026-11-20 前后）：cutamp v2、tr_umr v2（[ADR](../adr/2026-11-24-tr-umr-v2-no-missing-as-zero.md)，11-25 补齐 2018 起全历史）；分钟 7 个，2024-08 起（[第一批](../adr/2026-11-24-minute-factors-first-batch.md)、[2b](../adr/2026-11-24-minute-factors-batch-2b.md)，core_up/down 按 pxret21 中性化存残差）；资金流 3 个，2018 起（[ADR](../adr/2026-11-24-moneyflow-factors-batch-2a.md)）；mif，2018 起（[ADR](../adr/2026-11-24-mif.md)）。11-25 起本机日更（输入就绪才增量）。did_ratio 代码与 golden 已提交（[ADR](../adr/2026-11-25-did-ratio.md)），待源端漏行核查后物化。剩 6 个：event_sue、event_delta_roe、event_aog、barra ERNQLT、barra SENTIMENT、nap_adj_ratio | 见交接第二节 B |
+| `alpha_factory` 因子批量移植 | 🔄 Current-20 共 20 个，已迁 14 个，均与 wx2 对拍（其他差异 0，各类差异逐行核验）并物化到 lake（as_of 2026-11-20 前后）：cutamp v2、tr_umr v2（[ADR](../adr/2026-11-24-tr-umr-v2-no-missing-as-zero.md)，11-25 补齐 2018 起全历史）；分钟 7 个，2024-08 起（[第一批](../adr/2026-11-24-minute-factors-first-batch.md)、[2b](../adr/2026-11-24-minute-factors-batch-2b.md)，core_up/down 按 pxret21 中性化存残差）；资金流 3 个，2018 起（[ADR](../adr/2026-11-24-moneyflow-factors-batch-2a.md)）；mif，2018 起（[ADR](../adr/2026-11-24-mif.md)）。11-25 起本机日更（输入就绪才增量）。did_ratio 代码与 golden 已提交（[ADR](../adr/2026-11-25-did-ratio.md)），源端漏行核查 11-26 完成、裁定可物化（无需补采），待逐月物化。剩 6 个：event_sue、event_delta_roe、event_aog、barra ERNQLT、barra SENTIMENT、nap_adj_ratio | 见交接第二节 B |
 
 ### 下一步
 
@@ -127,7 +127,7 @@ Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM
   东财分钟 16:00、17:00 两次失败（HTTP 502 / ProxyError，另一会话处理中），所以分钟因子停在 11-24。cutamp/mif/资金流 04:10 与 UMR 04:30 今晚首次增量。
   `AINDEXEODPRICES` 在 16:30 只到一部分（11-25 2,134 / 6,730 行），06:00 那轮补齐；日更就绪判定会按基准代码等待。
 - **lake 已物化**：前瞻收益 open-to-open 四个周期（2018 起）；13 个因子（cutamp v2、tr_umr v2、mif、资金流 3 个为 2018 起；分钟 7 个为 2024-08 起）。
-  did_ratio 代码与 golden 已提交（`3721961`），**尚未物化**（见待裁定）。
+  did_ratio 代码与 golden 已提交（`3721961`），源端漏行核查 11-26 完成、裁定可物化（无需补采），**待逐月物化**。
 - **Current-20 进度**：14 / 20 已迁（含 did_ratio 代码）。剩 6 个：`event_sue`、`event_delta_roe`、`event_aog`、`barra_cne6_ernqlt`、`barra_cne6_sentiment`、`nap_adj_ratio`。
 - **工作区里有其他会话的未提交改动**（朝阳永续、东财分钟、`universe.py` 与 `domain/ports/universe.py`、`AGENTS.md`、`settings.py` 等）。
   它们让 3 个迁移清单测试在工作区失败（`test_migrate`、`test_src_migrations` ×2），提交后应恢复；不要替它们提交或回退。
@@ -143,7 +143,7 @@ Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM
 6. 日更 run log 的就绪依据只进了 `input_digest`（不可读），可读版在 Dagster 元数据；如需审计，给 `RunLog` 加可读字段。
 
 **B. 收尾 Current-20（剩 6 个 + did_ratio 物化）**
-1. **did_ratio 物化**：先按待裁定第 1 条核查源端漏行，再用 `quantagent lake materialize did-ratio`（2018 起逐月，失败即停），然后加入 04:10 日更（`cli/daily_increment.py` 的因子表）。
+1. **did_ratio 物化**：源端漏行核查已完成、裁定可物化（见待裁定第 1 条）。下一步用 `quantagent lake materialize did-ratio`（2018 起逐月，失败即停），然后加入 04:10 日更（`cli/daily_increment.py` 的因子表）。
 2. **事件三因子**（`event_sue`、`event_delta_roe`、`event_aog`，旧 `factors/factor_event_2.py:383-540`）：先读旧仓 `docs/decisions/2026-08-31-performance-factor-event-pit.md`（事件 PIT 以 `confirm_date` 截止）。
    要重建旧派生表 `fin_income_gen`（仓内无生产代码，需从使用处反推）与业绩快报来源（契约里未见快报表，先确认 Wind `ASHAREPROFITEXPRESS` 是否需要接入，属于新增源表，要问负责人）。
    `event_aog` 另需指数开盘价：`IndexReturnRepository` 只有涨跌幅，需窄扩展字段；旧代码开盘日判定 `'0925'` 与 `event_high250` 的 `'0930'` 不一致，迁移时要请负责人定。
@@ -197,7 +197,7 @@ Wind 财报四张与业绩预告的回填是否追平未逐表核对（利润表
 
 #### 五、待负责人裁定
 
-1. **did_ratio 物化前的源端漏行**：wx2 有、本地没有的分红 3,448 键、利润表 3,559 键；按股票-日影响 0.27%，但逐年上升（2026 年 1.25%）。建议在 wind_db 抽查几十条：源端有则补采后物化，源端已删则直接物化。需允许访问 wind_db。
+1. ~~**did_ratio 物化前的源端漏行**~~ ✅ **已裁定可物化**（11-26 核查，负责人已放行 wind_db）：直接对 wind_db 源端 OBJECT_ID 差集对比本地 PG（不经 wx2）。分红漏采 4 行、利润表漏采 66 行，**全部是当日（11-26）新增待日更**，非历史漏采；本地零残留；共有键抽 300 行值零不一致。wx2 独有的 3,448/3,559 键是 wx2 陈旧快照残留（北交所旧代码、已退市，Wind 源端已删）——反证：wx2 多余北交所分红键数超过源端全部北交所行数（2,448 行）。证据见 [did_ratio ADR 核查结论](../adr/2026-11-25-did-ratio.md)。**无需补采，可物化。**
 2. **告警渠道**（A.1）：邮件、企业微信或其他。
 3. **源数据修订后的因子重算机制**（A.5）是否现在做。
 4. **事件因子**需要的新源表（业绩快报等）与开盘日判定阈值（`'0925'` / `'0930'`）。
