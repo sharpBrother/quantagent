@@ -312,13 +312,13 @@ def test_written_run_persists_run_log_with_rows_and_digest(
 
 
 @pytest.mark.unit
-def test_registry_has_seventeen_distinct_factor_identities() -> None:
+def test_registry_has_eighteen_distinct_factor_identities() -> None:
     ids = [item.feature_id for item in d.FEATURE_INCREMENTS]
     identities = {
         (item.feature_id, item.definition_version, item.param_hash) for item in d.FEATURE_INCREMENTS
     }
-    assert len(ids) == len(set(ids)) == 17
-    assert len(identities) == 17
+    assert len(ids) == len(set(ids)) == 18
+    assert len(identities) == 18
     kinds = {item.feature_id: item.materializer for item in d.FEATURE_INCREMENTS}
     assert kinds["pf_single_abso_umr_1_mean_pos"] == "moneyflow"
     assert kinds["pf_single_core_up_20_mean_pos_neut_pxret21"] == "minute_2b"
@@ -338,6 +338,10 @@ def test_registry_has_seventeen_distinct_factor_identities() -> None:
     aog = next(item for item in d.FEATURE_INCREMENTS if item.materializer == "event_aog")
     assert aog.feature_id == "pf_single_event_aog_1_mean_pos"
     assert aog.inputs == ("ashareeodprices", "aindexeodprices", "ashareeodderivativeindicator")
+    # event_delta_roe 不依赖行情，就绪输入仅 all_a 域（衍生指标）；ROE/eqt/财报事件驱动不参与。
+    droe = next(item for item in d.FEATURE_INCREMENTS if item.materializer == "event_delta_roe")
+    assert droe.feature_id == "pf_single_event_delta_roe_1_mean_pos"
+    assert droe.inputs == ("ashareeodderivativeindicator",)
 
 
 @pytest.mark.unit

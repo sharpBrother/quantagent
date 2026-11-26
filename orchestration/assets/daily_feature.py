@@ -60,6 +60,14 @@ _EVENT_SUE_SUNTIME_DEPS: tuple[AssetsDefinition, ...] = (
     src_suntime_fin_income_gen,
 )
 
+# event_delta_roe 在财报三源之上，额外依赖 ROE（财务指标）与股东权益（资产负债表）采集资产。
+# 同为事件驱动、不参与行数就绪判定。
+_EVENT_DELTA_ROE_DEPS: tuple[AssetsDefinition, ...] = (
+    *_EVENT_SUE_SUNTIME_DEPS,
+    _WIND_BY_NAME["src_wind_asharefinancialindicator"],
+    _WIND_BY_NAME["src_wind_asharebalancesheet"],
+)
+
 # (资产名, feature_id, 输入)。输入决定 deps 与就绪判定，两处取值相同。
 # 凡按 all_a 取股票的因子，衍生指标表也是输入（all_a 成员由当日衍生指标代码决定）。
 _FEATURES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
@@ -148,6 +156,11 @@ _FEATURES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
         "pf_single_event_aog_1_mean_pos",
         ("ashareeodprices", "aindexeodprices", "ashareeodderivativeindicator"),
     ),
+    (
+        "feature_daily_event_delta_roe",
+        "pf_single_event_delta_roe_1_mean_pos",
+        ("ashareeodderivativeindicator",),
+    ),
 )
 
 
@@ -167,6 +180,9 @@ def _feature_asset(name: str, feature_id: str, inputs: tuple[str, ...]) -> Asset
     # event_sue/event_aog 额外依赖财报三源采集资产，同理不参与行数就绪判定。
     if name in ("feature_daily_event_sue", "feature_daily_event_aog"):
         deps = [*deps, *_EVENT_SUE_SUNTIME_DEPS]
+    # event_delta_roe 额外依赖财报三源 + ROE/股东权益采集资产。
+    if name == "feature_daily_event_delta_roe":
+        deps = [*deps, *_EVENT_DELTA_ROE_DEPS]
 
     @asset(
         name=name,

@@ -53,6 +53,14 @@ _FUNDAMENTAL_LINEAGE = {
         "src_suntime_fin_performance_express",
         "src_suntime_fin_income_gen",
     },
+    # event_delta_roe 在财报三源之上额外依赖 ROE（财务指标）与股东权益（资产负债表）采集资产。
+    "pf_single_event_delta_roe_1_mean_pos": {
+        "src_suntime_fin_performance_forecast",
+        "src_suntime_fin_performance_express",
+        "src_suntime_fin_income_gen",
+        "src_wind_asharefinancialindicator",
+        "src_wind_asharebalancesheet",
+    },
 }
 
 

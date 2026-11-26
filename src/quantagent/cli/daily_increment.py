@@ -18,6 +18,7 @@ from quantagent.adapters.postgres.readiness import PostgresSourceReadinessReposi
 from quantagent.cli.cutamp_materialize import materialize_cutamp
 from quantagent.cli.did_ratio_materialize import materialize_did_ratio
 from quantagent.cli.event_aog_materialize import materialize_event_aog
+from quantagent.cli.event_delta_roe_materialize import materialize_event_delta_roe
 from quantagent.cli.event_sue_materialize import materialize_event_sue
 from quantagent.cli.forward_return_materialize import materialize_forward_return_cli
 from quantagent.cli.mif_materialize import materialize_mif
@@ -44,6 +45,7 @@ from quantagent.domain.ports.readiness import DailySource
 from quantagent.features.library.fundamental import (
     did_ratio,
     event_aog,
+    event_delta_roe,
     event_sue,
     nap_adj_ratio,
 )
@@ -92,6 +94,7 @@ Materializer = Literal[
     "nap_adj_ratio",
     "event_sue",
     "event_aog",
+    "event_delta_roe",
 ]
 
 _DAILY_SOURCES: frozenset[str] = frozenset(get_args(DailySource))
@@ -189,6 +192,15 @@ def _feature_increments() -> tuple[FeatureIncrement, ...]:
             event_aog.PARAM_HASH,
             "event_aog",
             (PRICE, INDEX, DERIVATIVE),
+        ),
+        # event_delta_roe 不依赖行情（event_dt=declare_date），就绪输入仅 all_a 域（衍生指标）。
+        # ROE/股东权益/财报三源均事件驱动不作就绪输入，采集血缘在 orchestration deps 表达。
+        FeatureIncrement(
+            event_delta_roe.FEATURE_ID,
+            event_delta_roe.DEFINITION_VERSION,
+            event_delta_roe.PARAM_HASH,
+            "event_delta_roe",
+            (DERIVATIVE,),
         ),
     ]
     items.extend(
@@ -389,6 +401,7 @@ def _materialize_feature(
         "nap_adj_ratio": materialize_nap_adj_ratio,
         "event_sue": materialize_event_sue,
         "event_aog": materialize_event_aog,
+        "event_delta_roe": materialize_event_delta_roe,
     }
     if kind in single:
         return single[kind](

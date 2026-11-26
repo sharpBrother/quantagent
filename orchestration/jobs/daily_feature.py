@@ -27,6 +27,7 @@ _MAIN = (
     "feature_daily_nap_adj_ratio",
     "feature_daily_event_sue",
     "feature_daily_event_aog",
+    "feature_daily_event_delta_roe",
 )
 _UMR = ("feature_daily_tr_umr", "feature_daily_abso_umr")
 
