@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from collections.abc import Mapping
 if TYPE_CHECKING:
     from datetime import date, datetime
     from decimal import Decimal
@@ -131,3 +132,20 @@ class ShareholderEquityRecord:
     report_period: date
     ann_dt: date
     shrhldr_eqt: Decimal | None
+@dataclass(frozen=True, slots=True)
+class FinancialSeriesRecord:
+    """Wind 财务三表/财务指标的通用多字段行，barra 风格因子（ERNQLT 等）的季度序列用。
+
+    与上面的窄行不同：本行用 ``values`` 字典承载不定字段（一张表一次读多列），键是源端列名
+    （如 ``TOT_ASSETS``/``NET_PROFIT_EXCL_MIN_INT_INC``），值缺失为 None、单位与源端一致（元），
+    **不在端口换算**。``report_period`` 是报告期末日（``REPORT_PERIOD``），``ann_dt`` 是公告日。
+
+    可见性：端口按 ``ANN_DT <= as_of`` 批量截止（契约 grade A）。但 barra 复现旧仓 RAW
+    ``ANN_DT < adj_date``（严格小于，调仓日当天公告不可见——盘前 07:36 计算时当日财报未出），
+    逐截面在使用方再裁剪，不在端口做。同一（代码, 报告期）的修订去重（keep=last 取最新公告版）
+    与 tail(count) 取最近 N 期也都在使用方做——端口只负责按 as_of 截止后返回全部行，保持单一职责。
+    """
+    asset_id: str
+    report_period: date
+    ann_dt: date
+    values: Mapping[str, Decimal | None]

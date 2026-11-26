@@ -17,6 +17,7 @@ from quantagent.contracts.loader import load_bundle
 from quantagent.domain.errors import InvalidQueryError, MissingVisibilityError
 from quantagent.domain.fundamental.types import (
     DividendRecord,
+    FinancialSeriesRecord,
     IndicatorRecord,
     NetProfitRecord,
     RoeRecord,
@@ -37,6 +38,7 @@ DIVIDEND_DATASET = "src.wind.asharedividend"
 INCOME_DATASET = "src.wind.ashareincome"
 INDICATOR_DATASET = "src.wind.asharefinancialindicator"
 BALANCE_DATASET = "src.wind.asharebalancesheet"
+CASHFLOW_DATASET = "src.wind.asharecashflow"
 # 合并报表类型（旧代码 get_shrhldr_eqt 的 STATEMENT_TYPE = 408001000）。
 _CONSOLIDATED_STATEMENT_TYPE = "408001000"
 
@@ -280,6 +282,76 @@ class PostgresShareholderEquityRepository:
         return tuple(_equity_from_mapping(item) for item in fetched)
 
 
+class PostgresFinancialSeriesRepository:
+    """Wind 财务三表/财务指标的通用多字段批量读取，barra 风格因子（ERNQLT 等）季度序列用。
+
+    对应旧仓 RAW ``fetch_financials`` 的取数部分：按表/字段、``ANN_DT <= as_of`` 截止、
+    代码在域内。**不做**季末过滤、keep=last 去重、tail(count)、季度差分、TTM——这些口径
+    在 ``features.library.fundamental``（本 adapter 模块文档已声明）。``STATEMENT_TYPE='408001000'``
+    过滤仅对非 ``ASHAREFINANCIALINDICATOR`` 表（复现旧仓：财务指标表无此列）。
+    """
+    def __init__(
+        self,
+        conn: psycopg.Connection[object],
+        *,
+        contract: VisibilityContract | None = None,
+        dataset: str,
+    ) -> None:
+        self._conn = conn
+        self._dataset = dataset
+        self._table = dataset.rsplit(".", 1)[-1].upper()
+        self._contract = (
+            contract if contract is not None else load_fundamental_visibility(dataset)
+        )
+    def list_series(
+        self,
+        *,
+        as_of: date,
+        min_period: date,
+        fields: tuple[str, ...],
+        wind_codes: tuple[str, ...],
+    ) -> tuple[FinancialSeriesRecord, ...]:
+        """``REPORT_PERIOD >= min_period``、``ANN_DT <= as_of`` 且代码在域内的行，含全部修订版。
+
+        ``min_period`` 用报告期下界而非 ANN_DT 窗口（旧仓用 ANN_DT 窗口近似，这里按报告期更精确，
+        反正后续 tail(count) 由使用方控制）。同 report_period 多行（修订）都返回，去重在使用方。
+        """
+        codes = normalize_wind_codes(wind_codes)
+        if codes is None:
+            return ()
+        cutoff = pit_cutoff(self._contract, as_of=as_of)
+        visible_end = cutoff.on_or_before
+        cols = ["S_INFO_WINDCODE", "REPORT_PERIOD", "ANN_DT", *fields]
+        col_sql = ", ".join(quote_ident(c) for c in cols)
+        # 财务指标表无 STATEMENT_TYPE 列，其余表过滤合并报表（复现旧仓 fetch_financials）。
+        extra = ""
+        if self._table != "ASHAREFINANCIALINDICATOR":
+            extra = f" AND {quote_ident('STATEMENT_TYPE')} = %s"
+        statement = (
+            f"SELECT {col_sql} FROM {quote_ident('src_wind')}.{quote_ident(self._table)}"
+            f" WHERE {quote_ident('REPORT_PERIOD')} >= %s"
+            f" AND {quote_ident('ANN_DT')} <= %s"
+            f"{extra}"
+            f" AND {quote_ident('S_INFO_WINDCODE')} = ANY(%s)"
+            f" ORDER BY {quote_ident('S_INFO_WINDCODE')}, {quote_ident('REPORT_PERIOD')},"
+            f" {quote_ident('ANN_DT')}"
+        )
+        # 参数顺序: min_period, visible_end, [statement_type], codes。extra 在 ANN_DT 之后。
+        if self._table != "ASHAREFINANCIALINDICATOR":
+            exec_params = [_ymd(min_period), _ymd(visible_end), _CONSOLIDATED_STATEMENT_TYPE, list(codes)]
+        else:
+            exec_params = [_ymd(min_period), _ymd(visible_end), list(codes)]
+        with self._conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(assert_src_dml_sql(statement), exec_params)
+            fetched = cur.fetchall()
+        return tuple(_series_from_mapping(item, fields) for item in fetched)
+def _series_from_mapping(row: Mapping[str, object], fields: tuple[str, ...]) -> FinancialSeriesRecord:
+    return FinancialSeriesRecord(
+        asset_id=_asset_id(row),
+        report_period=_required_ymd(row, "REPORT_PERIOD"),
+        ann_dt=_required_ymd(row, "ANN_DT"),
+        values={f: _decimal(row.get(f), f) for f in fields},
+    )
 def _visible_window(
     contract: VisibilityContract,
     *,
