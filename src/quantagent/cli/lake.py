@@ -17,6 +17,7 @@ from quantagent.cli.mif_materialize import materialize_mif
 from quantagent.cli.minute_factors_2b_materialize import materialize_minute_factors_2b
 from quantagent.cli.minute_factors_materialize import materialize_minute_factors
 from quantagent.cli.moneyflow_materialize import materialize_moneyflow_factors
+from quantagent.cli.nap_adj_ratio_materialize import materialize_nap_adj_ratio
 from quantagent.cli.tr_umr_materialize import materialize_tr_umr
 from quantagent.domain.errors import DomainError
 from quantagent.lake.layout_bench import SCALES, run_layout_benchmark
@@ -381,6 +382,47 @@ def lake_materialize_did_ratio(
         f"wrote dataset=feature.value rows={row_count} digest={digest} "
         f"skipped_conflicts={conflict_count}"
     )
+
+
+@materialize_app.command("nap-adj-ratio")
+def lake_materialize_nap_adj_ratio(
+    start: Annotated[str, typer.Option("--start", help="截面起点 YYYY-MM-DD")],
+    end: Annotated[str, typer.Option("--end", help="截面终点 YYYY-MM-DD")],
+    as_of: Annotated[str, typer.Option("--as-of", help="调整行入库可见日 YYYY-MM-DD，必填")],
+    codes: Annotated[
+        str | None,
+        typer.Option("--codes", help="逗号分隔的 Wind 代码；不传则每个截面日取该日 all_a 成员"),
+    ] = None,
+) -> None:
+    """把 pf_single_nap_adj_ratio_1_mean_pos（盈利预测上调幅度中位数，方向 +1）写入 feature.value。
+    股票域为各截面日 all_a 成员去掉当日 ST。窗口（30 天）内无调整记录的股票不落行（缺失不补 0）。
+    可见截止用入库时间 entrytime ≤ as_of，业务窗口按研报日期 current_create_date，两者分离。
+    """
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    code_tuple = (
+        None if codes is None else tuple(part.strip() for part in codes.split(",") if part.strip())
+    )
+    try:
+        row_count, digest = materialize_nap_adj_ratio(
+            settings=settings,
+            paths=paths,
+            start=datetime.strptime(start.strip(), "%Y-%m-%d").date(),
+            end=datetime.strptime(end.strip(), "%Y-%m-%d").date(),
+            wind_codes=code_tuple,
+            as_of=datetime.strptime(as_of.strip(), "%Y-%m-%d").date(),
+        )
+    except (
+        LakeLayoutError,
+        DomainError,
+        PostgresAdapterError,
+        ConfigError,
+        RunLogError,
+        ValueError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"wrote dataset=feature.value rows={row_count} digest={digest}")
 
 
 @materialize_app.command("tr-umr")

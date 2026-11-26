@@ -40,3 +40,20 @@ class IndicatorRecord:
     asset_id: str
     ann_dt: date
     report_period: date
+
+
+@dataclass(frozen=True, slots=True)
+class EarningsAdjustRecord:
+    """朝阳永续盈利预测调整行，只含 nap_adj_ratio 需要的字段。
+
+    与财报三表不同，本行有两个时间：``create_dt`` 是研报日期 ``current_create_date``（事件时间，
+    业务窗口按它过滤），``entry_dt`` 是入库时间 ``entrytime`` 的日期部分（可见日，PIT 截止按它）。
+    读取端口已按 as_of 截止 ``entry_dt``，``entry_dt`` 不会晚于 as_of。``asset_id`` 是补全交易所
+    后缀的 Wind 格式（源端 ``stock_code`` 无后缀，由端口按号段补 .BJ/.SH/.SZ）。
+    """
+
+    asset_id: str
+    create_dt: date
+    entry_dt: date
+    report_year: int | None
+    np_adjust_rate: Decimal | None
