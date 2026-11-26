@@ -222,6 +222,44 @@ def test_event_not_in_domain_dropped() -> None:
 
 
 @pytest.mark.unit
+def test_nontrading_declare_uses_next_trading_day_domain() -> None:
+    # 核心回归（裁定 B1）：非交易日（周六）declare 的事件不落丢，域判定用 declare 后首个交易日。
+    # wx2 19.3% 事件行来自非交易日 declare。2024-04-27 周六（披露期 4 月），declare 后首个交易日 4-29 周一。
+    sat = date(2024, 4, 27)  # 周六 declare
+    mon = date(2024, 4, 29)  # 周一，declare 后首个交易日
+    e = _event("000001.SZ", sat, 2024, 1001, 150.0)
+    # domain_by_day 只有交易日键：周六无域，周一有域含该股。
+    domain = {mon: frozenset({"000001.SZ"})}
+    built = build_event_sue_values(
+        events=[e],
+        profit_rows=_full_history(),
+        domain_by_day=domain,
+        computed_at=datetime(2024, 12, 31),
+        run_id="t",
+    )
+    # event_dt 仍为 declare（周六），但事件因股票在周一域内而产值。
+    assert len(built.values) == 1
+    assert built.values[0].event_dt == sat
+
+
+@pytest.mark.unit
+def test_nontrading_declare_dropped_when_stock_not_in_next_day_domain() -> None:
+    # 非交易日 declare，但股票在 declare 后首个交易日域外（ST/非 all_a）→ 不落行。
+    sat = date(2024, 4, 27)
+    mon = date(2024, 4, 29)
+    e = _event("000001.SZ", sat, 2024, 1001, 150.0)
+    domain = {mon: frozenset({"600000.SH"})}  # 周一域内不含该股
+    built = build_event_sue_values(
+        events=[e],
+        profit_rows=_full_history(),
+        domain_by_day=domain,
+        computed_at=datetime(2024, 12, 31),
+        run_id="t",
+    )
+    assert built.values == ()
+
+
+@pytest.mark.unit
 def test_candidate_count_distinguishes_legit_empty() -> None:
     # 合法空/异常空区分依据 candidate_count：非披露期事件被月份过滤光 → candidate_count=0；
     # 披露期有候选但股票不在域/缺历史 → candidate_count>0 但 values 可为空（materialize 据此报错）。

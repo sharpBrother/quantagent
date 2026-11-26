@@ -85,9 +85,16 @@ def build_event_sue_values(
     for event in candidates:
         if event.profit is None:
             continue
-        # 域过滤：事件日必须是有域的交易日，且该股在当日域内。
-        domain = domain_by_day.get(event.declare_dt)
-        if domain is None or event.asset_id not in domain:
+        # 域过滤：财报可在任意自然日 declare（周末/节假日是披露高峰，wx2 19.3% 事件行来自非交易日
+        # declare），非交易日没有 all_a/ST 截面。declare 若为交易日直接用当日域；若非交易日，用 declare
+        # 后首个交易日的域——那是市场首次能对该事件定价的交易日，当天股票状态才有意义（负责人
+        # 2026-11-26 裁定 B1，与 event_aog 的 open_date 域判定同源）。``event_dt`` 仍为 declare_date
+        # （下游 confirm_date <= T as-of 取值兼容），仅域判定截面移到首个交易日。
+        domain_dt = _resolve_domain_date(event.declare_dt, domain_by_day)
+        if domain_dt is None:
+            continue
+        domain = domain_by_day[domain_dt]
+        if event.asset_id not in domain:
             continue
         history = profit_by_code.get(event.asset_id)
         if history is None:
@@ -165,6 +172,21 @@ def _period_end_date(report_year: int, report_quarter: int) -> date:
     """报告期末日：1001→0331、1002→0630、1003→0930、1004→1231。旧代码 period_dict 反推。"""
     month_day = {1001: (3, 31), 1002: (6, 30), 1003: (9, 30), 1004: (12, 31)}[report_quarter]
     return date_type(report_year, month_day[0], month_day[1])
+
+
+def _resolve_domain_date(
+    declare_dt: date, domain_by_day: Mapping[date, frozenset[str]]
+) -> date | None:
+    """域判定截面日：declare 是交易日（在 domain_by_day）直接用；否则取 declare 后首个交易日。
+
+    ``domain_by_day`` 的键就是交易日集合（cli 按交易日建域）。declare 落在窗口末尾之后无可用
+    交易日时返回 None（事件不落行）。不复用 domain_by_day 的交易日列表排序每次重算，调用方
+    窗口内交易日数量有限，逐个线性查找可接受。
+    """
+    if declare_dt in domain_by_day:
+        return declare_dt
+    after = sorted(dt for dt in domain_by_day if dt > declare_dt)
+    return after[0] if after else None
 
 
 def _group_profit_by_asset(

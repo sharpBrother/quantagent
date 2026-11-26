@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Literal
 
 from quantagent.adapters.lake.trade_calendar import LakeCalendarRepository
@@ -28,6 +28,8 @@ if TYPE_CHECKING:
 
 ACTION = "lake.materialize.feature.event_sue"
 _EXCHANGE = "SSE"
+# 日历/域向后宽限的自然日数：非交易日 declare 后首个交易日可能落在物化窗口 end 之后。
+_DOMAIN_LOOKAHEAD_DAYS = 10
 # 历史利润序列的批量回退年数：事件报告期最早可追溯到 start 前一年（Q4 报告次年披露），
 # 单季同比需 8 期 + 序列重构需 LOOKBACK_YEARS 年。给足余量取 start 前 6 年，逐事件的精确
 # report_year >= 当期 − LOOKBACK_YEARS 裁剪在 panel 做。多读不碍正确性（panel 逐事件再过滤），
@@ -54,13 +56,17 @@ def materialize_event_sue(
     run_id = new_run_id()
     computed_at = started.replace(tzinfo=None)
     try:
+        # 日历向后宽限覆盖域判定截面：月末/周末 declare 后首个交易日可能落在 end 之后
+        # （如 10-31 周六 declare → 11-02 周一）。declare 距后首个交易日最多几天，给 10 天余量。
+        cal_end = end + timedelta(days=_DOMAIN_LOOKAHEAD_DAYS)
         days = LakeCalendarRepository(paths.lake / "std" / "trade_calendar").list_days(
             as_of=as_of,
             exchange=_EXCHANGE,
             start=start,
-            end=end,
+            end=cal_end,
         )
-        events_days = tuple(day for day in open_dates(days) if start <= day <= end)
+        # 域判定截面含宽限（覆盖 declare 后首个交易日）；事件候选仍按 [start,end] 的 declare 窗口。
+        events_days = tuple(day for day in open_dates(days) if start <= day <= cal_end)
         conn = connect(settings, "src")
         try:
             members_by_day: Mapping[date, frozenset[str]] | None = None
