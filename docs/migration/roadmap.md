@@ -101,6 +101,8 @@ Wind 与聚源采集在子进程里跑，600 秒无新页即终止（先 SIGTERM
 
 **朝阳永续 Suntime P0/P1（2026-11-24）**：按[交接文档](suntime-ingest-plan.md)接入五张表。个股两张与 `rpt_earnings_adjust` 用 0006 已建的表；指数两张（`con_forecast_idx`、`con_forecast_roll_idx`）由 0030 新建，源库有、wx2 没有，负责人裁定为 P0。0031 给五张表加 `(tmstamp, id)` 游标索引，0032 写契约列注释。可见性只配四张一致预期：`source_field con_date`、非 strict、等级 A，个股年度表的 `con_date` 是 timestamp，按日期比较；`rpt_earnings_adjust` 只建镜像、不写契约。`con_forecast_stk_ttm` 不同步、不进写入白名单。中文用 pymssql `charset=utf8` 直接读取，不再做旧仓的 latin1/GBK 再解码。日更 01:10，避开旧仓 22:00、02:00、04:30 与聚源 03:30，只在 Mac 注册。P2（`FIN_APPO_RELE_DATE`、`der_prob_excess_stock`、`der_diver_stk`）未动。
 
+**朝阳永续三张财报事件表（2026-11-26，提交 `219a970`）**：`fin_performance_forecast`、`fin_performance_express`、`fin_income_gen` 按 pit-rules 的 `fin_*` 口径接入：`source_field` `field=declare_date`、非 strict、grade A、`date_only`。这三张是财报数据，用 `declare_date`；与 `rpt_earnings_adjust` 的 `entrytime` 口径（研报入库，`cb890e4` 起）不同。0035 建表加游标索引，0036 写列注释，0037 补 `rpt_earnings_adjust` 列注释。资产插在 `rpt_earnings_adjust` 与 `con_forecast_roll_stk` 之间，日更顺序：roll_idx → idx → rpt → forecast → express → income_gen → roll_stk → stk。首次回填行数与源端一致：express 36,105、forecast 133,545、income_gen 1,296,625。
+
 **其他**：JYDB P2/P3 七张表、朝阳永续 P2 三张、Tushare 其余接口 ⏳ 未接；第四类运维表 ⏳ 未动。
 
 ### P3 口径与因子
