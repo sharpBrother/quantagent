@@ -96,9 +96,51 @@ def src_suntime_rpt_earnings_adjust(
 
 
 @asset(
-    name="src_suntime_con_forecast_roll_stk",
+    name="src_suntime_fin_performance_forecast",
     group_name=_GROUP,
     deps=[src_suntime_rpt_earnings_adjust],
+    metadata={
+        "reads": "suntime.fin_performance_forecast",
+        "checkpoint": "src_batch_source_cursor",
+    },
+)
+def src_suntime_fin_performance_forecast(
+    context: AssetExecutionContext, config: SuntimeRunConfig
+) -> MaterializeResult[None]:
+    return _ingest(context, "fin_performance_forecast", config)
+
+
+@asset(
+    name="src_suntime_fin_performance_express",
+    group_name=_GROUP,
+    deps=[src_suntime_fin_performance_forecast],
+    metadata={
+        "reads": "suntime.fin_performance_express",
+        "checkpoint": "src_batch_source_cursor",
+    },
+)
+def src_suntime_fin_performance_express(
+    context: AssetExecutionContext, config: SuntimeRunConfig
+) -> MaterializeResult[None]:
+    return _ingest(context, "fin_performance_express", config)
+
+
+@asset(
+    name="src_suntime_fin_income_gen",
+    group_name=_GROUP,
+    deps=[src_suntime_fin_performance_express],
+    metadata={"reads": "suntime.fin_income_gen", "checkpoint": "src_batch_source_cursor"},
+)
+def src_suntime_fin_income_gen(
+    context: AssetExecutionContext, config: SuntimeRunConfig
+) -> MaterializeResult[None]:
+    return _ingest(context, "fin_income_gen", config)
+
+
+@asset(
+    name="src_suntime_con_forecast_roll_stk",
+    group_name=_GROUP,
+    deps=[src_suntime_fin_income_gen],
     metadata={"reads": "suntime.con_forecast_roll_stk", "checkpoint": "src_batch_source_cursor"},
 )
 def src_suntime_con_forecast_roll_stk(

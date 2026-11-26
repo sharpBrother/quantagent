@@ -420,9 +420,9 @@ tables:
   row_count: 未查
   category: 1
   reason: 现役：factors/factor_event_2.py
-  dest: 拟 src_suntime.fin_income_gen（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁）
-  extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。visibility 从旧仓下游取数反推；缺证据或冲突再问
-  src_batch1: false
+  dest: src_suntime.fin_income_gen（第一批已收录，0035）
+  extra: source_field declare_date / A，2026-11-26 接入
+  src_batch1: true
   origin: dictionary_manifest
   pit_required: true
 - name: fin_performance_express
@@ -431,9 +431,9 @@ tables:
   row_count: 未查
   category: 1
   reason: 现役：factors/factor_event_2.py
-  dest: 拟 src_suntime.fin_performance_express（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁）
-  extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。visibility 从旧仓下游取数反推；缺证据或冲突再问
-  src_batch1: false
+  dest: src_suntime.fin_performance_express（第一批已收录，0035）
+  extra: source_field declare_date / A，2026-11-26 接入
+  src_batch1: true
   origin: dictionary_manifest
   pit_required: true
 - name: fin_performance_forecast
@@ -442,9 +442,9 @@ tables:
   row_count: 未查
   category: 1
   reason: 现役：factors/factor_event_2.py
-  dest: 拟 src_suntime.fin_performance_forecast（字典误放 tushare 文件夹；zyyx_to_sql 写入；现不迁）
-  extra: 不是 Tushare。清单为评审基线；src_tables.yaml / DDL 尚未改，迁入前按本表修订。visibility 从旧仓下游取数反推；缺证据或冲突再问
-  src_batch1: false
+  dest: src_suntime.fin_performance_forecast（第一批已收录，0035）
+  extra: source_field declare_date / A，2026-11-26 接入
+  src_batch1: true
   origin: dictionary_manifest
   pit_required: true
 - name: rpt_earnings_adjust

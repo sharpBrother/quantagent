@@ -1,0 +1,160 @@
+dataset: src.suntime.fin_performance_express
+layer: pg
+doc_ref: docs/migration/suntime-ingest-plan.md
+temporal_kind: snapshot
+keys:
+  - id
+reads: []
+columns:
+  id:
+    dtype: int64
+    nullable: false
+    description: 朝阳永续源表主键
+  company_code:
+    dtype: string
+    nullable: true
+    description: 公司代码
+  stock_code:
+    dtype: string
+    nullable: true
+    description: 股票代码
+  stock_name:
+    dtype: string
+    nullable: true
+    description: 股票名称
+  report_period:
+    dtype: int64
+    nullable: true
+    description: 报告期
+  report_year:
+    dtype: int64
+    nullable: true
+    description: 报告年度
+  declare_date:
+    dtype: datetime
+    nullable: true
+    description: 公告日期；无时区时刻，PIT 可见日按日期比较，当天收盘后可见
+  content:
+    dtype: string
+    nullable: true
+    description: 快报内容摘要
+  tor:
+    dtype: float64
+    nullable: true
+    description: 营业收入
+  tor_grate_yoy:
+    dtype: float64
+    nullable: true
+    description: 营业收入同比
+  op:
+    dtype: float64
+    nullable: true
+    description: 营业利润
+  op_grate_yoy:
+    dtype: float64
+    nullable: true
+    description: 营业利润同比
+  tp:
+    dtype: float64
+    nullable: true
+    description: 利润总额
+  tp_grate_yoy:
+    dtype: float64
+    nullable: true
+    description: 利润总额同比
+  np:
+    dtype: float64
+    nullable: true
+    description: 净利润
+  np_grate_yoy:
+    dtype: float64
+    nullable: true
+    description: 净利润同比
+  eps:
+    dtype: float64
+    nullable: true
+    description: 每股收益
+  eps_grate_yoy:
+    dtype: float64
+    nullable: true
+    description: 每股收益同比
+  roe:
+    dtype: float64
+    nullable: true
+    description: 净资产收益率
+  roe_grate_yoy:
+    dtype: float64
+    nullable: true
+    description: 净资产收益率同比
+  ta:
+    dtype: float64
+    nullable: true
+    description: 总资产
+  ta_grate_yoy:
+    dtype: float64
+    nullable: true
+    description: 总资产同比
+  na:
+    dtype: float64
+    nullable: true
+    description: 净资产
+  na_grate_yoy:
+    dtype: float64
+    nullable: true
+    description: 净资产同比
+  na_ps:
+    dtype: float64
+    nullable: true
+    description: 每股净资产
+  na_ps_grate_yoy:
+    dtype: float64
+    nullable: true
+    description: 每股净资产同比
+  tc:
+    dtype: float64
+    nullable: true
+    description: 总股本
+  tc_grate_yoy:
+    dtype: float64
+    nullable: true
+    description: 总股本同比
+  chg_reason:
+    dtype: string
+    nullable: true
+    description: 变动原因说明
+  sequence:
+    dtype: string
+    nullable: true
+    description: 公告序号
+  is_valid:
+    dtype: int64
+    nullable: true
+    description: 是否有效；业务字段
+  entrytime:
+    dtype: datetime
+    nullable: true
+    description: 源端入库时间；系统列，不参与业务修订判断
+  updatetime:
+    dtype: datetime
+    nullable: true
+    description: 源端更新时间；系统列，不参与业务修订判断
+  tmstamp:
+    dtype: int64
+    nullable: true
+    description: 源端同步序列；分页游标组成部分，不参与业务修订判断
+  kfnp:
+    dtype: float64
+    nullable: true
+    description: 扣非净利润
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间，不是 PIT 依据
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 主键与业务列的内容指纹

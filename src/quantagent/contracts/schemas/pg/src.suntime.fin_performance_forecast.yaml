@@ -1,0 +1,196 @@
+dataset: src.suntime.fin_performance_forecast
+layer: pg
+doc_ref: docs/migration/suntime-ingest-plan.md
+temporal_kind: snapshot
+keys:
+  - id
+reads: []
+columns:
+  id:
+    dtype: int64
+    nullable: false
+    description: 朝阳永续源表主键
+  company_code:
+    dtype: string
+    nullable: true
+    description: 公司代码
+  stock_code:
+    dtype: string
+    nullable: true
+    description: 股票代码
+  stock_name:
+    dtype: string
+    nullable: true
+    description: 股票名称
+  announce_type:
+    dtype: int64
+    nullable: true
+    description: 公告类型
+  report_year:
+    dtype: int64
+    nullable: true
+    description: 报告年度
+  report_period:
+    dtype: int64
+    nullable: true
+    description: 报告期
+  declare_date:
+    dtype: datetime
+    nullable: true
+    description: 公告日期；无时区时刻，PIT 可见日按日期比较，当天收盘后可见
+  tor_ceiling:
+    dtype: float64
+    nullable: true
+    description: 营业收入预告上限
+  tor_floor:
+    dtype: float64
+    nullable: true
+    description: 营业收入预告下限
+  tor_rate_ceiling:
+    dtype: float64
+    nullable: true
+    description: 营业收入变动幅度上限
+  tor_rate_floor:
+    dtype: float64
+    nullable: true
+    description: 营业收入变动幅度下限
+  tor_description:
+    dtype: string
+    nullable: true
+    description: 营业收入预告描述
+  op_ceiling:
+    dtype: float64
+    nullable: true
+    description: 营业利润预告上限
+  op_floor:
+    dtype: float64
+    nullable: true
+    description: 营业利润预告下限
+  op_rate_ceiling:
+    dtype: float64
+    nullable: true
+    description: 营业利润变动幅度上限
+  op_rate_floor:
+    dtype: float64
+    nullable: true
+    description: 营业利润变动幅度下限
+  op_description:
+    dtype: string
+    nullable: true
+    description: 营业利润预告描述
+  np_ceiling:
+    dtype: float64
+    nullable: true
+    description: 净利润预告上限
+  np_floor:
+    dtype: float64
+    nullable: true
+    description: 净利润预告下限
+  np_rate_ceiling:
+    dtype: float64
+    nullable: true
+    description: 净利润变动幅度上限
+  np_rate_floor:
+    dtype: float64
+    nullable: true
+    description: 净利润变动幅度下限
+  np_type:
+    dtype: int64
+    nullable: true
+    description: 净利润类型
+  np_description:
+    dtype: string
+    nullable: true
+    description: 净利润预告描述
+  eps_ceiling:
+    dtype: float64
+    nullable: true
+    description: 每股收益预告上限
+  eps_floor:
+    dtype: float64
+    nullable: true
+    description: 每股收益预告下限
+  eps_rate_ceiling:
+    dtype: float64
+    nullable: true
+    description: 每股收益变动幅度上限
+  eps_rate_floor:
+    dtype: float64
+    nullable: true
+    description: 每股收益变动幅度下限
+  eps_type:
+    dtype: int64
+    nullable: true
+    description: 每股收益类型
+  eps_description:
+    dtype: string
+    nullable: true
+    description: 每股收益预告描述
+  chg_reason:
+    dtype: string
+    nullable: true
+    description: 变动原因说明
+  sequence:
+    dtype: string
+    nullable: true
+    description: 公告序号
+  is_valid:
+    dtype: int64
+    nullable: true
+    description: 是否有效；业务字段
+  entrytime:
+    dtype: datetime
+    nullable: true
+    description: 源端入库时间；系统列，不参与业务修订判断
+  updatetime:
+    dtype: datetime
+    nullable: true
+    description: 源端更新时间；系统列，不参与业务修订判断
+  tmstamp:
+    dtype: int64
+    nullable: true
+    description: 源端同步序列；分页游标组成部分，不参与业务修订判断
+  kcnp_ceiling:
+    dtype: decimal
+    precision: 38
+    scale: 10
+    nullable: true
+    description: 扣非净利润预告上限
+  kcnp_rate_ceiling:
+    dtype: decimal
+    precision: 38
+    scale: 10
+    nullable: true
+    description: 扣非净利润变动幅度上限
+  kcnp_mark_ceiling:
+    dtype: string
+    nullable: true
+    description: 扣非净利润上限标记
+  kcnp_floor:
+    dtype: decimal
+    precision: 38
+    scale: 10
+    nullable: true
+    description: 扣非净利润预告下限
+  kcnp_rate_floor:
+    dtype: decimal
+    precision: 38
+    scale: 10
+    nullable: true
+    description: 扣非净利润变动幅度下限
+  kcnp_mark_floor:
+    dtype: string
+    nullable: true
+    description: 扣非净利润下限标记
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间，不是 PIT 依据
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 主键与业务列的内容指纹

@@ -24,6 +24,16 @@ from orchestration.assets.macro import (
     src_macro_wgc_gold_demand,
 )
 from orchestration.assets.minprice import src_eastmoney_minute, src_mysql_minute
+from orchestration.assets.suntime import (
+    src_suntime_con_forecast_idx,
+    src_suntime_con_forecast_roll_idx,
+    src_suntime_con_forecast_roll_stk,
+    src_suntime_con_forecast_stk,
+    src_suntime_fin_income_gen,
+    src_suntime_fin_performance_express,
+    src_suntime_fin_performance_forecast,
+    src_suntime_rpt_earnings_adjust,
+)
 from orchestration.assets.tr_umr import feature_pf_single_tr_umr
 from orchestration.assets.tushare import src_tushare_shibor, src_tushare_us_treasury_yield
 from orchestration.assets.wind import WIND_SOURCE_ASSETS, std_trade_calendar
@@ -37,6 +47,7 @@ from orchestration.jobs.daily_feature import (
 from orchestration.jobs.jydb import jydb_daily
 from orchestration.jobs.macro import macro_daily, macro_wgc_weekly
 from orchestration.jobs.minprice import minprice_daily
+from orchestration.jobs.suntime import suntime_daily
 from orchestration.jobs.tr_umr import feature_tr_umr
 from orchestration.jobs.tushare import tushare_daily
 from orchestration.jobs.wind import wind_source_daily, wind_source_refresh
@@ -51,6 +62,7 @@ from orchestration.schedules.daily_feature import (
 from orchestration.schedules.jydb import jydb_daily_night
 from orchestration.schedules.macro import macro_daily_morning, macro_wgc_sunday
 from orchestration.schedules.minprice import minprice_first, minprice_retry
+from orchestration.schedules.suntime import suntime_daily_night
 from orchestration.schedules.tushare import tushare_daily_evening
 from orchestration.schedules.wind import wind_source_daily_close, wind_source_daily_morning
 from orchestration.sensors.run_failure import run_failure_alert
@@ -82,6 +94,7 @@ PROFILE_SCHEDULES: dict[str, tuple[ScheduleDefinition, ...]] = {
         minprice_first,
         minprice_retry,
         jydb_daily_night,
+        suntime_daily_night,
         feature_forward_return_daily_schedule,
         feature_minute_daily_schedule,
         feature_daily_main_schedule,
@@ -112,6 +125,14 @@ defs = Definitions(
         src_jydb_c_in_indicatordatav,
         src_jydb_ed_moneysupply,
         src_jydb_qt_osindexquote,
+        src_suntime_con_forecast_roll_idx,
+        src_suntime_con_forecast_idx,
+        src_suntime_rpt_earnings_adjust,
+        src_suntime_fin_performance_forecast,
+        src_suntime_fin_performance_express,
+        src_suntime_fin_income_gen,
+        src_suntime_con_forecast_roll_stk,
+        src_suntime_con_forecast_stk,
         feature_pf_single_cutamp,
         feature_pf_single_tr_umr,
         src_eastmoney_minute,
@@ -127,6 +148,7 @@ defs = Definitions(
         macro_daily,
         macro_wgc_weekly,
         jydb_daily,
+        suntime_daily,
         feature_cutamp,
         feature_tr_umr,
         minprice_daily,

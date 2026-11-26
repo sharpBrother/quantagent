@@ -21,7 +21,7 @@ _VIEW_TABLES = frozenset({"AINDEXINDUSTRIESCITICS"})
 @pytest.mark.unit
 def test_keep_list_tables_are_created(repo_root: Path) -> None:
     tables = load_src_tables(repo_root)
-    assert len(tables) == 65
+    assert len(tables) == 68
     sql = "\n".join(
         path.read_text(encoding="utf-8")
         for path in sorted((repo_root / "db" / "migrations" / "src").glob("*.sql"))
@@ -89,9 +89,9 @@ def test_every_batch_id_column_is_indexed(repo_root: Path) -> None:
         )
         is not None
     }
-    # 65 张清单表减去 0020 改成视图的 AINDEXINDUSTRIESCITICS，加上 0008 建的 ASHARECALENDAR（不在清单）
+    # 68 张清单表减去 0020 改成视图的 AINDEXINDUSTRIESCITICS，加上 0008 建的 ASHARECALENDAR（不在清单）
     # 与 0007 建后被 0018 删除的三张旧宏观表。0007 已应用不能改，所以旧表的 CREATE 仍在迁移文件里。
-    assert len(with_batch) == 68
+    assert len(with_batch) == 71
     assert with_batch - indexed == set()
 
 

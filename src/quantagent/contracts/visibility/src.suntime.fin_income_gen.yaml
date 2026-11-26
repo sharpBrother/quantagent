@@ -1,0 +1,11 @@
+dataset: src.suntime.fin_income_gen
+doc_ref: docs/migration/suntime-ingest-plan.md
+temporal_kind: snapshot
+visibility:
+  rule: source_field
+  field: declare_date
+  date_only: true
+  grade: A
+  rationale: >
+    朝阳利润表（业绩公告）按 declare_date 当天的公告，当天收盘后可见。源端 declare_date 为 00:00，按日期比较。见 docs/migration/suntime-ingest-plan.md 与 pit-rules 的 fin_* 行。
+pit_recoverable: true

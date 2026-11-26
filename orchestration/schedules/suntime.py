@@ -22,6 +22,9 @@ from orchestration.assets.suntime import (
     src_suntime_con_forecast_roll_idx,
     src_suntime_con_forecast_roll_stk,
     src_suntime_con_forecast_stk,
+    src_suntime_fin_income_gen,
+    src_suntime_fin_performance_express,
+    src_suntime_fin_performance_forecast,
     src_suntime_rpt_earnings_adjust,
 )
 from orchestration.jobs.suntime import suntime_daily
@@ -38,6 +41,9 @@ _ASSETS = (
     src_suntime_con_forecast_roll_idx,
     src_suntime_con_forecast_idx,
     src_suntime_rpt_earnings_adjust,
+    src_suntime_fin_performance_forecast,
+    src_suntime_fin_performance_express,
+    src_suntime_fin_income_gen,
     src_suntime_con_forecast_roll_stk,
     src_suntime_con_forecast_stk,
 )

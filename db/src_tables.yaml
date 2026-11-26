@@ -125,6 +125,12 @@ tables:
   - source: suntime
     name: rpt_earnings_adjust
   - source: suntime
+    name: fin_performance_forecast
+  - source: suntime
+    name: fin_performance_express
+  - source: suntime
+    name: fin_income_gen
+  - source: suntime
     name: con_forecast_stk_ttm
   - source: suntime
     name: der_prob_excess_stock

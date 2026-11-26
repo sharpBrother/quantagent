@@ -16,6 +16,7 @@ _PREFIX_TO_SCHEMA = {
     "src_tushare_": "src_tushare",
     "src_macro_": "src_macro",
     "src_jydb_": "src_jydb",
+    "src_suntime_": "src_suntime",
     "src_eastmoney_": "src_minprice",
     "src_mysql_": "src_minprice",
 }
@@ -53,6 +54,7 @@ _EXPECTED_SCHEDULES = {
         "minprice_first",
         "minprice_retry",
         "jydb_daily_night",
+        "suntime_daily_night",
         "feature_forward_return_daily",
         "feature_minute_daily",
         "feature_daily_main",
@@ -101,6 +103,7 @@ def test_every_registered_schedule_belongs_to_some_profile() -> None:
         "minprice_first",
         "minprice_retry",
         "jydb_daily_night",
+        "suntime_daily_night",
         "feature_forward_return_daily",
         "feature_minute_daily",
         "feature_daily_main",

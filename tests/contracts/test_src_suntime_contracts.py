@@ -58,3 +58,29 @@ def test_derived_only_tables_have_no_visibility() -> None:
     # con_forecast_stk_ttm 是旧仓派生表、不作源镜像同步，没有契约，引擎拒绝对它做 PIT 查询。
     visibilities = load_bundle().visibilities
     assert "src.suntime.con_forecast_stk_ttm" not in visibilities
+
+
+@pytest.mark.contracts
+def test_fin_event_tables_contracts_are_declared() -> None:
+    """三张事件表：业绩预告 / 快报 / 利润表，declare_date 当天收盘后可见。"""
+    bundle = load_bundle()
+    expected = {
+        "src.suntime.fin_performance_forecast",
+        "src.suntime.fin_performance_express",
+        "src.suntime.fin_income_gen",
+    }
+    assert expected <= set(bundle.visibilities)
+    assert expected <= set(bundle.schemas)
+    for dataset in expected:
+        schema = bundle.schemas[dataset]
+        visibility = bundle.visibilities[dataset]
+        assert schema.temporal_kind == "snapshot"
+        assert schema.keys == ["id"]
+        assert visibility.temporal_kind == "snapshot"
+        assert visibility.visibility.rule == "source_field"
+        assert visibility.visibility.field == "declare_date"
+        assert visibility.visibility.strict is False
+        assert visibility.visibility.grade == "A"
+        assert visibility.pit_recoverable is True
+        # declare_date 是 datetime（无时区时刻），按日期比较
+        assert visibility.visibility.date_only is True
