@@ -12,6 +12,7 @@ import typer
 from quantagent.adapters.postgres.errors import PostgresAdapterError
 from quantagent.cli.cutamp_materialize import materialize_cutamp
 from quantagent.cli.did_ratio_materialize import materialize_did_ratio
+from quantagent.cli.event_sue_materialize import materialize_event_sue
 from quantagent.cli.forward_return_materialize import materialize_forward_return_cli
 from quantagent.cli.mif_materialize import materialize_mif
 from quantagent.cli.minute_factors_2b_materialize import materialize_minute_factors_2b
@@ -405,6 +406,47 @@ def lake_materialize_nap_adj_ratio(
     )
     try:
         row_count, digest = materialize_nap_adj_ratio(
+            settings=settings,
+            paths=paths,
+            start=datetime.strptime(start.strip(), "%Y-%m-%d").date(),
+            end=datetime.strptime(end.strip(), "%Y-%m-%d").date(),
+            wind_codes=code_tuple,
+            as_of=datetime.strptime(as_of.strip(), "%Y-%m-%d").date(),
+        )
+    except (
+        LakeLayoutError,
+        DomainError,
+        PostgresAdapterError,
+        ConfigError,
+        RunLogError,
+        ValueError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"wrote dataset=feature.value rows={row_count} digest={digest}")
+
+
+@materialize_app.command("event-sue")
+def lake_materialize_event_sue(
+    start: Annotated[str, typer.Option("--start", help="事件公告日窗口起点 YYYY-MM-DD")],
+    end: Annotated[str, typer.Option("--end", help="事件公告日窗口终点 YYYY-MM-DD")],
+    as_of: Annotated[str, typer.Option("--as-of", help="公告可见日 YYYY-MM-DD，必填")],
+    codes: Annotated[
+        str | None,
+        typer.Option("--codes", help="逗号分隔的 Wind 代码；不传则每个事件日取该日 all_a 成员"),
+    ] = None,
+) -> None:
+    """把 pf_single_event_sue_1_mean_pos（标准化未预期盈利，方向 +1）写入 feature.value。
+    事件驱动稀疏因子：只在业绩公告（预告/快报/正式财报）事件日对域内股票落行，缺失不补 0。
+    可见截止统一用 declare_date（财报入库及时，2026-11-26 裁定）。
+    """
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    code_tuple = (
+        None if codes is None else tuple(part.strip() for part in codes.split(",") if part.strip())
+    )
+    try:
+        row_count, digest = materialize_event_sue(
             settings=settings,
             paths=paths,
             start=datetime.strptime(start.strip(), "%Y-%m-%d").date(),

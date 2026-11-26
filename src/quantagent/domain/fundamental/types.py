@@ -57,3 +57,40 @@ class EarningsAdjustRecord:
     entry_dt: date
     report_year: int | None
     np_adjust_rate: Decimal | None
+
+
+@dataclass(frozen=True, slots=True)
+class EarningsEventRecord:
+    """业绩公告事件候选行（业绩预告/快报/正式财报三源之一），只含事件因子需要的字段。
+
+    ``declare_dt`` 是公告日（源端 ``declare_date``，财报可见性裁定用它截止，grade A）。
+    ``profit`` 是当期归母净利润，已统一换算为万元（正式财报源 ``np_shareholder`` 为元，端口÷10000；
+    预告 ``np_floor``/快报 ``np`` 源端即为万元，实证比值恒 ≈1e4，见 event-factors-handoff.md）。
+    ``report_year`` 与 ``report_quarter`` 统一为 1001/1002/1003/1004（一/半/三/年报）；预告与快报源端
+    ``report_period`` 是 1-4，端口已乘 1000 加 1000 映射对齐（``period_dict``/``quarter_dict`` 双向映射）。
+    ``source`` 标记事件来源（forecast/express/income），用于多源去重的先到先得与 profit 取值分支复现。
+    """
+
+    asset_id: str
+    declare_dt: date
+    report_year: int
+    report_quarter: int
+    profit: Decimal | None
+    source: str  # "forecast" | "express" | "income"
+
+
+@dataclass(frozen=True, slots=True)
+class ProfitSeriesRecord:
+    """``fin_income_gen`` 历史归母净利润行，用于 event_sue 的过去 N 年利润序列重构。
+
+    只取 ``report_type in (1001,1003)``（合并期末/合并期末_调整，负责人 2026-11-26 提供字典）。
+    ``np_shareholder`` 单位为元（源端原始单位），**不**在端口换算——库函数复现旧代码 ÷10000 的时机，
+    保证 golden 对拍逐位一致。``report_quarter`` 是 1001-1004。``declare_dt`` 是可见截止列。
+    """
+
+    asset_id: str
+    report_year: int
+    report_quarter: int
+    report_type: int
+    declare_dt: date
+    np_shareholder: Decimal | None
