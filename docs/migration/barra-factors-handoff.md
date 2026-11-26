@@ -166,6 +166,44 @@ WHERE current_create_date BETWEEN start AND end AND stock_code IN (6位裸码)
   （AINDEXMEMBERSCITICS 是否已 ingest 待查；若无需新增）。
 然后实现 ERNQLT+SENTIMENT 验证模块。
 
+## 8.5 实施进度（2026-11-26）
+
+**已完成**：
+- ✅ 公共截面模块 `features/library/cross_section.py` 扩展（commit `ae7a22e`）：
+  `weighted_zscore`（复现 normalize，缺失填加权均值+未加权std ddof=0）、`industry_median_fill`、
+  `descriptor_pipeline`、`l3_integrate`。数值对照旧仓 pandas 最大差异 ~1e-16。11 单元测试全过。
+- ✅ 可行性核查：全部源表字段齐备（BALANCESHEET/INCOME/CASHFLOW/FINANCIALINDICATOR/
+  EODDERIVATIVEINDICATOR），中信行业成分 `AINDEXMEMBERSCITICS` 在 PG（30一级/114二级/312三级行业，
+  S_INFO_WINDCODE=行业指数CI005xxx.WI、S_CON_WINDCODE=成分股、INDATE/OUTDATE）。
+- ✅ 负责人裁定：`aindexmemberscitics` 行业成分沿用成分规则（S_CON_INDATE/OUTDATE 对 as_of 切片，
+  grade A）——**契约待补**（当前 visibility/ 无此 yaml）。
+
+**下一步（按序）**：
+1. 补 `contracts/visibility/src.wind.aindexmemberscitics.yaml`（成分规则）+ schemas 若缺。
+2. 财报时间序列 adapter：复现 RAW `fetch_financials`——按表/字段/ANN_DT<adj_date 截止、
+   STATEMENT_TYPE='408001000'（FINANCIALINDICATOR 除外）、REPORT_PERIOD 以0331/0630/0930/1231结尾过滤、
+   drop_duplicates(windcode,report_period,keep=last)、每股tail(count=21)、last_report_num 相对期号。
+   ERNQLT 需 BALANCESHEET(INCL_MIN_INT/OTHER_EQUITY_TOOLS/NON_CUR_LIAB/TOT_LIAB/TOT_ASSETS/TOT_SHR)、
+   FINANCIALINDICATOR(S_FA_INTERESTDEBT/S_STM_IS/S_FA_CAPITALIZEDTODA)、INCOME(TOT_OPER_REV/TOT_OPER_COST/
+   NET_PROFIT_EXCL_MIN_INT_INC)、CASHFLOW(NET_INCR_CASH_CASH_EQU/CASH_CASH_EQU_END_PERIOD/
+   NET_CASH_FLOWS_OPER_ACT/NET_CASH_FLOWS_INV_ACT)。
+3. `_add_quarter_col` 季度拆分（panel/domain 纯 python，项目不用pandas）：Q1=累计、非Q1=本期-上期、
+   is_last连续性校验(不连续field_Q=NaN)、折旧S_STM_IS/CAPITALIZED半年报年报插值
+   (last/last_month*this_month)。last_report_num透视+rolling(4).sum()做TTM。
+4. ERNQLT library(ABS/ACF纯函数)+panel(数据装配+descriptor合成)。
+5. 行业映射 adapter(fetch_industry_map: INDATE<=last_date AND (OUTDATE NULL OR >=last_date),
+   keep=last,缺失'Unknown')+市值cap adapter(S_DQ_MV)。
+6. SENTIMENT library(RR/ETOPFC/EPSFC)+panel。
+7. 全横截面golden(不能单股对拍，需全all_a重算比wx2整行，容差设计是难点——快照时差+股票池差异)。
+8. 物化+日更。
+
+**风格约束**：本项目 panel/library 现有文件均不用 pandas（坚持 dict/纯python），pandas虽是依赖。
+财报季度序列是逐股票时序操作（rolling逐股），跨股票仅在descriptor_process(已dict实现)，
+故纯python可行。rolling(4).sum()=近4期求和，**满4期才产值**（前3期NaN），**窗口内任一
+   NaN则结果为NaN**（pandas rolling 默认 min_periods=window，NaN传播）——即 TTM 严格4季完整才计算，
+   任一季缺失(折旧插值失败/is_last不连续)使 TTM 为NaN、descriptor为空，与“数据不足则descriptor为空”
+   裁定一致。纯python实现rolling_ttm时需严格复现此NaN传播语义。
+
 ## 9. 待查/风险
 
 - **AINDEXMEMBERSCITICS（中信行业成分）是否已 ingest 进 PG**——SENTIMENT/ERNQLT 的行业中性化依赖。
