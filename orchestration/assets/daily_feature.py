@@ -34,6 +34,14 @@ _INPUT_DEPS: dict[str, AssetsDefinition] = {
     "minute": src_eastmoney_minute,
 }
 
+# did_ratio 的财报血缘输入。它们是事件驱动、按 ANN_DT 截止，不参与行数就绪判定，
+# 但必须在 deps 里：日更应在财报采集之后跑，否则读到的还是昨天的财报。
+_DID_RATIO_FUNDAMENTAL_DEPS: tuple[AssetsDefinition, ...] = (
+    _WIND_BY_NAME["src_wind_asharedividend"],
+    _WIND_BY_NAME["src_wind_ashareincome"],
+    _WIND_BY_NAME["src_wind_asharefinancialindicator"],
+)
+
 # (资产名, feature_id, 输入)。输入决定 deps 与就绪判定，两处取值相同。
 # 凡按 all_a 取股票的因子，衍生指标表也是输入（all_a 成员由当日衍生指标代码决定）。
 _FEATURES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
@@ -102,6 +110,11 @@ _FEATURES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
         "pf_single_core_down_20_mean_neg_neut_pxret21",
         ("minute", "ashareeodprices", "ashareeodderivativeindicator"),
     ),
+    (
+        "feature_daily_did_ratio",
+        "pf_single_stock_did_ratio_did_ratio_realized_1_1_mean_pos",
+        ("ashareeodderivativeindicator",),
+    ),
 )
 
 
@@ -112,6 +125,9 @@ def _parse_day(value: str) -> date:
 
 def _feature_asset(name: str, feature_id: str, inputs: tuple[str, ...]) -> AssetsDefinition:
     deps = [std_trade_calendar, *(_INPUT_DEPS[item] for item in inputs)]
+    # did_ratio 额外依赖财报资产：血缘要求在财报采集之后跑，但不参与行数就绪判定。
+    if name == "feature_daily_did_ratio":
+        deps = [*deps, *_DID_RATIO_FUNDAMENTAL_DEPS]
 
     @asset(
         name=name,

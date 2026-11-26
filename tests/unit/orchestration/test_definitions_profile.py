@@ -36,6 +36,7 @@ _LAKE_ASSETS = frozenset(
         "feature_daily_corr_vrlaglarge",
         "feature_daily_core_up",
         "feature_daily_core_down",
+        "feature_daily_did_ratio",
     }
 )
 
