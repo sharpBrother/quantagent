@@ -143,6 +143,11 @@ _FEATURES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
         "pf_single_event_sue_1_mean_pos",
         ("ashareeodderivativeindicator",),
     ),
+    (
+        "feature_daily_event_aog",
+        "pf_single_event_aog_1_mean_pos",
+        ("ashareeodprices", "aindexeodprices", "ashareeodderivativeindicator"),
+    ),
 )
 
 
@@ -159,8 +164,8 @@ def _feature_asset(name: str, feature_id: str, inputs: tuple[str, ...]) -> Asset
     # nap_adj_ratio 额外依赖朝阳永续调整行采集资产，同理不参与行数就绪判定。
     if name == "feature_daily_nap_adj_ratio":
         deps = [*deps, *_NAP_ADJ_SUNTIME_DEPS]
-    # event_sue 额外依赖财报三源采集资产，同理不参与行数就绪判定。
-    if name == "feature_daily_event_sue":
+    # event_sue/event_aog 额外依赖财报三源采集资产，同理不参与行数就绪判定。
+    if name in ("feature_daily_event_sue", "feature_daily_event_aog"):
         deps = [*deps, *_EVENT_SUE_SUNTIME_DEPS]
 
     @asset(

@@ -47,6 +47,12 @@ _FUNDAMENTAL_LINEAGE = {
         "src_suntime_fin_performance_express",
         "src_suntime_fin_income_gen",
     },
+    # event_aog 同依赖财报三源采集资产（事件候选同源）。
+    "pf_single_event_aog_1_mean_pos": {
+        "src_suntime_fin_performance_forecast",
+        "src_suntime_fin_performance_express",
+        "src_suntime_fin_income_gen",
+    },
 }
 
 

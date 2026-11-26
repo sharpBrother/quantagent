@@ -17,6 +17,7 @@ from quantagent.adapters.lake.trade_calendar import LakeCalendarRepository
 from quantagent.adapters.postgres.readiness import PostgresSourceReadinessRepository
 from quantagent.cli.cutamp_materialize import materialize_cutamp
 from quantagent.cli.did_ratio_materialize import materialize_did_ratio
+from quantagent.cli.event_aog_materialize import materialize_event_aog
 from quantagent.cli.event_sue_materialize import materialize_event_sue
 from quantagent.cli.forward_return_materialize import materialize_forward_return_cli
 from quantagent.cli.mif_materialize import materialize_mif
@@ -40,7 +41,12 @@ from quantagent.domain.incremental import (
     plan_window,
 )
 from quantagent.domain.ports.readiness import DailySource
-from quantagent.features.library.fundamental import did_ratio, event_sue, nap_adj_ratio
+from quantagent.features.library.fundamental import (
+    did_ratio,
+    event_aog,
+    event_sue,
+    nap_adj_ratio,
+)
 from quantagent.features.library.minute.batch_2b import PARAM_HASHES as MINUTE_2B_PARAM_HASHES
 from quantagent.features.library.minute.five_day import DEFINITION_VERSION as MINUTE_VERSION
 from quantagent.features.library.minute.five_day import SPECS as MINUTE_SPECS
@@ -85,6 +91,7 @@ Materializer = Literal[
     "did_ratio",
     "nap_adj_ratio",
     "event_sue",
+    "event_aog",
 ]
 
 _DAILY_SOURCES: frozenset[str] = frozenset(get_args(DailySource))
@@ -173,6 +180,15 @@ def _feature_increments() -> tuple[FeatureIncrement, ...]:
             event_sue.PARAM_HASH,
             "event_sue",
             (DERIVATIVE,),
+        ),
+        # event_aog 需要行情就绪（个股+中证500夜盘涨幅）与 all_a 域（衍生指标）。
+        # 财报三源同为事件驱动不作就绪输入。event_dt=open_date，open_date 行情当晚可见。
+        FeatureIncrement(
+            event_aog.FEATURE_ID,
+            event_aog.DEFINITION_VERSION,
+            event_aog.PARAM_HASH,
+            "event_aog",
+            (PRICE, INDEX, DERIVATIVE),
         ),
     ]
     items.extend(
@@ -372,6 +388,7 @@ def _materialize_feature(
         # nap_adj_ratio/event_sue 返回 (行数, digest) 二元组，签名与三因子一致，可同表分发。
         "nap_adj_ratio": materialize_nap_adj_ratio,
         "event_sue": materialize_event_sue,
+        "event_aog": materialize_event_aog,
     }
     if kind in single:
         return single[kind](

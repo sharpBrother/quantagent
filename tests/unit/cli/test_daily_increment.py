@@ -312,13 +312,13 @@ def test_written_run_persists_run_log_with_rows_and_digest(
 
 
 @pytest.mark.unit
-def test_registry_has_sixteen_distinct_factor_identities() -> None:
+def test_registry_has_seventeen_distinct_factor_identities() -> None:
     ids = [item.feature_id for item in d.FEATURE_INCREMENTS]
     identities = {
         (item.feature_id, item.definition_version, item.param_hash) for item in d.FEATURE_INCREMENTS
     }
-    assert len(ids) == len(set(ids)) == 16
-    assert len(identities) == 16
+    assert len(ids) == len(set(ids)) == 17
+    assert len(identities) == 17
     kinds = {item.feature_id: item.materializer for item in d.FEATURE_INCREMENTS}
     assert kinds["pf_single_abso_umr_1_mean_pos"] == "moneyflow"
     assert kinds["pf_single_core_up_20_mean_pos_neut_pxret21"] == "minute_2b"
@@ -334,6 +334,10 @@ def test_registry_has_sixteen_distinct_factor_identities() -> None:
     sue = next(item for item in d.FEATURE_INCREMENTS if item.materializer == "event_sue")
     assert sue.feature_id == "pf_single_event_sue_1_mean_pos"
     assert sue.inputs == ("ashareeodderivativeindicator",)
+    # event_aog 需行情（个股+中证500夜盘涨幅）与 all_a 域就绪；财报三源事件驱动不参与。
+    aog = next(item for item in d.FEATURE_INCREMENTS if item.materializer == "event_aog")
+    assert aog.feature_id == "pf_single_event_aog_1_mean_pos"
+    assert aog.inputs == ("ashareeodprices", "aindexeodprices", "ashareeodderivativeindicator")
 
 
 @pytest.mark.unit
