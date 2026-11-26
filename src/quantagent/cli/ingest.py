@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime
 from pathlib import Path  # noqa: TC003 - Typer 在运行时解析类型
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated, cast
 
 import typer
 
@@ -25,13 +25,11 @@ from quantagent.ingest.errors import IngestError
 from quantagent.ingest.jobs.jin10_ism_details import ingest_jin10_ism_details
 from quantagent.ingest.jobs.jin10_ism_legacy import ingest_jin10_ism_legacy
 from quantagent.ingest.jobs.jydb_paged import DEFAULT_PAGE_SIZE as JYDB_DEFAULT_PAGE_SIZE
-from quantagent.ingest.jobs.jydb_paged import ingest_jydb_paged
 from quantagent.ingest.jobs.macro_fred import ingest_macro_fred
 from quantagent.ingest.jobs.macro_gpr import ingest_macro_gpr
 from quantagent.ingest.jobs.macro_wgc_html import ingest_wgc_html
 from quantagent.ingest.jobs.macro_wgc_legacy import ingest_wgc_legacy
 from quantagent.ingest.jobs.suntime_paged import DEFAULT_PAGE_SIZE as SUNTIME_DEFAULT_PAGE_SIZE
-from quantagent.ingest.jobs.suntime_paged import ingest_suntime_paged
 from quantagent.ingest.jobs.trade_cal import ingest_tushare_trade_cal
 from quantagent.ingest.jobs.tushare_shibor import ingest_tushare_shibor
 from quantagent.ingest.jobs.tushare_us_treasury_yield import ingest_tushare_us_treasury_yield
@@ -42,6 +40,12 @@ from quantagent.platform.config import get_settings
 from quantagent.platform.errors import ConfigError, RunLogError, WriteGateError
 from quantagent.platform.pg import connect
 from quantagent.platform.storage import detect_repo_root, resolve_var_paths
+
+if TYPE_CHECKING:
+    from quantagent.ingest.jobs.jydb_paged import JydbPagedIngestResult
+    from quantagent.ingest.jobs.suntime_paged import SuntimePagedIngestResult
+    from quantagent.platform.config.settings import Settings
+    from quantagent.platform.storage.paths import VarPaths
 
 ingest_app = typer.Typer(help="外部源采集到 PG 研究数据面。默认不写库。", no_args_is_help=True)
 tushare_app = typer.Typer(help="Tushare 源。", no_args_is_help=True)
@@ -104,11 +108,15 @@ def ingest_jydb(
         typer.Option("--from-cursor", help="可选 (JSID, ID) 游标 JSON；默认最新成功游标"),
     ] = None,
 ) -> None:
-    """从 JYDB 分页写入 src_jydb。<TABLE> 首次运行即全量回填，之后从游标增量。"""
+    """从 JYDB 分页写入 src_jydb。<TABLE> 首次运行即全量回填，之后从游标增量。
+
+    采集在看门狗保护的子进程里跑：手动 CLI 与 Dagster 日更走同一条链路，连接被
+    ToDesk 吞掉时一样会永不返回，不能只在调度侧防护。无新页超时即终止并报错。
+    """
     settings = get_settings()
     paths = resolve_var_paths(settings, repo_root=detect_repo_root())
     try:
-        result = ingest_jydb_paged(
+        result = _jydb_sync_watched(
             settings=settings,
             paths=paths,
             table=table,
@@ -153,11 +161,14 @@ def ingest_suntime(
         typer.Option("--from-cursor", help="可选 (tmstamp, id) 游标 JSON；默认最新成功游标"),
     ] = None,
 ) -> None:
-    """从 suntime_db 分页写入 src_suntime。<TABLE> 首次运行即全量回填，之后从游标增量。"""
+    """从 suntime_db 分页写入 src_suntime。<TABLE> 首次运行即全量回填，之后从游标增量。
+
+    与 jydb sync 同理由走看门狗子进程。
+    """
     settings = get_settings()
     paths = resolve_var_paths(settings, repo_root=detect_repo_root())
     try:
-        result = ingest_suntime_paged(
+        result = _suntime_sync_watched(
             settings=settings,
             paths=paths,
             table=table,
@@ -537,6 +548,76 @@ def ingest_jin10_ism_details_command(
     typer.echo(
         f"{mode} dataset=src.macro.jin10_economic_calendar rows={result.row_count} "
         f"dml={result.dml_count} digest={result.payload_digest}"
+    )
+
+
+def _jydb_sync_watched(
+    *,
+    settings: Settings,
+    paths: VarPaths,
+    table: str,
+    write_db: bool,
+    page_size: int,
+    max_pages: int | None,
+    from_cursor: str | None,
+) -> JydbPagedIngestResult:
+    """在看门狗保护的子进程里跑 jydb 采集，返回 ``JydbPagedIngestResult``。
+
+    与 Dagster 日更同一套防护：无新页超时即终止子进程并抛 ``IngestStalledError``。
+    """
+    # CLI 各命令共享本模块；函数体内导入让 --help 与单条命令启动不拉起看门狗与业务依赖。
+    from quantagent.ingest.sync_child import jydb_sync_child  # noqa: PLC0415
+    from quantagent.ingest.watchdog import run_watched_child  # noqa: PLC0415
+
+    return cast(
+        "JydbPagedIngestResult",
+        run_watched_child(
+            table=table,
+            progress_dir=paths.logs / "jydb_ingest_progress",
+            child_target=jydb_sync_child,
+            child_kwargs={
+                "settings": settings,
+                "paths": paths,
+                "table": table,
+                "write_db": write_db,
+                "page_size": page_size,
+                "max_pages": max_pages,
+                "from_cursor": from_cursor,
+            },
+        ),
+    )
+
+
+def _suntime_sync_watched(
+    *,
+    settings: Settings,
+    paths: VarPaths,
+    table: str,
+    write_db: bool,
+    page_size: int,
+    max_pages: int | None,
+    from_cursor: str | None,
+) -> SuntimePagedIngestResult:
+    """与 ``_jydb_sync_watched`` 同理，朝阳永续版本。"""
+    from quantagent.ingest.sync_child import suntime_sync_child  # noqa: PLC0415
+    from quantagent.ingest.watchdog import run_watched_child  # noqa: PLC0415
+
+    return cast(
+        "SuntimePagedIngestResult",
+        run_watched_child(
+            table=table,
+            progress_dir=paths.logs / "suntime_ingest_progress",
+            child_target=suntime_sync_child,
+            child_kwargs={
+                "settings": settings,
+                "paths": paths,
+                "table": table,
+                "write_db": write_db,
+                "page_size": page_size,
+                "max_pages": max_pages,
+                "from_cursor": from_cursor,
+            },
+        ),
     )
 
 

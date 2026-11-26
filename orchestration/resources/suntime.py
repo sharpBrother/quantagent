@@ -46,12 +46,14 @@ class SuntimeIngestResource:
         write_db: bool,
         page_size: int,
         max_pages: int | None,
+        from_cursor: str | None = None,
     ) -> SuntimePagedIngestResult:
         return self._run_watched(
             table,
             write_db=write_db,
             page_size=page_size,
             max_pages=max_pages,
+            from_cursor=from_cursor,
         )
 
     def _run_watched(
@@ -61,6 +63,7 @@ class SuntimeIngestResource:
         write_db: bool,
         page_size: int,
         max_pages: int | None,
+        from_cursor: str | None = None,
         child_target: Callable[..., None] | None = None,
         poll_seconds: float = POLL_SECONDS,
         term_grace_seconds: float = TERM_GRACE_SECONDS,
@@ -74,6 +77,7 @@ class SuntimeIngestResource:
             "write_db": write_db,
             "page_size": page_size,
             "max_pages": max_pages,
+            "from_cursor": from_cursor,
         }
         return cast(
             "SuntimePagedIngestResult",
@@ -99,6 +103,7 @@ def _suntime_child(
     max_pages: int | None,
     progress_path: Path,
     conn: Connection,
+    from_cursor: str | None = None,
 ) -> None:
     """子进程入口。必须是模块顶层函数，spawn 方式才能按名字导入它。"""
     from quantagent.ingest.jobs.suntime_paged import ingest_suntime_paged
@@ -114,6 +119,7 @@ def _suntime_child(
             write_db=write_db,
             page_size=page_size,
             max_pages=max_pages,
+            from_cursor=from_cursor,
             on_page=progress,
         )
     except Exception as exc:
