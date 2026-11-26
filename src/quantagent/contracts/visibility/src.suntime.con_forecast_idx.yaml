@@ -1,0 +1,12 @@
+dataset: src.suntime.con_forecast_idx
+doc_ref: docs/migration/suntime-ingest-plan.md
+temporal_kind: snapshot
+visibility:
+  rule: source_field
+  field: con_date
+  grade: A
+  rationale: >
+    指数一致预期是 con_date 当天的快照，当天收盘后可见，con_date <= as_of。
+    2022 年以前的快照是供应商事后回补的；源端会改写历史行，数值为当前版本。
+    见 docs/adr/2026-11-24-suntime-visibility.md。
+pit_recoverable: true

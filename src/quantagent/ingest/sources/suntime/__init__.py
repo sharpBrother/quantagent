@@ -1,4 +1,1 @@
-"""quantagent/ingest/sources/suntime
-
-骨架占位。职责定义见 docs/architecture/layers/。
-"""
+"""朝阳永续源镜像采集。连接、游标与分页只读源库，不写入。"""

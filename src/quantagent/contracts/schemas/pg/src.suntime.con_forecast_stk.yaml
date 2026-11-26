@@ -1,0 +1,144 @@
+dataset: src.suntime.con_forecast_stk
+layer: pg
+doc_ref: docs/migration/suntime-ingest-plan.md
+temporal_kind: snapshot
+keys:
+  - id
+reads: []
+columns:
+  id:
+    dtype: int64
+    nullable: false
+    description: 朝阳永续源表主键
+  stock_code:
+    dtype: string
+    nullable: true
+    description: 股票代码
+  stock_name:
+    dtype: string
+    nullable: true
+    description: 股票名称
+  con_date:
+    dtype: datetime
+    nullable: true
+    description: 一致预期快照日；带时刻，PIT 可见日按日期比较，当天收盘后可见
+  con_year:
+    dtype: int64
+    nullable: true
+    description: 预测年度
+  con_or:
+    dtype: float64
+    nullable: true
+    description: 一致预期营业收入
+  con_or_type:
+    dtype: int64
+    nullable: true
+    description: 营业收入预测类型
+  con_or_hisdate:
+    dtype: datetime
+    nullable: true
+    description: 营业收入历史截止日
+  con_np:
+    dtype: float64
+    nullable: true
+    description: 一致预期净利润
+  con_np_type:
+    dtype: int64
+    nullable: true
+    description: 净利润预测类型；0 为最近一期年报实际值
+  con_np_hisdate:
+    dtype: datetime
+    nullable: true
+    description: 净利润历史截止日
+  con_eps:
+    dtype: float64
+    nullable: true
+    description: 一致预期每股收益
+  con_eps_type:
+    dtype: int64
+    nullable: true
+    description: 每股收益预测类型
+  con_eps_hisdate:
+    dtype: datetime
+    nullable: true
+    description: 每股收益历史截止日
+  con_na:
+    dtype: float64
+    nullable: true
+    description: 一致预期净资产
+  con_pb:
+    dtype: float64
+    nullable: true
+    description: 一致预期市净率
+  con_ps:
+    dtype: float64
+    nullable: true
+    description: 一致预期市销率
+  con_pe:
+    dtype: float64
+    nullable: true
+    description: 一致预期市盈率
+  con_peg:
+    dtype: float64
+    nullable: true
+    description: 一致预期 PEG
+  con_roe:
+    dtype: float64
+    nullable: true
+    description: 一致预期净资产收益率
+  con_or_yoy:
+    dtype: float64
+    nullable: true
+    description: 一致预期营业收入同比
+  con_np_yoy:
+    dtype: float64
+    nullable: true
+    description: 一致预期净利润同比
+  con_npcgrate_2y:
+    dtype: float64
+    nullable: true
+    description: 一致预期净利润两年复合增长率
+  con_npgrate_1w:
+    dtype: float64
+    nullable: true
+    description: 一致预期净利润一周变化率
+  con_npgrate_4w:
+    dtype: float64
+    nullable: true
+    description: 一致预期净利润四周变化率
+  con_npgrate_13w:
+    dtype: float64
+    nullable: true
+    description: 一致预期净利润十三周变化率
+  con_npgrate_26w:
+    dtype: float64
+    nullable: true
+    description: 一致预期净利润二十六周变化率
+  con_npgrate_52w:
+    dtype: float64
+    nullable: true
+    description: 一致预期净利润五十二周变化率
+  entrytime:
+    dtype: datetime
+    nullable: true
+    description: 源端入库时间；系统列，不参与业务修订判断
+  updatetime:
+    dtype: datetime
+    nullable: true
+    description: 源端更新时间；系统列，不参与业务修订判断
+  tmstamp:
+    dtype: int64
+    nullable: true
+    description: 源端同步序列；分页游标组成部分，不参与业务修订判断
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间，不是 PIT 依据
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 主键与业务列的内容指纹

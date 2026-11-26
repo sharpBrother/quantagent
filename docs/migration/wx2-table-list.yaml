@@ -6,8 +6,8 @@ row_count_note: 本机未连 SQL Server wx2，行数一律未查
 pit_note: 本清单不定版 visibility / 不写 PIT YAML，须负责人逐表确认后再配
 migrate_note: 清单为评审基线，不启动迁入；拟改名/改 schema 的表先改 DDL 再迁
 counts:
-  total: 373
-  c1: 90
+  total: 375
+  c1: 92
   c2: 73
   c3: 0
   c4: 26
@@ -332,6 +332,28 @@ tables:
   extra: 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问
   src_batch1: true
   origin: dictionary_manifest
+  pit_required: true
+- name: con_forecast_idx
+  folder: suntime
+  nature: vendor
+  row_count: 未查
+  category: 1
+  reason: wx2 无此表。2026-11-24 源库核对后由负责人裁定为 P0：指数一致预期，研究线宽基直接读
+  dest: src_suntime.con_forecast_idx（第一批已收录）
+  extra: 源库 511,532 行、27 个指数；不含中证红利 000922。visibility 已配 source_field con_date / A，2022 年以前为供应商回补
+  src_batch1: true
+  origin: code
+  pit_required: true
+- name: con_forecast_roll_idx
+  folder: suntime
+  nature: vendor
+  row_count: 未查
+  category: 1
+  reason: wx2 无此表。2026-11-24 源库核对后由负责人裁定为 P0：指数滚动一致预期，研究线主用
+  dest: src_suntime.con_forecast_roll_idx（第一批已收录）
+  extra: 源库 127,883 行，覆盖与入库特征同 con_forecast_idx。visibility 已配 source_field con_date / A，2022 年以前为供应商回补
+  src_batch1: true
+  origin: code
   pit_required: true
 - name: con_forecast_stk
   folder: suntime
@@ -3797,7 +3819,6 @@ tables:
   src_batch1: true
   pit_required: false
   origin: code
-  pit_required: false
 - name: AINDEXFINANCIALDERIVATIVE
   folder: wind
   nature: vendor

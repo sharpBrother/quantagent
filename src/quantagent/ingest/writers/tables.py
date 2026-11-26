@@ -24,6 +24,7 @@ from quantagent.adapters.postgres.src_targets import (
     JIN10_ECONOMIC_CALENDAR,
     JYDB_SPECS,
     SHIBOR,
+    SUNTIME_SPECS,
     TRADE_CAL,
     US_TREASURY_YIELD,
     WGC_GOLD_DEMAND,
@@ -52,6 +53,7 @@ ALLOWED_SRC_WRITE_TARGETS: dict[str, SrcTableWriteSpec] = {
     **{spec.dataset: spec for spec in BOND_FX_WIND_SPECS.values()},
     **{spec.dataset: spec for spec in INDEX_DESCRIPTION_WIND_SPECS.values()},
     **{spec.dataset: spec for spec in JYDB_SPECS.values()},
+    **{spec.dataset: spec for spec in SUNTIME_SPECS.values()},
 }
 
 # 旁表只允许写入器按批次协议 INSERT，不能当业务目标表；其余 tushare 表本

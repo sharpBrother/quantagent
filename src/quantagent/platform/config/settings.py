@@ -58,6 +58,16 @@ class Settings(BaseSettings):
     jydb_mssql_password: SecretStr = SecretStr("")
     jydb_mssql_tds_version: str = "7.0"
 
+    # 朝阳永续 suntime_db 只读源。旧仓配置节 [zyyx]，与 Wind、聚源不是同一台。
+    # 2026-11-24 核对：charset=utf8 直接读出正确中文，不需要再解码。
+    suntime_mssql_host: str = ""
+    suntime_mssql_port: int = Field(default=1433, ge=1, le=65535)
+    suntime_mssql_database: str = ""
+    suntime_mssql_user: str = ""
+    suntime_mssql_password: SecretStr = SecretStr("")
+    suntime_mssql_tds_version: str = "7.0"
+    suntime_mssql_charset: str = "utf8"
+
     # 迁移期只读 wx2。读旧仓 get_daily_prices 的同一张表，不写入。
     legacy_mssql_host: str = ""
     legacy_mssql_port: int = Field(default=1433, ge=1, le=65535)
@@ -95,6 +105,12 @@ class Settings(BaseSettings):
     @property
     def jydb_mssql_configured(self) -> bool:
         return bool(self.jydb_mssql_host and self.jydb_mssql_user and self.jydb_mssql_database)
+
+    @property
+    def suntime_mssql_configured(self) -> bool:
+        return bool(
+            self.suntime_mssql_host and self.suntime_mssql_user and self.suntime_mssql_database
+        )
 
     @property
     def legacy_mssql_configured(self) -> bool:

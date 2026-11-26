@@ -30,6 +30,8 @@ from quantagent.ingest.jobs.macro_fred import ingest_macro_fred
 from quantagent.ingest.jobs.macro_gpr import ingest_macro_gpr
 from quantagent.ingest.jobs.macro_wgc_html import ingest_wgc_html
 from quantagent.ingest.jobs.macro_wgc_legacy import ingest_wgc_legacy
+from quantagent.ingest.jobs.suntime_paged import DEFAULT_PAGE_SIZE as SUNTIME_DEFAULT_PAGE_SIZE
+from quantagent.ingest.jobs.suntime_paged import ingest_suntime_paged
 from quantagent.ingest.jobs.trade_cal import ingest_tushare_trade_cal
 from quantagent.ingest.jobs.tushare_shibor import ingest_tushare_shibor
 from quantagent.ingest.jobs.tushare_us_treasury_yield import ingest_tushare_us_treasury_yield
@@ -45,10 +47,12 @@ ingest_app = typer.Typer(help="外部源采集到 PG 研究数据面。默认不
 tushare_app = typer.Typer(help="Tushare 源。", no_args_is_help=True)
 wind_app = typer.Typer(help="Wind wind_db 源。历史回填与日更共用。", no_args_is_help=True)
 jydb_app = typer.Typer(help="聚源 JYDB 源。首次回填与增量共用。", no_args_is_help=True)
+suntime_app = typer.Typer(help="朝阳永续源。首次回填与增量共用。", no_args_is_help=True)
 macro_app = typer.Typer(help="宏观公开数据源。", no_args_is_help=True)
 ingest_app.add_typer(tushare_app, name="tushare")
 ingest_app.add_typer(wind_app, name="wind")
 ingest_app.add_typer(jydb_app, name="jydb")
+ingest_app.add_typer(suntime_app, name="suntime")
 ingest_app.add_typer(macro_app, name="macro")
 ingest_app.add_typer(minprice_app, name="minprice")
 
@@ -105,6 +109,55 @@ def ingest_jydb(
     paths = resolve_var_paths(settings, repo_root=detect_repo_root())
     try:
         result = ingest_jydb_paged(
+            settings=settings,
+            paths=paths,
+            table=table,
+            write_db=write_db,
+            page_size=page_size,
+            max_pages=max_pages,
+            from_cursor=from_cursor,
+        )
+    except (
+        IngestError,
+        WriteGateError,
+        ConfigError,
+        RunLogError,
+        ForbiddenSqlError,
+        TransactionUnknownError,
+        PostgresAdapterError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    mode = "wrote" if result.written else "dry-run"
+    typer.echo(
+        f"{mode} dataset={result.dataset} pages={result.pages} rows={result.row_count} "
+        f"inserted={result.inserted} replaced={result.replaced} skipped={result.skipped} "
+        f"metadata_skipped={result.metadata_skipped} dml={result.dml_count} "
+        f"batches={len(result.batch_ids)} cursor={result.source_cursor} "
+        f"digest={result.payload_digest}"
+    )
+
+
+@suntime_app.command("sync")
+def ingest_suntime(
+    table: Annotated[str, typer.Argument(help="朝阳永续表名，必须是 SUNTIME_SPECS 白名单")],
+    write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
+    page_size: Annotated[
+        int, typer.Option("--page-size", help="每页行数")
+    ] = SUNTIME_DEFAULT_PAGE_SIZE,
+    max_pages: Annotated[
+        int | None, typer.Option("--max-pages", help="最多扫描页数；默认干跑一页、真写全量")
+    ] = None,
+    from_cursor: Annotated[
+        str | None,
+        typer.Option("--from-cursor", help="可选 (tmstamp, id) 游标 JSON；默认最新成功游标"),
+    ] = None,
+) -> None:
+    """从 suntime_db 分页写入 src_suntime。<TABLE> 首次运行即全量回填，之后从游标增量。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    try:
+        result = ingest_suntime_paged(
             settings=settings,
             paths=paths,
             table=table,

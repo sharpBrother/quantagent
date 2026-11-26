@@ -2,7 +2,7 @@
 title: PIT 规则体系
 status: active
 created: 2026-09-16
-updated: 2026-11-23
+updated: 2026-11-24
 applies_to:
   - src/quantagent/contracts/visibility/
   - src/quantagent/domain/pit/
@@ -66,7 +66,7 @@ YAML**，也**不得作为 PIT 查询的数据集**（fail-closed 仍然成立�
 |---|---|---|
 | 交易所日频（价 / 衍生 / 指数 / 行业指数 / 资金流 / 两融汇总） | `TRADE_DT` 点查或闭区间，调用方保证 `end<=as_of` | `same_day_close`，`event_field=TRADE_DT`，grade A |
 | 国债指数 / 黄金现货 | `TradingDay` / `TradeDate` 闭区间 | 同上，`same_day_close` |
-| 朝阳一致预期 `con_forecast_stk` / `con_forecast_roll_stk` / `con_forecast_idx` / `con_forecast_roll_idx` / `der_diver_stk` | `con_date` 落在查询区间（`con_date <= trade_date`，收盘后观察日） | `source_field` `field=con_date`，grade A；2018 年以前为供应商回补，写进 rationale（[ADR](../adr/2026-11-24-suntime-visibility.md)）。`con_forecast_stk_ttm` 是旧仓派生表，不作源镜像 |
+| 朝阳一致预期 `con_forecast_stk` / `con_forecast_roll_stk` / `con_forecast_idx` / `con_forecast_roll_idx` / `der_diver_stk` | `con_date` 落在查询区间（`con_date <= trade_date`，收盘后观察日） | `source_field` `field=con_date`，grade A。个股表 2018 年以前、指数表 2022 年以前为供应商回补，写进 rationale（[ADR](../adr/2026-11-24-suntime-visibility.md)）。`con_forecast_stk_ttm` 是旧仓派生表，不作源镜像 |
 | 盈利预测调整 `rpt_earnings_adjust` | `current_create_date` | 2026-11-24：入库常晚于研报日，**暂不写契约**，研究侧要用时再定（[ADR](../adr/2026-11-24-suntime-visibility.md)） |
 | Wind 财报 / 财务指标 | `ANN_DT <= as_of`；空公告不可见；同报告期留最后一次 | `source_field` `field=ANN_DT`，**不加**法定披露日 fallback。调仓日当天公告可见 |
 | 业绩预告/快报/朝阳利润 `fin_*` | `declare_date` | `source_field` `field=declare_date` |

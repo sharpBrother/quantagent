@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from quantagent.adapters.postgres import jydb_columns as _jydb
+from quantagent.adapters.postgres import suntime_columns as _suntime
 from quantagent.adapters.postgres import wind_bond_fx_columns as _bond_fx
 from quantagent.adapters.postgres import wind_first_batch_columns as _first_batch
 from quantagent.adapters.postgres import wind_index_description_columns as _index_description
@@ -96,6 +97,18 @@ JYDB_SPECS: dict[str, SrcTableWriteSpec] = {
 # 朝阳永续 P0/P1。主键一律是源端 id；分页游标是 (tmstamp, id)，
 # 所以 tmstamp 属于游标而不是业务列。entrytime、updatetime 是源端同步时间，
 # 变化不算业务修订。rpt_earnings_adjust 只建镜像，不写可见性契约。
+SUNTIME_SPECS: dict[str, SrcTableWriteSpec] = {
+    name: SrcTableWriteSpec(
+        dataset=f"src.suntime.{name}",
+        pg_schema="src_suntime",
+        pg_table=name,
+        native_columns=getattr(_suntime, f"{name}_COLUMNS"),
+        keys=("id",),
+        system_columns=("entrytime", "updatetime", "tmstamp"),
+    )
+    for name in _suntime.SUNTIME_SYNC
+}
+
 TRADE_CAL = SrcTableWriteSpec(
     dataset="src.tushare.trade_cal",
     pg_schema="src_tushare",

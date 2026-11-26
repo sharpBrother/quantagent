@@ -119,6 +119,10 @@ tables:
   - source: suntime
     name: con_forecast_roll_stk
   - source: suntime
+    name: con_forecast_idx
+  - source: suntime
+    name: con_forecast_roll_idx
+  - source: suntime
     name: rpt_earnings_adjust
   - source: suntime
     name: con_forecast_stk_ttm

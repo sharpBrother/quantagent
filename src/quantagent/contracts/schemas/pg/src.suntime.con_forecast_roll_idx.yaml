@@ -1,0 +1,96 @@
+dataset: src.suntime.con_forecast_roll_idx
+layer: pg
+doc_ref: docs/migration/suntime-ingest-plan.md
+temporal_kind: snapshot
+keys:
+  - id
+reads: []
+columns:
+  id:
+    dtype: int64
+    nullable: false
+    description: 朝阳永续源表主键
+  index_code:
+    dtype: string
+    nullable: true
+    description: 指数代码
+  index_name:
+    dtype: string
+    nullable: true
+    description: 指数名称
+  con_date:
+    dtype: date
+    nullable: true
+    description: 指数滚动一致预期快照日；当天收盘后可见
+  con_or_roll:
+    dtype: float64
+    nullable: true
+    description: 滚动一致预期营业收入
+  con_np_roll:
+    dtype: float64
+    nullable: true
+    description: 滚动一致预期净利润
+  con_eps_roll:
+    dtype: float64
+    nullable: true
+    description: 滚动一致预期每股收益
+  con_na_roll:
+    dtype: float64
+    nullable: true
+    description: 滚动一致预期净资产
+  con_pb_roll:
+    dtype: float64
+    nullable: true
+    description: 滚动一致预期市净率
+  con_ps_roll:
+    dtype: float64
+    nullable: true
+    description: 滚动一致预期市销率
+  con_pe_roll:
+    dtype: float64
+    nullable: true
+    description: 滚动一致预期市盈率
+  con_peg_roll:
+    dtype: float64
+    nullable: true
+    description: 滚动一致预期 PEG
+  con_roe_roll:
+    dtype: float64
+    nullable: true
+    description: 滚动一致预期净资产收益率
+  con_npcgrate_2y_roll:
+    dtype: float64
+    nullable: true
+    description: 滚动一致预期净利润两年复合增长率
+  con_or_yoy_roll:
+    dtype: float64
+    nullable: true
+    description: 滚动一致预期营业收入同比
+  con_np_yoy_roll:
+    dtype: float64
+    nullable: true
+    description: 滚动一致预期净利润同比
+  entrytime:
+    dtype: datetime
+    nullable: true
+    description: 源端入库时间；系统列，不参与业务修订判断
+  updatetime:
+    dtype: datetime
+    nullable: true
+    description: 源端更新时间；系统列，不参与业务修订判断
+  tmstamp:
+    dtype: int64
+    nullable: true
+    description: 源端同步序列；分页游标组成部分，不参与业务修订判断
+  _batch_id:
+    dtype: int64
+    nullable: false
+    description: 采集批次
+  _ingested_at:
+    dtype: datetime
+    nullable: false
+    description: 本系统采集时间，不是 PIT 依据
+  _row_hash:
+    dtype: string
+    nullable: false
+    description: 主键与业务列的内容指纹

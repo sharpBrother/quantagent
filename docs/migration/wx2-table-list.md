@@ -106,15 +106,15 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 
 | 类别 | 张数 |
 |---|---:|
-| 1 源镜像 | 90 |
+| 1 源镜像 | 92 |
 | 2 可重算 | 73 |
 | 3 遗产冻结 | 0 |
 | 4 运维改造 | 26 |
 | 5 无消费者 | 184 |
-| 合计 | 373 |
+| 合计 | 375 |
 | 其中无需 PIT | 26 |
 
-第一批 `db/src_tables.yaml` 的 62 张仍全部落在类别 1。2026-11-22 新增 `AINDEXMEMBERSCITICSZL`（0025，中信一级成员 canonical 表）。2026-11-19 新增 `AINDEXDESCRIPTION`、`AINDEXDESCRIPTIONZL` 两张，`AINDEXINDUSTRIESCITICS` 改为视图（0020）。Tushare 宏观三张与
+第一批 `db/src_tables.yaml` 的 64 张仍全部落在类别 1。2026-11-24 新增 `con_forecast_idx`、`con_forecast_roll_idx`（源库有、wx2 没有，负责人裁定为 P0）。2026-11-22 新增 `AINDEXMEMBERSCITICSZL`（0025，中信一级成员 canonical 表）。2026-11-19 新增 `AINDEXDESCRIPTION`、`AINDEXDESCRIPTIONZL` 两张，`AINDEXINDUSTRIESCITICS` 改为视图（0020）。Tushare 宏观三张与
 `FIN_APPO_RELE_DATE` 已按拟去向回写 DDL；其余拟去向（如 `fin_*`、`etf_min_price`）仍未改。
 类别 3 本轮为 0：历史策略结果表（`strategy_result_*` 等）现役无读取，已归入类别 5。
 
@@ -150,6 +150,8 @@ visibility 只管观测何时可知。下列表只做代码/身份 join，**不�
 | `macro_wgc_gold_demand` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：core/market_data_service.py | src_macro.macro_wgc_gold_demand（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `con_forecast_citic` | 未查 | 1 源镜像 | 是 | src-plane 点名弱引用（data/test_task.py 等），第二批再评估 | src_suntime.con_forecast_citic（第二批评估，现不迁） | visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `con_forecast_roll_stk` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/data_gateway.py, alpha_factory/etf/gateway.py, agent_style_rotation/expectation_engine.py 等5处 | src_suntime.con_forecast_roll_stk（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
+| `con_forecast_idx` | 未查 | 1 源镜像 | 是 | wx2 无此表。2026-11-24 源库核对后由负责人裁定为 P0：指数一致预期，研究线宽基直接读 | src_suntime.con_forecast_idx（第一批已收录） | 源库 511,532 行、27 个指数；不含中证红利 000922。visibility 已配 source_field con_date / A，2022 年以前为供应商回补 |
+| `con_forecast_roll_idx` | 未查 | 1 源镜像 | 是 | wx2 无此表。2026-11-24 源库核对后由负责人裁定为 P0：指数滚动一致预期，研究线主用 | src_suntime.con_forecast_roll_idx（第一批已收录） | 源库 127,883 行，覆盖与入库特征同 con_forecast_idx。visibility 已配 source_field con_date / A，2022 年以前为供应商回补 |
 | `con_forecast_stk` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/consensus_fttm_wide_builder.py, agent_style_rotation/data_gateway.py, alpha_factory/etf/gateway.py 等12处 | src_suntime.con_forecast_stk（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `con_forecast_stk_ttm` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：agent_style_rotation/consensus_fttm_wide_builder.py, agent_style_rotation/data_gateway.py, data/宽基指数配置策略2.py | src_suntime.con_forecast_stk_ttm（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |
 | `der_diver_stk` | 未查 | 1 源镜像 | 是 | 第一批 src_tables.yaml；现役：core/raw_loader.py, enhanced_optimizer/factors/exposure.py | src_suntime.der_diver_stk（第一批已收录，本清单不启动迁入） | 存量 pit_recoverable:false。visibility 从旧仓下游取数反推；缺证据或冲突再问 |

@@ -1,0 +1,147 @@
+"""朝阳永续 P0/P1 源表采集列。
+
+列与源端 ``INFORMATION_SCHEMA.COLUMNS`` 在 2026-11-24 核对一致，顺序保持
+``ordinal_position``。技术列 ``_batch_id`` / ``_ingested_at`` / ``_row_hash``
+不在这里，由写入器追加。
+
+``con_forecast_stk_ttm`` 是旧仓派生表，不同步，不进本清单。
+"""
+
+from __future__ import annotations
+
+SUNTIME_SYNC: tuple[str, ...] = (
+    "con_forecast_roll_idx",
+    "con_forecast_idx",
+    "rpt_earnings_adjust",
+    "con_forecast_roll_stk",
+    "con_forecast_stk",
+)
+
+con_forecast_stk_COLUMNS: tuple[str, ...] = (
+    "id",
+    "stock_code",
+    "stock_name",
+    "con_date",
+    "con_year",
+    "con_or",
+    "con_or_type",
+    "con_or_hisdate",
+    "con_np",
+    "con_np_type",
+    "con_np_hisdate",
+    "con_eps",
+    "con_eps_type",
+    "con_eps_hisdate",
+    "con_na",
+    "con_pb",
+    "con_ps",
+    "con_pe",
+    "con_peg",
+    "con_roe",
+    "con_or_yoy",
+    "con_np_yoy",
+    "con_npcgrate_2y",
+    "con_npgrate_1w",
+    "con_npgrate_4w",
+    "con_npgrate_13w",
+    "con_npgrate_26w",
+    "con_npgrate_52w",
+    "entrytime",
+    "updatetime",
+    "tmstamp",
+)
+
+con_forecast_roll_stk_COLUMNS: tuple[str, ...] = (
+    "id",
+    "stock_code",
+    "stock_name",
+    "con_date",
+    "con_or_roll",
+    "con_np_roll",
+    "con_eps_roll",
+    "con_na_roll",
+    "con_pb_roll",
+    "con_ps_roll",
+    "con_pe_roll",
+    "con_peg_roll",
+    "con_roe_roll",
+    "con_npcgrate_2y_roll",
+    "con_or_yoy_roll",
+    "con_np_yoy_roll",
+    "entrytime",
+    "updatetime",
+    "tmstamp",
+)
+
+rpt_earnings_adjust_COLUMNS: tuple[str, ...] = (
+    "id",
+    "report_id",
+    "stock_code",
+    "stock_name",
+    "title",
+    "report_type",
+    "organ_id",
+    "organ_name",
+    "author",
+    "report_year",
+    "current_create_date",
+    "previous_create_date",
+    "current_forecast_np",
+    "previous_forecast_np",
+    "np_adjust_rate",
+    "np_adjust_mark",
+    "current_forecast_eps",
+    "previous_forecast_eps",
+    "eps_adjust_rate",
+    "eps_adjust_mark",
+    "is_capital_different",
+    "entrytime",
+    "updatetime",
+    "tmstamp",
+)
+
+con_forecast_idx_COLUMNS: tuple[str, ...] = (
+    "id",
+    "index_code",
+    "index_name",
+    "con_date",
+    "con_year",
+    "con_or",
+    "con_np",
+    "con_eps",
+    "con_na",
+    "con_pb",
+    "con_ps",
+    "con_pe",
+    "con_peg",
+    "con_roe",
+    "con_or_yoy",
+    "con_np_yoy",
+    "con_npcgrate_2y",
+    "con_pei",
+    "entrytime",
+    "updatetime",
+    "tmstamp",
+)
+
+con_forecast_roll_idx_COLUMNS: tuple[str, ...] = (
+    "id",
+    "index_code",
+    "index_name",
+    "con_date",
+    "con_or_roll",
+    "con_np_roll",
+    "con_eps_roll",
+    "con_na_roll",
+    "con_pb_roll",
+    "con_ps_roll",
+    "con_pe_roll",
+    "con_peg_roll",
+    "con_roe_roll",
+    "con_npcgrate_2y_roll",
+    "con_or_yoy_roll",
+    "con_np_yoy_roll",
+    "entrytime",
+    "updatetime",
+    "tmstamp",
+)
