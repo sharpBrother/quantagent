@@ -1,6 +1,6 @@
 ---
 title: 分钟行情历史与日更来源
-status: active
+status: superseded
 created: 2026-11-21
 updated: 2026-11-21
 applies_to:
@@ -8,7 +8,7 @@ applies_to:
   - src/quantagent/contracts/
   - orchestration/
 supersedes: null
-superseded_by: null
+superseded_by: 2026-11-26-minute-bars-mysql-incremental.md
 ---
 
 # 分钟行情历史与日更来源

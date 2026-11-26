@@ -16,7 +16,6 @@ from quantagent.adapters.lake.forward_return import LakeForwardReturnRepository
 from quantagent.adapters.lake.trade_calendar import LakeCalendarRepository
 from quantagent.adapters.postgres.readiness import PostgresSourceReadinessRepository
 from quantagent.cli.cutamp_materialize import materialize_cutamp
-from quantagent.cli.did_ratio_materialize import materialize_did_ratio
 from quantagent.cli.forward_return_materialize import materialize_forward_return_cli
 from quantagent.cli.mif_materialize import materialize_mif
 from quantagent.cli.minute_factors_2b_materialize import materialize_minute_factors_2b
@@ -38,7 +37,6 @@ from quantagent.domain.incremental import (
     plan_window,
 )
 from quantagent.domain.ports.readiness import DailySource
-from quantagent.features.library.fundamental import did_ratio
 from quantagent.features.library.minute.batch_2b import PARAM_HASHES as MINUTE_2B_PARAM_HASHES
 from quantagent.features.library.minute.five_day import DEFINITION_VERSION as MINUTE_VERSION
 from quantagent.features.library.minute.five_day import SPECS as MINUTE_SPECS
@@ -73,7 +71,7 @@ Input = Literal[
     "aindexeodprices",
     "minute",
 ]
-Materializer = Literal["cutamp", "mif", "tr_umr", "moneyflow", "minute", "minute_2b", "did_ratio"]
+Materializer = Literal["cutamp", "mif", "tr_umr", "moneyflow", "minute", "minute_2b"]
 
 _DAILY_SOURCES: frozenset[str] = frozenset(get_args(DailySource))
 # 指数源只统计基准代码。与 tr_umr / abso_umr 读取的基准一致。
@@ -131,16 +129,6 @@ def _feature_increments() -> tuple[FeatureIncrement, ...]:
             tr_umr.PARAM_HASH,
             "tr_umr",
             (PRICE, INDEX, DERIVATIVE),
-        ),
-        # did_ratio 的日频就绪依赖只有衍生指标：all_a 成员与市值都由它决定。
-        # 财报（分红/利润表/财务指标）是事件驱动、按 ANN_DT 截止，没有"当日行数就绪"概念，
-        # 不作为就绪输入；它们的采集血缘在 orchestration 资产的 deps 里表达。
-        FeatureIncrement(
-            did_ratio.FEATURE_ID,
-            did_ratio.DEFINITION_VERSION,
-            did_ratio.PARAM_HASH,
-            "did_ratio",
-            (DERIVATIVE,),
         ),
     ]
     items.extend(
@@ -331,22 +319,18 @@ def _materialize_feature(
         raise IncrementError("写入计划缺少起点、截止或物化 as_of")
     start, end, as_of = plan.start, plan.cutoff, plan.materialize_as_of
     kind = item.materializer
-    # 单因子直返的物化函数：签名统一为 (settings, paths, start, end, wind_codes, as_of)。
-    # did_ratio 返回三元组（行数, digest, 冲突数），日更只取前两元。
-    single = {
-        "cutamp": materialize_cutamp,
-        "mif": materialize_mif,
-        "tr_umr": materialize_tr_umr,
-    }
-    if kind in single:
-        return single[kind](
+    if kind == "cutamp":
+        return materialize_cutamp(
             settings=settings, paths=paths, start=start, end=end, wind_codes=None, as_of=as_of
         )
-    if kind == "did_ratio":
-        row_count, digest, _conflicts = materialize_did_ratio(
+    if kind == "mif":
+        return materialize_mif(
             settings=settings, paths=paths, start=start, end=end, wind_codes=None, as_of=as_of
         )
-        return row_count, digest
+    if kind == "tr_umr":
+        return materialize_tr_umr(
+            settings=settings, paths=paths, start=start, end=end, wind_codes=None, as_of=as_of
+        )
     if kind == "moneyflow":
         return materialize_moneyflow_factors(
             settings=settings,

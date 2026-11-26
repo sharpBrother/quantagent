@@ -372,3 +372,20 @@ def test_constituent_empty_code_fails_closed() -> None:
             dt=AS_OF,
             universe_id="index:000300.SH",
         )
+
+
+def test_listed_codes_for_ingest_includes_new_and_beijing_shares() -> None:
+    conn = _conn(
+        description=[
+            _desc("920001.BJ", "20240105", None, "BSE"),
+            _desc("600000.SH", "20000101", None, "SSE"),
+            _desc("000002.SZ", "20000101", "20240105", "SZSE"),
+            _desc("000003.SZ", "20240106", None, "SZSE"),
+            _desc("000004.SZ", None, None, "SZSE"),
+        ],
+        observed=[],
+    )
+    assert PostgresUniverseRepository(conn).listed_codes_for_ingest(as_of=AS_OF) == (
+        "600000.SH",
+        "920001.BJ",
+    )

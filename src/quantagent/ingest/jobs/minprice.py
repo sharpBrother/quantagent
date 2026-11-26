@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import time
 from datetime import UTC, date, datetime
 from datetime import time as time_of_day
@@ -37,6 +38,9 @@ if TYPE_CHECKING:
 
 _NAMES = ("ts_code", "trade_time", "open", "high", "low", "close", "vol", "amount")
 _EXPECTED_BARS = 241
+_AUTO_VOLUME_START = date(2026, 11, 26)
+_AUTO_VOLUME_LIMIT = 3
+_STOCK_CODE = re.compile(r"(?:6[0-9]{5}\.SH|[03][0-9]{5}\.SZ|(?:[48][0-9]{5}|92[0-9]{4})\.BJ)\Z")
 _JANUARY_21_NEGATIVE_COUNT = 103
 _APPROVED_NEGATIVE_VOLUME = {
     date(2026, 1, 22): (("002485.SZ", Decimal("-28")),),
@@ -93,6 +97,8 @@ _APPROVED_NEGATIVE_VOLUME = {
     date(2026, 11, 3): (("920275.BJ", Decimal("-35")), ("920931.BJ", Decimal("263"))),
     date(2026, 11, 11): (("920608.BJ", Decimal("-19")),),
     date(2026, 11, 18): (("920121.BJ", Decimal("1775")),),
+    date(2026, 11, 24): (("920608.BJ", Decimal("353")),),
+    date(2026, 11, 25): (("920608.BJ", Decimal("18")),),
 }
 _PREVIOUSLY_APPROVED_DATES = frozenset(
     {
@@ -122,6 +128,51 @@ class MinuteRunLog(RunLog):
     excluded_codes: list[str] = Field(default_factory=list)
     amount_comparisons: list[dict[str, str]] = Field(default_factory=list)
     outcome: str = "unknown"
+
+
+def previous_day_code_count(pg: Any, *, day: date) -> int:
+    """用已登记的上一交易日代码数判断采集完整性。"""
+    with pg.cursor() as cur:
+        cur.execute(
+            "SELECT code_count FROM src_minprice.lake_partition WHERE dataset=%s AND trade_date=%s",
+            ("ashare_minute_bar", day),
+        )
+        previous = cur.fetchone()
+    if previous is None or previous[0] <= 0:
+        raise SourceNotReadyError("上一交易日分钟分区缺失，不能判断当日完整性")
+    return int(previous[0])
+
+
+def _automatic_volume_fixes(
+    table: pa.Table, *, trade_date: date
+) -> tuple[tuple[str, Decimal], ...]:
+    """仅处理负责人多次确认的少量收盘 -1 手异常，其他异常仍停止。"""
+    rows = (
+        table.filter(pc.less(table["vol"], 0))
+        .select(["ts_code", "trade_time", "vol", "amount"])
+        .to_pylist()
+    )
+    if not rows:
+        return ()
+    if len(rows) > _AUTO_VOLUME_LIMIT:
+        raise SourceFetchError("负成交量超过每日 3 条同类异常上限")
+    expected = datetime.combine(trade_date, time_of_day(15))
+    fixes = []
+    for item in rows:
+        code, stamp, vol, amount = item["ts_code"], item["trade_time"], item["vol"], item["amount"]
+        if (
+            not isinstance(code, str)
+            or not _STOCK_CODE.fullmatch(code)
+            or stamp != expected
+            or vol != Decimal("-1")
+            or not isinstance(amount, Decimal)
+            or not amount.is_finite()
+        ):
+            raise SourceFetchError("负成交量记录与已确认的收盘 -1 手模式不一致")
+        fixes.append((code, amount))
+    if len({code for code, _ in fixes}) != len(fixes):
+        raise SourceFetchError("负成交量记录证券代码重复")
+    return tuple(fixes)
 
 
 def assert_daily_ready(table: pa.Table, previous_code_count: int) -> None:
@@ -187,6 +238,11 @@ def ingest_day(  # noqa: PLR0912, PLR0915
         volume_fixes = (
             _APPROVED_NEGATIVE_VOLUME.get(trade_date, ()) if source_batches is None else ()
         )
+        automatic_volume_fixes = (
+            source_batches is None and trade_date >= _AUTO_VOLUME_START and not volume_fixes
+        )
+        if automatic_volume_fixes:
+            volume_fixes = _automatic_volume_fixes(table, trade_date=trade_date)
         if volume_fixes:
             original_input_digest = content_digest(
                 table.append_column(
@@ -261,6 +317,13 @@ def ingest_day(  # noqa: PLR0912, PLR0915
             )
         for fix_code, fix_amount in volume_fixes:
             fix_time = datetime.combine(trade_date, time_of_day(15))
+            if automatic_volume_fixes and fix_code in excluded_codes:
+                # 负成交额不达标时保留整只股票的缺失，不妨碍其他股票入库。
+                for comparison in amount_comparisons:
+                    if comparison["ts_code"] == fix_code:
+                        comparison["excluded_volume_before"] = "-1.0000"
+                        comparison["excluded_amount_before"] = f"{fix_amount:.4f}"
+                continue
             if fix_amount >= 0:
                 if fix_code in excluded_codes:
                     raise SourceFetchError(f"{trade_date} 指定记录的股票被排除，停止入库")

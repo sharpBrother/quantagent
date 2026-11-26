@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any
 import pyarrow.parquet as pq
 
 from quantagent.ingest.errors import SourceFetchError
-from quantagent.ingest.jobs.minprice import ingest_day
-from quantagent.ingest.sources.eastmoney_minute import fetch_day, list_stocks
+from quantagent.ingest.jobs.minprice import ingest_day, previous_day_code_count
+from quantagent.ingest.sources.eastmoney_minute import fetch_day
 from quantagent.platform.config import assert_db_write_allowed
 from quantagent.platform.identity import digest_file
 
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from datetime import date
 
     from quantagent.domain.ports.calendar import CalendarRepository
+    from quantagent.domain.ports.universe import IngestUniverseRepository
     from quantagent.platform.config import Settings
     from quantagent.platform.storage.paths import VarPaths
 
@@ -41,9 +42,10 @@ def ingest_eastmoney_day(
     settings: Settings,
     paths: VarPaths,
     calendar: CalendarRepository,
+    universe: IngestUniverseRepository,
     write_db: bool = False,
 ) -> str:
-    """以东财股票列表采集当日，任何请求失败都不登记部分日行情。"""
+    """以 Wind 在市名单采集当日，任何请求失败都不登记部分日行情。"""
     if write_db:
         assert_db_write_allowed(settings=settings, write_db=True)
         with pg.cursor() as cur:
@@ -67,19 +69,14 @@ def ingest_eastmoney_day(
     days = calendar.list_days(as_of=trade_date, exchange="SSE", start=trade_date, end=trade_date)
     if len(days) != 1 or not days[0].is_open or days[0].prev_trade_dt is None:
         raise SourceFetchError("当日或上一交易日日历不可用")
-    with pg.cursor() as cur:
-        cur.execute(
-            "SELECT code_count FROM src_minprice.lake_partition WHERE dataset=%s AND trade_date=%s",
-            ("ashare_minute_bar", days[0].prev_trade_dt),
-        )
-        previous = cur.fetchone()
-    if previous is None or previous[0] <= 0:
-        raise SourceFetchError("上一交易日分钟分区缺失，不能判断当日完整性")
+    previous = previous_day_code_count(pg, day=days[0].prev_trade_dt)
     # 全市场请求可能持续较久；读取上一日清单后释放 PG 只读事务。
     pg.rollback()
-    codes = list_stocks()
+    codes = universe.listed_codes_for_ingest(as_of=trade_date)
     if not codes:
-        raise SourceFetchError("东财股票列表为空")
+        raise SourceFetchError("Wind 当日股票名单为空")
+    # 释放读取名单的 PG 快照，不在网络采集期间持有事务。
+    pg.rollback()
     return ingest_day(
         None,
         pg,
@@ -87,7 +84,7 @@ def ingest_eastmoney_day(
         settings=settings,
         paths=paths,
         calendar=calendar,
-        previous_code_count=int(previous[0]),
+        previous_code_count=previous,
         source_batches=_batches(codes, trade_date),
         source_table="eastmoney.trends2",
         write_db=write_db,

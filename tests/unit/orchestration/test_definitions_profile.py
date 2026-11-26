@@ -17,6 +17,7 @@ _PREFIX_TO_SCHEMA = {
     "src_macro_": "src_macro",
     "src_jydb_": "src_jydb",
     "src_eastmoney_": "src_minprice",
+    "src_mysql_": "src_minprice",
 }
 # lake 产物，不写源 schema，不受 PROFILE_WRITABLE_SCHEMAS 约束。
 _LAKE_ASSETS = frozenset(
@@ -36,7 +37,6 @@ _LAKE_ASSETS = frozenset(
         "feature_daily_corr_vrlaglarge",
         "feature_daily_core_up",
         "feature_daily_core_down",
-        "feature_daily_did_ratio",
     }
 )
 

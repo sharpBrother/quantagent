@@ -24,3 +24,9 @@ class UniverseRepository(Protocol):
         不提供省略 ``as_of`` 的重载。
         """
         ...
+
+
+class IngestUniverseRepository(UniverseRepository, Protocol):
+    def listed_codes_for_ingest(self, *, as_of: date) -> tuple[str, ...]:
+        """当日采集名单：以当前态上市／退市日期切片，不是 PIT 研究股票池。"""
+        ...

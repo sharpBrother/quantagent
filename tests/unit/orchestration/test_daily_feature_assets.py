@@ -27,17 +27,6 @@ def _key_names(asset_def: AssetsDefinition) -> set[str]:
     return {key.to_user_string() for key in asset_def.dependency_keys}
 
 
-# did_ratio 额外依赖财报三张表：血缘要求在财报采集之后跑，但财报是事件驱动、
-# 不参与行数就绪判定（不是 DailySource）。其他因子仍严格 deps 与就绪输入一一对应。
-_FUNDAMENTAL_LINEAGE = {
-    "pf_single_stock_did_ratio_did_ratio_realized_1_1_mean_pos": {
-        "src_wind_asharedividend",
-        "src_wind_ashareincome",
-        "src_wind_asharefinancialindicator",
-    }
-}
-
-
 @pytest.mark.unit
 def test_every_registered_factor_has_one_daily_asset_with_matching_inputs() -> None:
     by_feature = {
@@ -47,7 +36,6 @@ def test_every_registered_factor_has_one_daily_asset_with_matching_inputs() -> N
     assert set(by_feature) == {item.feature_id for item in FEATURE_INCREMENTS}
     for item in FEATURE_INCREMENTS:
         expected = {_INPUT_KEY[name] for name in item.inputs} | {"std_trade_calendar"}
-        expected |= _FUNDAMENTAL_LINEAGE.get(item.feature_id, set())
         assert _key_names(by_feature[item.feature_id]) == expected, item.feature_id
 
 

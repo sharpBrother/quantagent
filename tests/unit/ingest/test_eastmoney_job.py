@@ -24,9 +24,8 @@ def test_daily_uses_previous_manifest_and_records_eastmoney(
     calendar = SimpleNamespace(list_days=lambda **kw: (CalendarDay(day, "SSE", True, previous),))
     pg = MagicMock()
     pg.cursor.return_value.__enter__.return_value.fetchone.side_effect = [None, (100,)]
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.eastmoney_minute.list_stocks", lambda: ("000001.SZ",)
-    )
+    universe = MagicMock()
+    universe.listed_codes_for_ingest.return_value = ("000001.SZ",)
     seen: dict[str, Any] = {}
 
     def ingest(*args: Any, **kwargs: Any) -> str:
@@ -42,10 +41,12 @@ def test_daily_uses_previous_manifest_and_records_eastmoney(
             settings=settings,
             paths=resolve_var_paths(settings, repo_root=tmp_path),
             calendar=calendar,
+            universe=universe,
             write_db=True,
         )
         == "inserted"
     )
+    universe.listed_codes_for_ingest.assert_called_once_with(as_of=day)
     assert seen["source_table"] == "eastmoney.trends2"
     assert seen["previous_code_count"] == 100
 
@@ -65,6 +66,7 @@ def test_daily_rejects_missing_previous_day(tmp_path: Path) -> None:
             settings=settings,
             paths=resolve_var_paths(settings, repo_root=tmp_path),
             calendar=calendar,
+            universe=MagicMock(),
         )
 
 
@@ -84,12 +86,17 @@ def test_daily_skips_verified_existing_partition_without_network(
         1,
         digest_file(file),
     )
-    monkeypatch.setattr(
-        "quantagent.ingest.jobs.eastmoney_minute.list_stocks", lambda: pytest.fail("不应重新请求")
-    )
+    universe = MagicMock()
     assert (
         ingest_eastmoney_day(
-            pg, trade_date=day, settings=settings, paths=paths, calendar=MagicMock(), write_db=True
+            pg,
+            trade_date=day,
+            settings=settings,
+            paths=paths,
+            calendar=MagicMock(),
+            universe=universe,
+            write_db=True,
         )
         == "skipped"
     )
+    universe.listed_codes_for_ingest.assert_not_called()

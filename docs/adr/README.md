@@ -109,6 +109,11 @@ applies_to:
 | 2026-11-23 | [2026-11-11 分钟行情单条负成交量和成交额修正](2026-11-23-minute-bar-november-11-correction.md) |
 | 2026-11-23 | [2026-11-18 分钟行情单条成交量和成交额修正](2026-11-23-minute-bar-november-18-correction.md) |
 
+| 2026-11-25 | [2026-11-24 分钟行情单条成交量和成交额修正](2026-11-25-minute-bar-november-24-correction.md) |
+| 2026-11-25 | [东财分钟行情使用 Wind 在市股票采集名单](2026-11-25-minute-bar-wind-stock-list.md) |
+| 2026-11-26 | [暂用 MySQL 同步分钟行情增量](2026-11-26-minute-bars-mysql-incremental.md) |
+| 2026-11-26 | [2026-11-25 分钟行情单条成交量和成交额修正](2026-11-26-minute-bar-november-25-correction.md) |
+
 ## 研究口径决策
 
 | 日期 | 决策 |

@@ -1,4 +1,4 @@
-"""东财分钟行情 16:00 首次采集、17:00 补跑。"""
+"""MySQL 分钟行情 16:00 首次采集、17:00 补跑。"""
 
 from zoneinfo import ZoneInfo
 
@@ -12,7 +12,7 @@ from dagster import (
     SkipReason,
 )
 
-from orchestration.assets.minprice import src_eastmoney_minute
+from orchestration.assets.minprice import src_mysql_minute
 from orchestration.jobs.minprice import minprice_daily
 from quantagent.platform.config import get_settings
 from quantagent.platform.storage import detect_repo_root, resolve_var_paths
@@ -45,7 +45,7 @@ def _evaluate(context: ScheduleEvaluationContext, *, final: bool) -> RunRequest 
         run_key=f"{today}:{int(final)}",
         run_config={
             "ops": {
-                src_eastmoney_minute.op.name: {
+                src_mysql_minute.op.name: {
                     "config": {
                         "as_of": str(today),
                         "write_db": True,

@@ -10,7 +10,12 @@ import pytest
 
 from quantagent.domain.minute_exclusions import JANUARY_21_EXCLUDED
 from quantagent.ingest.errors import SourceFetchError, SourceNotReadyError
-from quantagent.ingest.jobs.minprice import assert_daily_ready, ingest_day
+from quantagent.ingest.jobs.minprice import (
+    _SCHEMA,
+    _automatic_volume_fixes,
+    assert_daily_ready,
+    ingest_day,
+)
 from quantagent.platform.config import Settings
 from quantagent.platform.storage.paths import resolve_var_paths
 
@@ -288,6 +293,8 @@ def test_approved_negative_volume_corrected_after_daily_check(
         (date(2026, 10, 22), "920751.BJ", "37"),
         (date(2026, 10, 29), "920871.BJ", "37"),
         (date(2026, 11, 18), "920121.BJ", "1775"),
+        (date(2026, 11, 24), "920608.BJ", "353"),
+        (date(2026, 11, 25), "920608.BJ", "18"),
     ],
 )
 def test_corrects_approved_positive_amount_and_negative_volume(
@@ -943,3 +950,95 @@ def test_november_3_corrects_two_rows_mixed_amount_signs(
     ]
     with pytest.raises(SourceFetchError, match="未通过成交额对比"):
         ingest_day(MagicMock(), pg, **kwargs)
+
+
+def test_automatic_close_negative_volume_is_limited_and_specific() -> None:
+    day = date(2026, 11, 26)
+
+    def row(code, hour, minute, vol, amount):
+        return dict(
+            zip(
+                _SCHEMA.names,
+                (
+                    code,
+                    datetime(2026, 11, 26, hour, minute),
+                    *[Decimal("10")] * 4,
+                    Decimal(vol),
+                    Decimal(amount),
+                ),
+                strict=True,
+            )
+        )
+
+    valid = [row("920608.BJ", 15, 0, "-1", "18"), row("600000.SH", 15, 0, "-1", "-5")]
+    assert _automatic_volume_fixes(pa.Table.from_pylist(valid, schema=_SCHEMA), trade_date=day) == (
+        ("920608.BJ", Decimal("18")),
+        ("600000.SH", Decimal("-5")),
+    )
+    for invalid in (
+        [row("920608.BJ", 14, 59, "-1", "18")],
+        [row("920608.BJ", 15, 0, "-2", "18")],
+        [row(f"92000{i}.BJ", 15, 0, "-1", "18") for i in range(4)],
+    ):
+        with pytest.raises(SourceFetchError):
+            _automatic_volume_fixes(pa.Table.from_pylist(invalid, schema=_SCHEMA), trade_date=day)
+
+
+def test_automatic_volume_fix_excludes_code_when_daily_amount_differs(monkeypatch, tmp_path):
+    day = date(2026, 11, 26)
+    rows = [
+        (
+            "920608.BJ",
+            datetime(2026, 11, 26, 9, 30),
+            *[Decimal("10")] * 4,
+            Decimal("1"),
+            Decimal("1000"),
+        ),
+        (
+            "920608.BJ",
+            datetime(2026, 11, 26, 15),
+            *[Decimal("10")] * 4,
+            Decimal("-1"),
+            Decimal("-18"),
+        ),
+        (
+            "000001.SZ",
+            datetime(2026, 11, 26, 15),
+            *[Decimal("10")] * 4,
+            Decimal("1"),
+            Decimal("10"),
+        ),
+    ]
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.read_day", lambda *a, **k: iter([rows]))
+    captured = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.stage_partition",
+        lambda table, **k: captured.append((table, k)) or SimpleNamespace(content_digest="a" * 64),
+    )
+    monkeypatch.setattr("quantagent.ingest.jobs.minprice.register_partition", lambda *a, **k: None)
+    logs = []
+    monkeypatch.setattr(
+        "quantagent.ingest.jobs.minprice.persist_run_log", lambda record, paths: logs.append(record)
+    )
+    prices = MagicMock()
+    prices.list_prices.return_value = [SimpleNamespace(wind_code="920608.BJ", amount=Decimal("2"))]
+    settings = Settings(var_root=tmp_path, allow_db_write=True)
+    pg = MagicMock()
+    pg.cursor.return_value.__enter__.return_value.fetchone.return_value = None
+    assert (
+        ingest_day(
+            MagicMock(),
+            pg,
+            trade_date=day,
+            settings=settings,
+            paths=resolve_var_paths(settings, repo_root=tmp_path),
+            calendar=MagicMock(),
+            daily_prices=prices,
+            write_db=True,
+        )
+        == "inserted"
+    )
+    assert set(captured[0][0]["ts_code"].to_pylist()) == {"000001.SZ"}
+    assert captured[0][1]["excluded_codes"] == ["920608.BJ"]
+    assert logs[0].amount_comparisons[0]["excluded_volume_before"] == "-1.0000"
+    assert logs[0].amount_comparisons[0]["excluded_amount_before"] == "-18.0000"

@@ -57,6 +57,24 @@ class PostgresUniverseRepository:
         self._contract = contract
         self._listings: tuple[ListingRow, ...] | None = None
 
+    def listed_codes_for_ingest(self, *, as_of: date) -> tuple[str, ...]:
+        """采集名单包含新股及北交所；当前态源仅用于当天采集，不充当 PIT 池。"""
+        listings = self._load_listings()
+        codes = tuple(
+            sorted(
+                row.asset_id
+                for row in listings
+                if row.list_date is not None
+                and row.list_date <= as_of
+                and (row.delist_date is None or row.delist_date > as_of)
+                and row.exchange_market in {"SSE", "SZSE", "BSE"}
+                and row.asset_id.endswith((".SH", ".SZ", ".BJ"))
+            )
+        )
+        if not codes:
+            raise EmptyDomainError(f"当日采集名单为空: {as_of.isoformat()}")
+        return codes
+
     def members_at(
         self,
         *,

@@ -6,7 +6,7 @@ from dagster import DagsterInstance, DefaultScheduleStatus, build_schedule_conte
 from orchestration.schedules.minprice import minprice_first, minprice_retry
 
 
-def test_daily_schedules_are_stopped_until_live_validation(
+def test_daily_mysql_schedules_have_safe_defaults(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr(
@@ -28,10 +28,10 @@ def test_daily_schedules_are_stopped_until_live_validation(
     assert minprice_first.default_status == DefaultScheduleStatus.STOPPED
     assert minprice_retry.default_status == DefaultScheduleStatus.STOPPED
     assert (
-        first.run_requests[0].run_config["ops"]["src_eastmoney_minute"]["config"]["final_attempt"]
+        first.run_requests[0].run_config["ops"]["src_mysql_minute"]["config"]["final_attempt"]
         is False
     )
     assert (
-        retry.run_requests[0].run_config["ops"]["src_eastmoney_minute"]["config"]["final_attempt"]
+        retry.run_requests[0].run_config["ops"]["src_mysql_minute"]["config"]["final_attempt"]
         is True
     )
