@@ -12,6 +12,7 @@ import typer
 from quantagent.adapters.postgres.errors import PostgresAdapterError
 from quantagent.cli.cutamp_materialize import materialize_cutamp
 from quantagent.cli.did_ratio_materialize import materialize_did_ratio
+from quantagent.cli.ernqlt_materialize import materialize_ernqlt
 from quantagent.cli.event_aog_materialize import materialize_event_aog
 from quantagent.cli.event_delta_roe_materialize import materialize_event_delta_roe
 from quantagent.cli.event_sue_materialize import materialize_event_sue
@@ -467,6 +468,58 @@ def lake_materialize_event_sue(
         typer.secho(str(exc), fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1) from exc
     typer.echo(f"wrote dataset=feature.value rows={row_count} digest={digest}")
+
+
+@materialize_app.command("barra-ernqlt")
+def lake_materialize_barra_ernqlt(
+    start: Annotated[str, typer.Option("--start", help="截面起点 YYYY-MM-DD")],
+    end: Annotated[str, typer.Option("--end", help="截面终点 YYYY-MM-DD")],
+    as_of: Annotated[str, typer.Option("--as-of", help="财报/行情/行业可见日 YYYY-MM-DD，必填")],
+    codes: Annotated[
+        str | None,
+        typer.Option("--codes", help="逗号分隔的 Wind 代码；不传则每个截面日取该日 all_a 成员"),
+    ] = None,
+) -> None:
+    """把 pf_single_barra_cne6_ernqlt_1_mean_pos（Barra CNE6 盈利质量标准化暴露，方向 +1）写入 feature.value。
+
+    与已迁单因子不同：存的是**标准化后暴露值**（z-score），逐交易日全横截面经 descriptor_process
+    （去极值/中信一级行业中位填补/流通市值加权标准化）+ l3integrate 等权合成 ABS/ACF。
+    股票域为各截面日 all_a 减当日 ST；财报截止复现旧仓 ``ANN_DT < adj_date``（盘前计算当日未出）。
+    数据不足（财报期不齐）的股票该 descriptor 为空，缺失不补 0。pit_grade=B（行业成分近似）。
+    """
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    code_tuple = (
+        None if codes is None else tuple(part.strip() for part in codes.split(",") if part.strip())
+    )
+    try:
+        row_count, digest, coverage = materialize_ernqlt(
+            settings=settings,
+            paths=paths,
+            start=datetime.strptime(start.strip(), "%Y-%m-%d").date(),
+            end=datetime.strptime(end.strip(), "%Y-%m-%d").date(),
+            wind_codes=code_tuple,
+            as_of=datetime.strptime(as_of.strip(), "%Y-%m-%d").date(),
+        )
+    except (
+        LakeLayoutError,
+        DomainError,
+        PostgresAdapterError,
+        ConfigError,
+        RunLogError,
+        ValueError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    # 覆盖率摘要：最少/最多有值股票数，供物化核对。
+    if coverage:
+        ratios = [c[2] / c[1] for c in coverage if c[1] > 0]
+        cov_summary = (
+            f"coverage_min={min(ratios):.1%}_max={max(ratios):.1%}" if ratios else "coverage_empty"
+        )
+    else:
+        cov_summary = "coverage_empty"
+    typer.echo(f"wrote dataset=feature.value rows={row_count} digest={digest} {cov_summary}")
 
 
 @materialize_app.command("event-aog")
