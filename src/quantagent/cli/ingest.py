@@ -24,6 +24,8 @@ from quantagent.cli.minprice import minprice_app
 from quantagent.ingest.errors import IngestError
 from quantagent.ingest.jobs.jin10_ism_details import ingest_jin10_ism_details
 from quantagent.ingest.jobs.jin10_ism_legacy import ingest_jin10_ism_legacy
+from quantagent.ingest.jobs.jin10_ism_rehash import rehash_jin10_ism
+from quantagent.ingest.jobs.jin10_ism_scan import ingest_jin10_ism_scan
 from quantagent.ingest.jobs.jydb_paged import DEFAULT_PAGE_SIZE as JYDB_DEFAULT_PAGE_SIZE
 from quantagent.ingest.jobs.macro_fred import ingest_macro_fred
 from quantagent.ingest.jobs.macro_gpr import ingest_macro_gpr
@@ -548,6 +550,63 @@ def ingest_jin10_ism_details_command(
     typer.echo(
         f"{mode} dataset=src.macro.jin10_economic_calendar rows={result.row_count} "
         f"dml={result.dml_count} digest={result.payload_digest}"
+    )
+
+
+@macro_app.command("jin10-ism-rehash")
+def ingest_jin10_ism_rehash_command(
+    write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
+) -> None:
+    """一次性订正金十 ISM 存量行 _row_hash（负责人批准的 UPDATE 例外）；默认干跑。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    try:
+        result = rehash_jin10_ism(settings=settings, paths=paths, write_db=write_db)
+    except (
+        IngestError,
+        WriteGateError,
+        ConfigError,
+        RunLogError,
+        ForbiddenSqlError,
+        TransactionUnknownError,
+        PostgresAdapterError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    mode = "wrote" if result.written else "dry-run"
+    typer.echo(
+        f"{mode} total={result.total_rows} need_update={result.need_update} "
+        f"updated={result.updated} already_current={result.already_current} dml={result.dml_count}"
+    )
+
+
+@macro_app.command("jin10-ism-scan")
+def ingest_jin10_ism_scan_command(
+    write_db: Annotated[bool, typer.Option("--write-db", help="显式允许写库")] = False,
+) -> None:
+    """发现新一期金十 ISM 并复查近期修订；默认干跑。"""
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    try:
+        result = ingest_jin10_ism_scan(settings=settings, paths=paths, write_db=write_db)
+    except (
+        IngestError,
+        WriteGateError,
+        ConfigError,
+        RunLogError,
+        ForbiddenSqlError,
+        TransactionUnknownError,
+        PostgresAdapterError,
+    ) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
+    mode = "wrote" if result.written else "dry-run"
+    typer.echo(
+        f"{mode} dataset=src.macro.jin10_economic_calendar "
+        f"due={result.due} scanned={result.scanned} found={result.found_data_id} "
+        f"rechecked={result.rechecked} rows={result.row_count} "
+        f"inserted={result.inserted} replaced={result.replaced} skipped={result.skipped} "
+        f"dml={result.dml_count}"
     )
 
 

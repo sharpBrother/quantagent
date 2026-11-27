@@ -18,7 +18,11 @@ from dagster import (
 )
 from dagster._core.test_utils import create_run_for_test
 from orchestration.assets import macro as macro_assets
-from orchestration.assets.macro import src_macro_fred_observation_vintage, src_macro_gpr_daily
+from orchestration.assets.macro import (
+    src_macro_fred_observation_vintage,
+    src_macro_gpr_daily,
+    src_macro_jin10_economic_calendar,
+)
 from orchestration.assets.wind import _pit_grade
 from orchestration.definitions import defs, schedules_for_profile
 from orchestration.jobs.macro import macro_daily
@@ -82,13 +86,19 @@ def test_asset_passes_write_flag_and_reports_no_start_or_as_of(
 @pytest.mark.unit
 def test_macro_daily_job_contains_the_fred_asset() -> None:
     assert macro_daily.name == "macro_daily"
-    # macro_daily 同时选中 GPR 与 FRED 两个资产，两者都要在 Definitions 里，作业才能解析。
+    # macro_daily 同时选中 GPR、FRED 与金十 ISM 三个资产，三者都要在 Definitions 里才能解析。
     resolved = Definitions(
-        assets=[src_macro_fred_observation_vintage, src_macro_gpr_daily], jobs=[macro_daily]
+        assets=[
+            src_macro_fred_observation_vintage,
+            src_macro_gpr_daily,
+            src_macro_jin10_economic_calendar,
+        ],
+        jobs=[macro_daily],
     ).get_job_def("macro_daily")
     assert {key.path[-1] for key in resolved.asset_layer.executable_asset_keys} == {
         "src_macro_fred_observation_vintage",
         "src_macro_gpr_daily",
+        "src_macro_jin10_economic_calendar",
     }
 
 

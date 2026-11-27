@@ -62,6 +62,11 @@ class MacroWgcRunConfig(Config):
     write_db: bool = False
 
 
+class MacroJin10IsmRunConfig(Config):
+    # 调度是全自动写入。第二道闸 QUANTAGENT_ALLOW_DB_WRITE 仍由执行机环境决定。
+    write_db: bool = False
+
+
 @asset(
     name="src_macro_wgc_gold_demand",
     group_name=_GROUP,
@@ -81,6 +86,46 @@ def src_macro_wgc_gold_demand(config: MacroWgcRunConfig) -> MaterializeResult[No
             "new": new,
             "file_sha256": sha,
             "pit_grade": _pit_grade("src.macro.macro_wgc_gold_demand"),
+        }
+    )
+
+
+@asset(
+    name="src_macro_jin10_economic_calendar",
+    group_name=_GROUP,
+    metadata={
+        "reads": "jin10.economic_calendar detail (web/data/jiedu)",
+        "checkpoint": "src_macro_jin10_data_id_scan",
+        "pit_grade": _pit_grade("src.macro.jin10_economic_calendar"),
+    },
+)
+def src_macro_jin10_economic_calendar(config: MacroJin10IsmRunConfig) -> MaterializeResult[None]:
+    from quantagent.ingest.jobs.jin10_ism_scan import ingest_jin10_ism_scan
+    from quantagent.platform.config import get_settings
+    from quantagent.platform.storage import detect_repo_root, resolve_var_paths
+
+    settings = get_settings()
+    paths = resolve_var_paths(settings, repo_root=detect_repo_root())
+    result = ingest_jin10_ism_scan(settings=settings, paths=paths, write_db=config.write_db)
+    return MaterializeResult(
+        metadata={
+            "latest_data_id": result.latest_data_id,
+            "next_public_at": ""
+            if result.next_public_at is None
+            else result.next_public_at.isoformat(),
+            "due": result.due,
+            "scan_attempted": result.scan_attempted,
+            "scanned": result.scanned,
+            "found_data_id": result.found_data_id,
+            "rechecked": result.rechecked,
+            "row_count": result.row_count,
+            "inserted": result.inserted,
+            "replaced": result.replaced,
+            "skipped": result.skipped,
+            "metadata_skipped": result.metadata_skipped,
+            "dml_count": result.dml_count,
+            "pit_grade": _pit_grade("src.macro.jin10_economic_calendar"),
+            "digest": result.output_digest or "",
         }
     )
 

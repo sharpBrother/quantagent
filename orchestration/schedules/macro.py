@@ -20,6 +20,7 @@ from dagster import (
 from orchestration.assets.macro import (
     src_macro_fred_observation_vintage,
     src_macro_gpr_daily,
+    src_macro_jin10_economic_calendar,
     src_macro_wgc_gold_demand,
 )
 from orchestration.jobs.macro import macro_daily, macro_wgc_weekly
@@ -62,6 +63,12 @@ def _evaluate(context: ScheduleEvaluationContext) -> RunRequest | SkipReason:
                 src_macro_fred_observation_vintage.op.name: {
                     "config": {
                         # 全量拉取，不需要起点或 as_of。
+                        "write_db": True,
+                    }
+                },
+                src_macro_jin10_economic_calendar.op.name: {
+                    "config": {
+                        # 全自动写入。是否扫描由资产内的 next_public_time 判定，调度不判断。
                         "write_db": True,
                     }
                 },

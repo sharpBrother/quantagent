@@ -19,7 +19,11 @@ from dagster import (
 )
 from dagster._core.test_utils import create_run_for_test
 from orchestration.assets import macro as macro_assets
-from orchestration.assets.macro import src_macro_fred_observation_vintage, src_macro_gpr_daily
+from orchestration.assets.macro import (
+    src_macro_fred_observation_vintage,
+    src_macro_gpr_daily,
+    src_macro_jin10_economic_calendar,
+)
 from orchestration.assets.wind import _pit_grade
 from orchestration.jobs.macro import macro_daily
 from orchestration.schedules import macro as macro_schedules
@@ -111,10 +115,14 @@ def test_default_run_is_dry_run(tmp_path: Path, monkeypatch: MonkeyPatch) -> Non
 
 @pytest.mark.unit
 def test_macro_daily_job_includes_the_gpr_asset() -> None:
-    # macro_daily 与 FRED 共用一个作业，两者都要在 Definitions 里才能解析。
+    # macro_daily 与 FRED、金十 ISM 共用一个作业，三者都要在 Definitions 里才能解析。
     assert macro_daily.name == "macro_daily"
     resolved = Definitions(
-        assets=[src_macro_gpr_daily, src_macro_fred_observation_vintage],
+        assets=[
+            src_macro_gpr_daily,
+            src_macro_fred_observation_vintage,
+            src_macro_jin10_economic_calendar,
+        ],
         jobs=[macro_daily],
     ).get_job_def("macro_daily")
     assert "src_macro_gpr_daily" in {
@@ -160,7 +168,10 @@ def test_schedule_runs_on_a_closed_exchange_day(instance: DagsterInstance) -> No
 @pytest.mark.unit
 def test_schedule_source_never_reads_the_trade_calendar() -> None:
     source = inspect.getsource(macro_schedules).lower()
-    assert "calendar" not in source
+    # 调度不得读取交易日历（公开源按自然日跑）。金十资产名里的 economic_calendar
+    # 是数据集名而不是交易日历，检测时排除这个误命中。
+    assert "trade_cal" not in source
+    assert "trade_calendar" not in source
 
 
 @pytest.mark.unit

@@ -21,6 +21,7 @@ from orchestration.assets.jydb import (
 from orchestration.assets.macro import (
     src_macro_fred_observation_vintage,
     src_macro_gpr_daily,
+    src_macro_jin10_economic_calendar,
     src_macro_wgc_gold_demand,
 )
 from orchestration.assets.minprice import src_eastmoney_minute, src_mysql_minute
@@ -118,6 +119,7 @@ defs = Definitions(
         src_tushare_us_treasury_yield,
         src_macro_fred_observation_vintage,
         src_macro_gpr_daily,
+        src_macro_jin10_economic_calendar,
         src_macro_wgc_gold_demand,
         src_jydb_c_ed_indicatormain,
         src_jydb_c_ed_macroindicatordata,

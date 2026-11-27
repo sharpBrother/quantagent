@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -53,6 +53,11 @@ def _default(obj: Any) -> str:
     if isinstance(obj, bytes):
         return obj.hex()
     if isinstance(obj, datetime):
+        # 带时区的时间统一转 UTC 再序列化。timestamptz 读回的时区表示取决于 server
+        # timezone（本机是 Asia/Shanghai），与写入时的 UTC 表示是同一时刻但 isoformat 不同，
+        # 会让同一行的指纹在写入与回读时不稳定。规范化到 UTC 后 digest 与时区表示无关。
+        if obj.tzinfo is not None:
+            return obj.astimezone(UTC).isoformat()
         return obj.isoformat()
     if isinstance(obj, date):
         return obj.isoformat()
