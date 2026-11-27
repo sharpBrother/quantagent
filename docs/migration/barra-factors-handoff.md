@@ -166,43 +166,52 @@ WHERE current_create_date BETWEEN start AND end AND stock_code IN (6位裸码)
   （AINDEXMEMBERSCITICS 是否已 ingest 待查；若无需新增）。
 然后实现 ERNQLT+SENTIMENT 验证模块。
 
-## 8.5 实施进度（2026-11-26）
+## 8.5 实施进度（2026-11-26，已 compact 后续）
 
-**已完成**：
-- ✅ 公共截面模块 `features/library/cross_section.py` 扩展（commit `ae7a22e`）：
-  `weighted_zscore`（复现 normalize，缺失填加权均值+未加权std ddof=0）、`industry_median_fill`、
-  `descriptor_pipeline`、`l3_integrate`。数值对照旧仓 pandas 最大差异 ~1e-16。11 单元测试全过。
-- ✅ 可行性核查：全部源表字段齐备（BALANCESHEET/INCOME/CASHFLOW/FINANCIALINDICATOR/
-  EODDERIVATIVEINDICATOR），中信行业成分 `AINDEXMEMBERSCITICS` 在 PG（30一级/114二级/312三级行业，
-  S_INFO_WINDCODE=行业指数CI005xxx.WI、S_CON_WINDCODE=成分股、INDATE/OUTDATE）。
-- ✅ 负责人裁定：`aindexmemberscitics` 行业成分沿用成分规则（S_CON_INDATE/OUTDATE 对 as_of 切片，
-  grade A）——**契约待补**（当前 visibility/ 无此 yaml）。
+**已完成并提交**（全部 lint/mypy clean，数值对照旧仓 pandas 验证）：
+
+| commit | 内容 |
+|---|---|
+| `ae7a22e` | 公共截面模块 `features/library/cross_section.py`：`weighted_zscore`/`industry_median_fill`/`descriptor_pipeline`/`l3_integrate`。对照 pandas 差 ~1e-16。11 测试 |
+| `aa83034` | 财报季度序列 `features/library/fundamental/financial_series.py` + adapter `PostgresFinancialSeriesRepository` + `FinancialSeriesRecord`。折旧链等4用例与 pandas `_add_quarter_col` 逐位一致。9 测试 |
+| `e240fd9` | ERNQLT descriptor 纯函数 `features/library/fundamental/ernqlt.py`：`net_operating_assets`/`abs_descriptor`/`acf_descriptor`。9 测试 |
+| `e7634d9` | 行业归属 `domain/ports/industry.py` + `adapters/postgres/industry.py`。端到端验证 2024-04-30 有 5311 股/30 行业 |
+
+**关键语义已锁定（实现时必须遵循）**：
+
+1. **财报截止**：旧仓 `ANN_DT < adj_date`（严格小于，调仓日当天公告不可见——盘前 07:36 算时当日
+   财报未出）。adapter 按 `ANN_DT <= as_of` 批量截止，panel 逐截面再裁剪 `ann_dt < adj_date`。
+2. **CFO/CFI 与 NI/DA 求和口径不同（忠实复现）**：`cfo_q/cfi_q.tail(4).sum()` 用 pandas sum
+   **skipna=True**（容忍缺失季，全None=0）；`income_y/da_y` 用 `rolling(4).sum()` **NaN传播**
+   （满4期且无缺失才值）。`_skipna_sum` 与 `rolling_ttm` 已分别实现。
+3. **is_last 校验对所有期含 Q1 生效**：序列第一期永远 None（Q1 也不例外——旧仓 `~is_last` 覆盖 Q1）。
+4. **ABS 严格性差异（已登记）**：本仓要求 NOA 恰好 5 期，旧仓矩阵 tail(5) 不足时取现有最早行。
+   更严格、符合 4 季 NOA 变化本意。golden 对拍时数据极少股票可能有差异。
+5. **行业一级用 `AINDEXMEMBERSCITICSZL`（非 AINDEXMEMBERSCITICS）**：2026-11-22 已裁定，ZL 是 canonical，
+   旧表仅对账。行业归属读 ZL，INDATE/OUTDATE 闭区间切片 + knowledge_dt=INDATE 可见性（复用
+   `mart.universe_member` 契约 grade B）。`aindexmemberscitics` 契约**不必补**（不参与读取）。
+
+**⚠️ 待解决的 cap 口径关键点（panel 前置依赖）**：
+旧仓 `fetch_cap` 用 **`S_DQ_MV`**（当日总市值），本项目现有端口 `list_market_value` 读 **`S_VAL_MV`**。
+两字段**不一致**（20240430 实测：600000.SH 相同、000001.SZ 差 0.002%、**300750.SZ 差 11.5%**）。
+cap 在 normalize 仅作加权均值权重，但大市值股 11.5% 差异不可忽略。**必须用 S_DQ_MV 忠实复现**。
+需给 `DerivativeIndicatorRepository` 加 `list_dq_market_value`（读 S_DQ_MV，同 MarketValue 形状）
+或等价能力——`ASHAREEODDERIVATIVEINDICATOR` 表已有 S_DQ_MV 列。panel 需要逐日全市场 cap 做截面权重。
 
 **下一步（按序）**：
-1. 补 `contracts/visibility/src.wind.aindexmemberscitics.yaml`（成分规则）+ schemas 若缺。
-2. 财报时间序列 adapter：复现 RAW `fetch_financials`——按表/字段/ANN_DT<adj_date 截止、
-   STATEMENT_TYPE='408001000'（FINANCIALINDICATOR 除外）、REPORT_PERIOD 以0331/0630/0930/1231结尾过滤、
-   drop_duplicates(windcode,report_period,keep=last)、每股tail(count=21)、last_report_num 相对期号。
-   ERNQLT 需 BALANCESHEET(INCL_MIN_INT/OTHER_EQUITY_TOOLS/NON_CUR_LIAB/TOT_LIAB/TOT_ASSETS/TOT_SHR)、
-   FINANCIALINDICATOR(S_FA_INTERESTDEBT/S_STM_IS/S_FA_CAPITALIZEDTODA)、INCOME(TOT_OPER_REV/TOT_OPER_COST/
-   NET_PROFIT_EXCL_MIN_INT_INC)、CASHFLOW(NET_INCR_CASH_CASH_EQU/CASH_CASH_EQU_END_PERIOD/
-   NET_CASH_FLOWS_OPER_ACT/NET_CASH_FLOWS_INV_ACT)。
-3. `_add_quarter_col` 季度拆分（panel/domain 纯 python，项目不用pandas）：Q1=累计、非Q1=本期-上期、
-   is_last连续性校验(不连续field_Q=NaN)、折旧S_STM_IS/CAPITALIZED半年报年报插值
-   (last/last_month*this_month)。last_report_num透视+rolling(4).sum()做TTM。
-4. ERNQLT library(ABS/ACF纯函数)+panel(数据装配+descriptor合成)。
-5. 行业映射 adapter(fetch_industry_map: INDATE<=last_date AND (OUTDATE NULL OR >=last_date),
-   keep=last,缺失'Unknown')+市值cap adapter(S_DQ_MV)。
-6. SENTIMENT library(RR/ETOPFC/EPSFC)+panel。
-7. 全横截面golden(不能单股对拍，需全all_a重算比wx2整行，容差设计是难点——快照时差+股票池差异)。
-8. 物化+日更。
+1. cap 读取扩展（S_DQ_MV）。
+2. **ERNQLT panel**（最大块）：逐交易日循环(~2142日)×全市场。每股读4表财报序列→financial_series
+   季度处理→ernqlt descriptor→全截面 l3_integrate(cap加权+行业中位填补)→存标准化暴露。
+   event_dt=adj_date(交易日)、knowledge_dt 血缘推导箍到 adj_date。域=T日 all_a 减ST。
+   **注意财报数据装配**：每交易日 T 需用 ANN_DT<T 截止后 tail(21) 期——可为效率一次性读全历史
+   再逐日裁剪（财报序列稀疏，每股~21期×4表，全市场~5000股，内存可控）。
+3. ERNQLT golden（全横截面对拍 wx2 barra_cne6，不能单股对拍）。容差设计是难点。
+4. SENTIMENT library(RR/ETOPFC/EPSFC)+panel（结构类似，数据源是 rpt_earnings_adjust+close）。
+5. 物化+日更。
 
 **风格约束**：本项目 panel/library 现有文件均不用 pandas（坚持 dict/纯python），pandas虽是依赖。
 财报季度序列是逐股票时序操作（rolling逐股），跨股票仅在descriptor_process(已dict实现)，
-故纯python可行。rolling(4).sum()=近4期求和，**满4期才产值**（前3期NaN），**窗口内任一
-   NaN则结果为NaN**（pandas rolling 默认 min_periods=window，NaN传播）——即 TTM 严格4季完整才计算，
-   任一季缺失(折旧插值失败/is_last不连续)使 TTM 为NaN、descriptor为空，与“数据不足则descriptor为空”
-   裁定一致。纯python实现rolling_ttm时需严格复现此NaN传播语义。
+故纯python可行。
 
 ## 9. 待查/风险
 
