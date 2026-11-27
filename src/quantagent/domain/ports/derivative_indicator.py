@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Protocol
 if TYPE_CHECKING:
     from datetime import date
 
-    from quantagent.domain.derivative_indicator.types import MarketValue, Turnover
+    from quantagent.domain.derivative_indicator.types import DqMarketValue, MarketValue, Turnover
 
 
 class DerivativeIndicatorRepository(Protocol):
@@ -35,5 +35,20 @@ class DerivativeIndicatorRepository(Protocol):
     ) -> tuple[MarketValue, ...]:
         """``[start, end]`` 内、``as_of`` 可见的总市值行（``S_VAL_MV``）。与 ``list_turnover`` 同一套可见性与
         行集规则：含非交易日行，不补缺，不按行情对齐。空市值返回 ``total_mv=None``，不丢行。
+        """
+        ...
+
+    def list_dq_market_value(
+        self,
+        *,
+        as_of: date,
+        start: date,
+        end: date,
+        wind_codes: tuple[str, ...],
+    ) -> tuple[DqMarketValue, ...]:
+        """``[start, end]`` 内、``as_of`` 可见的**流通市值**行（``S_DQ_MV``）。barra descriptor_process 加权用。
+
+        与 ``list_market_value`` 同一套可见性与行集规则，仅字段从 ``S_VAL_MV``（总市值）换成
+        ``S_DQ_MV``（流通市值）。两者在大市值股上可差 11% 级，不可互相替代。空市值返回 ``dq_mv=None``。
         """
         ...
