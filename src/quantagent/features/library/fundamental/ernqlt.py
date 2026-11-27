@@ -30,12 +30,53 @@
 且与"数据不足则 descriptor 为空"裁定一致。**影响面**：仅数据极少的股票（上市初期/长期停牌），
 golden 对拍时若 wx2 这类股票有值而本仓 None，属可解释差异。
 """
+
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import TYPE_CHECKING
+
+from quantagent.platform.identity import digest_json
+
+if TYPE_CHECKING:
+    from quantagent.features.library.fundamental.ernqlt_series import ErnqltInputs
+
+FEATURE_ID = "pf_single_barra_cne6_ernqlt_1_mean_pos"
+DEFINITION_VERSION = "v1"
+# 方向 +1：盈利质量越高越好。长表存标准化后暴露值（z-score），不乘符号。
+SIGN = 1
+# Current-20 消费窗口 1，取截面日当天的值。
+MEAN_WINDOW = 1
+PARAMS = {
+    "sign": str(SIGN),
+    "mean_window": MEAN_WINDOW,
+}
+PARAM_HASH = digest_json(PARAMS)
 
 # ABS 用 5 期存量算近 4 季 NOA 变化（5 期首尾差）。
 _NOA_PERIODS = 5
+
+
+def ernqlt_descriptors(inputs: ErnqltInputs) -> dict[str, Decimal | None]:
+    """从装配好的输入算 ABS/ACF 两个三级 descriptor 原始值。任一数据不足则该 descriptor 为 None。
+
+    返回 ``{"ABS": ..., "ACF": ...}``（键固定、顺序固定——与旧仓 ``f_dict`` 的插入序一致，
+    l3_integrate 等权平均对顺序不敏感，但固定顺序便于 golden 对照）。原始值跨股票合成在 panel。
+    """
+    return {
+        "ABS": abs_descriptor(
+            noa_series=list(inputs.noa_series),
+            da_ttm=inputs.da_ttm,
+            total_assets_latest=inputs.total_assets_latest,
+        ),
+        "ACF": acf_descriptor(
+            ni_ttm=inputs.net_profit_ttm,
+            cfo_single=list(inputs.cfo_single),
+            cfi_single=list(inputs.cfi_single),
+            da_ttm=inputs.da_ttm,
+            total_assets_latest=inputs.total_assets_latest,
+        ),
+    }
 
 
 def net_operating_assets(
